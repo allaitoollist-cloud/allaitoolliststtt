@@ -20,17 +20,25 @@ export default function Home() {
   const filteredTools = useMemo(() => {
     return tools.filter((tool) => {
       // Search filter
-      const matchesSearch = searchQuery === '' ||
+      const matchesSearch =
+        searchQuery === '' ||
         tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         tool.shortDescription.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        tool.tags.some((tag: string) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+        (Array.isArray(tool.tags) &&
+          tool.tags.some(
+            (tag: any) =>
+              typeof tag === 'string' &&
+              tag.toLowerCase().includes(searchQuery.toLowerCase())
+          ));
 
       // Category filter
-      const matchesCategory = selectedCategories.length === 0 ||
+      const matchesCategory =
+        selectedCategories.length === 0 ||
         selectedCategories.includes(tool.category);
 
       // Pricing filter
-      const matchesPricing = selectedPricing.length === 0 ||
+      const matchesPricing =
+        selectedPricing.length === 0 ||
         selectedPricing.includes(tool.pricing);
 
       return matchesSearch && matchesCategory && matchesPricing;
@@ -38,17 +46,17 @@ export default function Home() {
   }, [searchQuery, selectedCategories, selectedPricing]);
 
   const handleCategoryToggle = (category: string) => {
-    setSelectedCategories(prev =>
+    setSelectedCategories((prev) =>
       prev.includes(category)
-        ? prev.filter(c => c !== category)
+        ? prev.filter((c) => c !== category)
         : [...prev, category]
     );
   };
 
   const handlePricingToggle = (pricing: string) => {
-    setSelectedPricing(prev =>
+    setSelectedPricing((prev) =>
       prev.includes(pricing)
-        ? prev.filter(p => p !== pricing)
+        ? prev.filter((p) => p !== pricing)
         : [...prev, pricing]
     );
   };
@@ -82,7 +90,10 @@ export default function Home() {
                     )}
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[300px] sm:w-[400px] overflow-y-auto">
+                <SheetContent
+                  side="left"
+                  className="w-[300px] sm:w-[400px] overflow-y-auto"
+                >
                   <div className="mt-6">
                     <FilterSidebar
                       selectedCategories={selectedCategories}
@@ -112,7 +123,8 @@ export default function Home() {
                   {searchQuery ? 'Search Results' : 'Featured Tools'}
                 </h2>
                 <span className="text-sm text-muted-foreground">
-                  {filteredTools.length} {filteredTools.length === 1 ? 'result' : 'results'}
+                  {filteredTools.length}{' '}
+                  {filteredTools.length === 1 ? 'result' : 'results'}
                 </span>
               </div>
 
