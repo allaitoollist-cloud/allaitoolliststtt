@@ -23,7 +23,7 @@ export default function Home() {
       const matchesSearch = searchQuery === '' ||
         tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         tool.shortDescription.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        tool.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+        tool.tags.some((tag: string) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
 
       // Category filter
       const matchesCategory = selectedCategories.length === 0 ||
