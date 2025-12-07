@@ -23,7 +23,6 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { MoreHorizontal, Check, X, Trash2 } from 'lucide-react';
-import { createBrowserClient } from '@supabase/ssr';
 import { useToast } from '@/components/ui/use-toast';
 import { useRouter } from 'next/navigation';
 
@@ -45,76 +44,137 @@ export function SubmissionRow({ submission }: { submission: Submission }) {
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
     const router = useRouter();
-    const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
 
     const handleApprove = async () => {
         setLoading(true);
-        const { error } = await supabase
-            .from('tool_submissions')
-            .update({ status: 'approved', reviewed_at: new Date().toISOString() })
-            .eq('id', submission.id);
+        console.log('Approving submission:', submission.id);
 
-        if (error) {
+        try {
+            const response = await fetch('/api/submissions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'approve',
+                    submissionId: submission.id,
+                    submissionData: {
+                        tool_name: submission.tool_name,
+                        tool_url: submission.tool_url,
+                        description: submission.description,
+                        category: submission.category,
+                        pricing: submission.pricing,
+                    }
+                }),
+            });
+
+            const data = await response.json();
+
+
+            if (!response.ok) {
+                console.error('Error approving:', data.error);
+                toast({
+                    title: 'Error',
+                    description: data.error || 'Failed to approve submission',
+                    variant: 'destructive',
+                });
+            } else {
+                toast({
+                    title: 'Success',
+                    description: data.message || 'Submission approved!',
+                });
+                router.refresh();
+            }
+        } catch (error) {
+            console.error('Network error:', error);
             toast({
                 title: 'Error',
-                description: 'Failed to approve submission',
+                description: 'Network error occurred',
                 variant: 'destructive',
             });
-        } else {
-            toast({
-                title: 'Success',
-                description: 'Submission approved successfully',
-            });
-            router.refresh();
         }
         setLoading(false);
     };
 
     const handleReject = async () => {
         setLoading(true);
-        const { error } = await supabase
-            .from('tool_submissions')
-            .update({ status: 'rejected', reviewed_at: new Date().toISOString() })
-            .eq('id', submission.id);
+        console.log('Rejecting submission:', submission.id);
 
-        if (error) {
+        try {
+            const response = await fetch('/api/submissions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'reject',
+                    submissionId: submission.id,
+                }),
+            });
+
+            console.log('API Response status:', response.status);
+            const data = await response.json();
+            console.log('API Response data:', data);
+
+
+            if (!response.ok) {
+                console.error('Error rejecting:', data.error);
+                toast({
+                    title: 'Error',
+                    description: data.error || 'Failed to reject submission',
+                    variant: 'destructive',
+                });
+            } else {
+                toast({
+                    title: 'Success',
+                    description: data.message || 'Submission rejected',
+                });
+                router.refresh();
+            }
+        } catch (error) {
+            console.error('Network error:', error);
             toast({
                 title: 'Error',
-                description: 'Failed to reject submission',
+                description: 'Network error occurred',
                 variant: 'destructive',
             });
-        } else {
-            toast({
-                title: 'Success',
-                description: 'Submission rejected',
-            });
-            router.refresh();
         }
         setLoading(false);
     };
 
     const handleDelete = async () => {
         setLoading(true);
-        const { error } = await supabase
-            .from('tool_submissions')
-            .delete()
-            .eq('id', submission.id);
+        console.log('Deleting submission:', submission.id);
 
-        if (error) {
+        try {
+            const response = await fetch('/api/submissions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'delete',
+                    submissionId: submission.id,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                console.error('Error deleting:', data.error);
+                toast({
+                    title: 'Error',
+                    description: data.error || 'Failed to delete submission',
+                    variant: 'destructive',
+                });
+            } else {
+                toast({
+                    title: 'Success',
+                    description: data.message || 'Submission deleted',
+                });
+                router.refresh();
+            }
+        } catch (error) {
+            console.error('Network error:', error);
             toast({
                 title: 'Error',
-                description: 'Failed to delete submission',
+                description: 'Network error occurred',
                 variant: 'destructive',
             });
-        } else {
-            toast({
-                title: 'Success',
-                description: 'Submission deleted successfully',
-            });
-            router.refresh();
         }
         setLoading(false);
         setDeleteDialogOpen(false);
@@ -160,13 +220,37 @@ export function SubmissionRow({ submission }: { submission: Submission }) {
                     <div className="flex justify-end gap-2">
                         {submission.status === 'pending' && (
                             <>
-                                <Button variant="ghost" size="sm" onClick={handleApprove} disabled={loading}>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        console.log('Approve clicked for:', submission.id);
+                                        handleApprove();
+                                    }}
+                                    disabled={loading}
+                                    className="hover:bg-green-500/20 hover:text-green-500"
+                                >
                                     <Check className="h-4 w-4 mr-1" />
-                                    Approve
+                                    {loading ? 'Processing...' : 'Approve'}
                                 </Button>
-                                <Button variant="ghost" size="sm" onClick={handleReject} disabled={loading}>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        console.log('Reject clicked for:', submission.id);
+                                        handleReject();
+                                    }}
+                                    disabled={loading}
+                                    className="hover:bg-red-500/20 hover:text-red-500"
+                                >
                                     <X className="h-4 w-4 mr-1" />
-                                    Reject
+                                    {loading ? 'Processing...' : 'Reject'}
                                 </Button>
                             </>
                         )}

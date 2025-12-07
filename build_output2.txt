@@ -1,0 +1,169 @@
+﻿
+> nextjs@0.1.0 build
+> next build
+
+   Creating an optimized production build...
+node.exe : Browserslist: 
+caniuse-lite is outdated. 
+Please run:
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~
+    + CategoryInfo           
+   : NotSpecified: (Browser  
+  slist: c...ed. Please ru   
+ n::String) [], RemoteExc    
+eption
+    + FullyQualifiedErrorId  
+   : NativeCommandError
+ 
+  npx 
+update-browserslist-db@latest
+  Why you should do it 
+regularly: https://github.com
+/browserslist/update-db#readm
+e
+ Γ£ô Compiled successfully
+   Skipping linting
+   Checking validity of types...
+   Collecting page data...
+   Generating static pages (0/44)...
+
+ ΓÜá metadata.metadataBase 
+is not set for resolving 
+social open graph or twitter 
+images, using 
+"http://localhost:3000". See 
+https://nextjs.org/docs/app/a
+pi-reference/functions/genera
+te-metadata#metadatabase
+
+ ΓÜá metadata.metadataBase 
+is not set for resolving 
+social open graph or twitter 
+images, using 
+"http://localhost:3000". See 
+https://nextjs.org/docs/app/a
+pi-reference/functions/genera
+te-metadata#metadatabase
+
+ ΓÜá metadata.metadataBase 
+is not set for resolving 
+social open graph or twitter 
+images, using 
+"http://localhost:3000". See 
+https://nextjs.org/docs/app/a
+pi-reference/functions/genera
+te-metadata#metadatabase
+
+ ΓÜá metadata.metadataBase 
+is not set for resolving 
+social open graph or twitter 
+images, using 
+"http://localhost:3000". See 
+https://nextjs.org/docs/app/a
+pi-reference/functions/genera
+te-metadata#metadatabase
+
+ ΓÜá metadata.metadataBase 
+is not set for resolving 
+social open graph or twitter 
+images, using 
+"http://localhost:3000". See 
+https://nextjs.org/docs/app/a
+pi-reference/functions/genera
+te-metadata#metadatabase
+
+ ΓÜá metadata.metadataBase 
+is not set for resolving 
+social open graph or twitter 
+images, using 
+"http://localhost:3000". See 
+https://nextjs.org/docs/app/a
+pi-reference/functions/genera
+te-metadata#metadatabase
+
+ ΓÜá metadata.metadataBase 
+is not set for resolving 
+social open graph or twitter 
+images, using 
+"http://localhost:3000". See 
+https://nextjs.org/docs/app/a
+pi-reference/functions/genera
+te-metadata#metadatabase
+
+   Generating static pages (11/44)
+
+
+   Generating static pages (22/44)
+
+
+   Generating static pages (33/44)
+
+
+ Γ£ô Generating static pages (44/44)
+   Finalizing page optimization...
+
+Route (app)                              Size     First Load JS
+Γöî ╬╗ /                                    25.5 kB         238 kB
+Γö£ Γùï /_not-found                          0 B                0 B
+Γö£ Γùï /about                               239 B           197 kB
+Γö£ ╬╗ /admin                               109 kB          196 kB
+Γö£ ╬╗ /admin-debug                         148 B          79.7 kB
+Γö£ Γùï /admin/activity                      2.11 kB         147 kB
+Γö£ ╬╗ /admin/blogs                         5.71 kB         191 kB
+Γö£ Γùï /admin/blogs/create                  197 B           166 kB
+Γö£ ╬╗ /admin/blogs/edit/[id]               423 B           166 kB
+Γö£ Γùï /admin/categories                    8.76 kB         161 kB
+Γö£ ╬╗ /admin/contact-messages              6.83 kB         179 kB
+Γö£ Γùï /admin/login                         4.6 kB         91.5 kB
+Γö£ Γùï /admin/newsletter                    4.78 kB         150 kB
+Γö£ ╬╗ /admin/reviews                       4.59 kB         189 kB
+Γö£ Γùï /admin/settings                      4.73 kB         150 kB
+Γö£ ╬╗ /admin/submissions                   2.15 kB         180 kB
+Γö£ ╬╗ /admin/tools                         2.65 kB         188 kB
+Γö£ Γùï /admin/tools/import                  6.05 kB         151 kB
+Γö£ ╬╗ /admin/users                         1.85 kB         180 kB
+Γö£ Γùï /advertise                           602 B           197 kB
+Γö£ ╬╗ /blog                                233 B           197 kB
+Γö£ ╬╗ /blog/[slug]                         447 B           197 kB
+Γö£ ╬╗ /categories                          232 B           197 kB
+Γö£ ╬╗ /category/[slug]                     2.31 kB         208 kB
+Γö£ Γùï /compare                             239 B           197 kB
+Γö£ Γùï /contact                             24.6 kB         221 kB
+Γö£ Γùï /cookies                             239 B           197 kB
+Γö£ Γùï /deals                               239 B           197 kB
+Γö£ Γùï /debug                               2.05 kB         142 kB
+Γö£ Γùï /disclaimer                          239 B           197 kB
+Γö£ Γùï /dmca                                239 B           197 kB
+Γö£ Γùï /favorites                           1.2 kB          207 kB
+Γö£ Γùï /login                               2.88 kB         200 kB
+Γö£ ╬╗ /new                                 1.2 kB          207 kB
+Γö£ Γùï /news                                239 B           197 kB
+Γö£ Γùï /pricing                             232 B           197 kB
+Γö£ Γùï /privacy                             239 B           197 kB
+Γö£ Γùï /register                            2.96 kB         200 kB
+Γö£ Γùï /robots.txt                          0 B                0 B
+Γö£ Γùï /settings                            2.94 kB         200 kB
+Γö£ ╬╗ /sitemap.xml                         0 B                0 B
+Γö£ Γùï /submit                              4.38 kB         208 kB
+Γö£ Γùï /terms                               239 B           197 kB
+Γö£ ╬╗ /tool/[slug]                         2.66 kB         200 kB
+Γö£ ╬╗ /top-10                              1.2 kB          207 kB
+Γö£ ╬╗ /trending                            1.2 kB          207 kB
+Γöö Γùï /tutorials                           239 B           197 kB
++ First Load JS shared by all            79.6 kB
+  Γö£ chunks/7864-216a7aa0edb6e633.js      26.6 kB
+  Γö£ chunks/fd9d1056-c25a450ba62d5df1.js  50.9 kB
+  Γö£ chunks/main-app-3e2dd379ea254ad5.js  228 B
+  Γöö chunks/webpack-421edd82acccef0b.js   1.82 kB
+
+
+╬╗  (Server)  server-side renders at runtime (uses getInitialProps or getServerSideProps)
+Γùï  (Static)  automatically rendered as static HTML (uses no initial props)
+

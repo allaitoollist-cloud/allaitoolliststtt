@@ -14,6 +14,7 @@ import { CollectionsSection } from '@/components/CollectionsSection';
 import { QuickFilters } from '@/components/QuickFilters';
 import { ComparisonBar } from '@/components/ComparisonBar';
 import { TrendingToolsSection } from '@/components/TrendingToolsSection';
+import { FeaturedToolsSection } from '@/components/FeaturedToolsSection';
 import { NewsletterSection } from '@/components/NewsletterSection';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -94,6 +95,9 @@ export default function HomeClient({ initialTools, categories = [] }: HomeClient
 
             <main className="flex-grow">
                 <Hero onSearch={setSearchQuery} />
+
+                {/* Featured Tools Section - Shows admin-marked featured tools */}
+                <FeaturedToolsSection tools={initialTools} />
 
                 <div className="container mx-auto px-4 py-12">
                     <div className="flex flex-col md:flex-row gap-8">

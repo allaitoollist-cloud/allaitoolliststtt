@@ -1,0 +1,84 @@
+﻿
+> nextjs@0.1.0 build
+> next build
+
+   Creating an optimized production build...
+node.exe : Browserslist: 
+caniuse-lite is outdated. 
+Please run:
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~
+    + CategoryInfo           
+   : NotSpecified: (Browser  
+  slist: c...ed. Please ru   
+ n::String) [], RemoteExc    
+eption
+    + FullyQualifiedErrorId  
+   : NativeCommandError
+ 
+  npx 
+update-browserslist-db@latest
+  Why you should do it 
+regularly: https://github.com
+/browserslist/update-db#readm
+e
+ Γ£ô Compiled successfully
+   Skipping linting
+   Checking validity of types...
+Failed to compile.
+
+./components/admin/ToolRow.ts
+x:110:76
+Type error: Type '{ 
+className: string; title: 
+string; }' is not assignable 
+to type 'IntrinsicAttributes 
+& Omit<LucideProps, "ref"> & 
+RefAttributes<SVGSVGElement>'
+.
+  Property 'title' does not 
+exist on type 
+'IntrinsicAttributes & 
+Omit<LucideProps, "ref"> & Re
+fAttributes<SVGSVGElement>'.
+
+[0m [90m 108 | [39m       
+                 {[90m/* 
+Verified Status Icons 
+*/[39m}[0m
+[0m [90m 109 | [39m       
+                 
+{tool[33m.[39mverified 
+[33m?[39m ([0m
+[0m[31m[1m>[22m[39m[90m
+ 110 | [39m                 
+           [33m<[39m[33mBa
+dgeCheck[39m className[33m=
+[39m[32m"h-4 w-4 
+text-green-500"[39m title[3
+3m=[39m[32m"Verified"[39m 
+[33m/[39m[33m>[39m[0m
+[0m [90m     | [39m       
+                             
+                             
+          
+[31m[1m^[22m[39m[0m
+[0m [90m 111 | [39m       
+                 ) 
+[33m:[39m ([0m
+[0m [90m 112 | [39m       
+                     
+[33m<[39m[33mClock[39m cl
+assName[33m=[39m[32m"h-4 
+w-4 text-yellow-500"[39m tit
+le[33m=[39m[32m"Pending 
+Verification"[39m 
+[33m/[39m[33m>[39m[0m
+[0m [90m 113 | [39m       
+                 )}[0m

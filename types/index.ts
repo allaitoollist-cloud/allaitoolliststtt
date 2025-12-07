@@ -20,6 +20,7 @@ export interface DatabaseTool {
     date_added: string;
     last_updated: string;
     created_at: string;
+    is_draft: boolean;
 }
 
 export interface UserProfile {
@@ -85,6 +86,7 @@ export interface Tool {
     platform?: string[];
     dateAdded?: string;
     lastUpdated?: string;
+    isDraft?: boolean;
 }
 
 // Helper function to convert database format to frontend format
@@ -109,6 +111,7 @@ export function dbToolToTool(dbTool: DatabaseTool): Tool {
         platform: dbTool.platform,
         dateAdded: dbTool.date_added,
         lastUpdated: dbTool.last_updated,
+        isDraft: dbTool.is_draft,
     };
 }
 
@@ -135,6 +138,17 @@ export function toolToDbTool(tool: Partial<Tool>): Partial<DatabaseTool> {
     };
 }
 
+// Category interface
+export interface Category {
+    id: string;
+    name: string;
+    slug: string;
+    description: string | null;
+    icon: string | null;
+    color: string;
+    created_at: string;
+}
+
 export const categories = [
     "All",
     "Text",
@@ -144,8 +158,16 @@ export const categories = [
     "Code",
     "Writing",
     "Productivity",
+    "Automation",
     "Marketing",
     "Design",
+    "Business",
+    "Education",
+    "Research",
+    "Data",
+    "SEO",
+    "Social Media",
+    "Customer Support",
     "Other"
 ];
 
