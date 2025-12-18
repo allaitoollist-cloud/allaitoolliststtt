@@ -1,14 +1,11 @@
-import { createBrowserClient } from '@supabase/ssr';
+import { getBrowserClient } from '@/lib/supabase-browser';
 
 export async function logActivity(
     action: string,
     details: any = {},
     userId?: string
 ) {
-    const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabase = getBrowserClient();
 
     try {
         let uid = userId;

@@ -10,7 +10,7 @@ import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { categories, pricingModels } from '@/types';
 import { useState } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
+import { getBrowserClient } from '@/lib/supabase-browser';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, CheckCircle2 } from 'lucide-react';
 
@@ -19,10 +19,7 @@ export default function SubmitPage() {
     const [submitted, setSubmitted] = useState(false);
     const { toast } = useToast();
 
-    const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabase = getBrowserClient();
 
     async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -49,10 +46,36 @@ export default function SubmitPage() {
 
             if (error) throw error;
 
+            // Send submission confirmation email (silently, don't block submission)
+            if (data.submitter_email) {
+                // Send email in background, don't wait for it
+                fetch('/api/submit-tool-email', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        toolName: data.tool_name,
+                        submitterEmail: data.submitter_email,
+                    }),
+                }).then(async (response) => {
+                    const result = await response.json();
+                    if (!result.success) {
+                        // Log error but don't show to user
+                        console.warn('Email sending failed (non-blocking):', result.error?.message || 'Domain not verified');
+                    } else {
+                        console.log('✅ Submission email sent successfully');
+                    }
+                }).catch((err) => {
+                    // Silently handle email errors
+                    console.warn('Email service unavailable:', err);
+                });
+            }
+
             setSubmitted(true);
             toast({
                 title: "Submission Received!",
-                description: "We'll review your tool and get back to you shortly.",
+                description: "We'll review your tool and get back to you shortly. You'll receive an email once your tool is reviewed.",
             });
         } catch (error) {
             console.error('Error submitting tool:', error);

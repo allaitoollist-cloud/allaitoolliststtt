@@ -1,5 +1,6 @@
 'use client';
 
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,8 +16,16 @@ interface ToolCardProps {
 }
 
 export function ToolCard({ tool }: ToolCardProps) {
-    const isNew = tool.dateAdded && new Date(tool.dateAdded) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    // Use useEffect to calculate isNew on client to avoid hydration mismatch
+    const [isNew, setIsNew] = useState(false);
     const { addToComparison, removeFromComparison, isInComparison, comparisonTools, maxTools } = useComparison();
+    
+    useEffect(() => {
+        if (tool.dateAdded) {
+            const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+            setIsNew(new Date(tool.dateAdded) > sevenDaysAgo);
+        }
+    }, [tool.dateAdded]);
     const inComparison = isInComparison(tool.id);
     const canAddMore = comparisonTools.length < maxTools;
 

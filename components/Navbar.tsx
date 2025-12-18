@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Menu, Bot, Sparkles, Newspaper, BookOpen, Trophy, Flame, X, DollarSign, GitCompare } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     NavigationMenu,
     NavigationMenuContent,
@@ -20,7 +20,16 @@ interface NavbarProps {
 }
 
 export function Navbar({ onSearch }: NavbarProps = {}) {
-    const [showBanner, setShowBanner] = useState(true);
+    // Use useEffect to set banner state on client to avoid hydration mismatch
+    const [showBanner, setShowBanner] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+        // Check localStorage for banner preference
+        const bannerHidden = localStorage.getItem('banner-hidden');
+        setShowBanner(!bannerHidden);
+    }, []);
 
     const resources = [
         {
@@ -58,7 +67,7 @@ export function Navbar({ onSearch }: NavbarProps = {}) {
     return (
         <>
             {/* Promo Banner */}
-            {showBanner && (
+            {mounted && showBanner && (
                 <div className="relative bg-gradient-to-r from-primary/90 via-purple-600/90 to-pink-600/90 text-white">
                     <div className="container mx-auto px-4 py-2.5">
                         <div className="flex items-center justify-center gap-2 text-sm md:text-base">
@@ -69,7 +78,10 @@ export function Navbar({ onSearch }: NavbarProps = {}) {
                         </div>
                     </div>
                     <button
-                        onClick={() => setShowBanner(false)}
+                        onClick={() => {
+                            setShowBanner(false);
+                            localStorage.setItem('banner-hidden', 'true');
+                        }}
                         className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-white/20 rounded-full transition-colors"
                     >
                         <X className="h-4 w-4" />

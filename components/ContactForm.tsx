@@ -16,7 +16,6 @@ import {
     FormMessage,
 } from '@/components/ui/form';
 import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/lib/supabase';
 import { Loader2, Send } from 'lucide-react';
 
 const formSchema = z.object({
@@ -43,22 +42,23 @@ export function ContactForm() {
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setLoading(true);
         try {
-            const { error } = await supabase
-                .from('contact_messages')
-                .insert([
-                    {
-                        name: values.name,
-                        email: values.email,
-                        subject: values.subject,
-                        message: values.message,
-                    },
-                ]);
+            const response = await fetch('/api/contact', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(values),
+            });
 
-            if (error) throw error;
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to send message');
+            }
 
             toast({
                 title: 'Message Sent',
-                description: 'We have received your message and will get back to you soon.',
+                description: 'We have received your message and will get back to you soon. Check your email for confirmation.',
             });
 
             form.reset();

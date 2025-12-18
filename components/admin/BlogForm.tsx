@@ -9,8 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, Save, ArrowLeft } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { MarkdownEditor } from '@/components/admin/MarkdownEditor';
 
@@ -27,6 +28,7 @@ interface BlogFormProps {
         meta_keywords: string;
         category: string;
         is_published: boolean;
+        template?: string;
     };
     isEditing?: boolean;
 }
@@ -39,6 +41,8 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
     const [loading, setLoading] = useState(false);
+    const [generating, setGenerating] = useState(false);
+    const [keywords, setKeywords] = useState('');
 
     const [formData, setFormData] = useState({
         title: initialData?.title || '',
@@ -51,6 +55,7 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
         meta_keywords: initialData?.meta_keywords || '',
         category: initialData?.category || '',
         is_published: initialData?.is_published || false,
+        template: initialData?.template || 'default',
     });
 
     const generateSlug = (title: string) => {
@@ -69,6 +74,95 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
         }));
     };
 
+    const handleGenerateBlog = async () => {
+        if (!keywords.trim()) {
+            toast({
+                title: 'Error',
+                description: 'Please enter keywords to generate blog',
+                variant: 'destructive',
+            });
+            return;
+        }
+
+        setGenerating(true);
+        try {
+            console.log('Sending request to generate blog with keywords:', keywords);
+            
+            const response = await fetch('/api/generate-blog', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    keywords: keywords.trim(),
+                    category: formData.category || ''
+                }),
+            });
+
+            console.log('Response status:', response.status);
+            const data = await response.json();
+            console.log('Response data:', data);
+            console.log('Blog data received:', data.blog);
+
+            if (!response.ok) {
+                console.error('API Error:', data);
+                throw new Error(data.error || data.details || 'Failed to generate blog');
+            }
+
+            if (data.success && data.blog) {
+                // Validate required fields
+                if (!data.blog.title || !data.blog.content) {
+                    console.error('Missing required fields:', {
+                        hasTitle: !!data.blog.title,
+                        hasContent: !!data.blog.content,
+                        blog: data.blog
+                    });
+                    throw new Error('Generated blog is missing required fields (title or content)');
+                }
+
+                // Fill form with generated content
+                const updatedFormData = {
+                    ...formData,
+                    title: data.blog.title || formData.title,
+                    slug: data.blog.slug || formData.slug,
+                    content: data.blog.content || formData.content,
+                    excerpt: data.blog.excerpt || formData.excerpt || (data.blog.content?.substring(0, 200) + '...'),
+                    meta_title: data.blog.meta_title || formData.meta_title || data.blog.title?.substring(0, 60),
+                    meta_description: data.blog.meta_description || formData.meta_description || data.blog.excerpt?.substring(0, 160),
+                    meta_keywords: data.blog.meta_keywords || formData.meta_keywords || keywords,
+                    category: data.blog.category || formData.category,
+                    is_published: false // Keep as draft
+                };
+
+                console.log('Updating form with:', {
+                    title: updatedFormData.title,
+                    contentLength: updatedFormData.content?.length,
+                    excerpt: updatedFormData.excerpt?.substring(0, 50)
+                });
+
+                setFormData(updatedFormData);
+
+                toast({
+                    title: 'Success',
+                    description: `Blog generated successfully! Title: ${data.blog.title?.substring(0, 50)}...`,
+                });
+            } else {
+                console.error('Invalid response structure:', data);
+                throw new Error('Invalid response from blog generation API');
+            }
+        } catch (error: any) {
+            console.error('Error generating blog:', error);
+            const errorMessage = error.message || error.toString() || 'Failed to generate blog';
+            toast({
+                title: 'Error',
+                description: errorMessage.length > 100 ? errorMessage.substring(0, 100) + '...' : errorMessage,
+                variant: 'destructive',
+            });
+        } finally {
+            setGenerating(false);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -80,9 +174,20 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
 
             const blogData = {
                 ...formData,
+                template: formData.template || 'default', // Ensure template is always set
                 author_id: null, // TEMP: Set to null since auth is disabled
                 updated_at: new Date().toISOString(),
             };
+            
+            // Ensure template is always a valid value
+            if (!blogData.template || !['default', 'modern', 'minimal', 'magazine', 'story'].includes(blogData.template)) {
+                blogData.template = 'default';
+            }
+            
+            // Debug log
+            if (process.env.NODE_ENV === 'development') {
+                console.log('Saving blog with template:', blogData.template, 'Full data:', blogData);
+            }
 
             let error;
 
@@ -157,6 +262,53 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
             </div>
 
             <div className="grid gap-6">
+                {/* AI Blog Generator */}
+                {!isEditing && (
+                    <Card className="border-primary/20 bg-primary/5">
+                        <CardContent className="p-6 space-y-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Sparkles className="h-5 w-5 text-primary" />
+                                <h3 className="text-lg font-semibold">AI Blog Generator</h3>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                                Enter keywords and let AI write a complete blog post for you. It will be saved as draft.
+                            </p>
+                            <div className="flex gap-2">
+                                <Input
+                                    placeholder="Enter keywords (e.g., AI tools, productivity tips, technology trends)"
+                                    value={keywords}
+                                    onChange={(e) => setKeywords(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !generating) {
+                                            handleGenerateBlog();
+                                        }
+                                    }}
+                                    disabled={generating}
+                                    className="flex-1"
+                                />
+                                <Button
+                                    type="button"
+                                    onClick={handleGenerateBlog}
+                                    disabled={generating || !keywords.trim()}
+                                    className="gap-2"
+                                >
+                                    {generating ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                            Generating...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Sparkles className="h-4 w-4" />
+                                            Generate Blog
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
                 <Card>
                     <CardContent className="p-6 space-y-4">
                         <div className="grid gap-2">
@@ -211,6 +363,7 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
                                 placeholder="e.g., AI Tools, Technology, Tutorials"
                             />
                         </div>
+
                     </CardContent>
                 </Card>
 
@@ -260,15 +413,39 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
                     </CardContent>
                 </Card>
 
-                <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold">Content</h3>
-                        <p className="text-sm text-muted-foreground">Write your blog post content with formatting</p>
+                <div className="space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <h3 className="text-lg font-semibold">Content</h3>
+                            <p className="text-sm text-muted-foreground">Write your blog post content with formatting</p>
+                        </div>
+                        {/* Template Selection - Right in Editor Area */}
+                        <div className="flex items-center gap-3">
+                            <Label htmlFor="template" className="text-sm font-medium whitespace-nowrap">Template:</Label>
+                            <Select
+                                value={formData.template}
+                                onValueChange={(value) => setFormData(prev => ({ ...prev, template: value }))}
+                            >
+                                <SelectTrigger id="template" className="w-full sm:w-[200px]">
+                                    <SelectValue placeholder="Select template" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="default">📄 Default Template</SelectItem>
+                                    <SelectItem value="modern">✨ Modern Template</SelectItem>
+                                    <SelectItem value="minimal">🎨 Minimal Template</SelectItem>
+                                    <SelectItem value="magazine">📰 Magazine Template</SelectItem>
+                                    <SelectItem value="story">📖 Story Template</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
                     <MarkdownEditor
                         value={formData.content}
                         onChange={(content) => setFormData(prev => ({ ...prev, content }))}
                     />
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <span className="font-medium">💡 Tip:</span> Choose a template above to change how your blog post will look when published
+                    </p>
                 </div>
             </div>
         </form>

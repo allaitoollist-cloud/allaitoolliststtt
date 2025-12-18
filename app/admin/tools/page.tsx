@@ -13,6 +13,7 @@ import { Search, Plus, Upload, Package, Star, TrendingUp, ShieldCheck, FileX, Ey
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { ToolRow } from '@/components/admin/ToolRow';
+import { DeleteDummyToolsButton } from '@/components/admin/DeleteDummyToolsButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,6 +45,7 @@ export default async function AdminToolsPage() {
                     <p className="text-muted-foreground">View and manage all AI tools in your directory.</p>
                 </div>
                 <div className="flex gap-2">
+                    <DeleteDummyToolsButton />
                     <Button variant="outline" asChild>
                         <Link href="/admin/tools/import">
                             <Upload className="mr-2 h-4 w-4" />

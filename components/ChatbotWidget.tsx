@@ -15,17 +15,24 @@ interface Message {
 
 export function ChatbotWidget() {
     const [isOpen, setIsOpen] = useState(false);
-    const [messages, setMessages] = useState<Message[]>([
-        {
-            id: '1',
-            text: 'Hi! I\'m your AI assistant. How can I help you today?',
-            sender: 'bot',
-            timestamp: new Date(),
-        }
-    ]);
+    const [mounted, setMounted] = useState(false);
+    const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Initialize messages on client side only to avoid hydration mismatch
+    useEffect(() => {
+        setMounted(true);
+        setMessages([
+            {
+                id: '1',
+                text: 'Hi! I\'m your AI assistant. How can I help you today?',
+                sender: 'bot',
+                timestamp: new Date(),
+            }
+        ]);
+    }, []);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -106,6 +113,11 @@ export function ChatbotWidget() {
             handleSend();
         }
     };
+
+    // Don't render until mounted to avoid hydration mismatch
+    if (!mounted) {
+        return null;
+    }
 
     return (
         <>

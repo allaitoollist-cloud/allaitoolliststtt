@@ -23,7 +23,7 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { MoreHorizontal, Trash2, ExternalLink, Eye, Star, TrendingUp, BadgeCheck, Clock, ShieldCheck, Pencil, FileX } from 'lucide-react';
-import { createBrowserClient } from '@supabase/ssr';
+import { getBrowserClient } from '@/lib/supabase-browser';
 import { useToast } from '@/components/ui/use-toast';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -50,33 +50,48 @@ export function ToolRow({ tool }: { tool: Tool }) {
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
     const router = useRouter();
-    const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabase = getBrowserClient();
 
     const handleDelete = async () => {
         setLoading(true);
-        const { error } = await supabase
-            .from('tools')
-            .delete()
-            .eq('id', tool.id);
-
-        if (error) {
-            toast({
-                title: 'Error',
-                description: 'Failed to delete tool',
-                variant: 'destructive',
+        try {
+            const response = await fetch('/api/tools', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'delete',
+                    toolId: tool.id,
+                }),
             });
-        } else {
+
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || 'Failed to delete tool');
+            }
+
             toast({
                 title: 'Success',
-                description: 'Tool deleted successfully',
+                description: 'Tool deleted successfully. Page will refresh...',
             });
-            router.refresh();
+            
+            // Force full page reload to clear all caches
+            setTimeout(() => {
+                window.location.href = '/admin/tools';
+            }, 1000);
+        } catch (error) {
+            console.error('Delete error:', error);
+            toast({
+                title: 'Error',
+                description: error instanceof Error ? error.message : 'Failed to delete tool',
+                variant: 'destructive',
+            });
+        } finally {
+            setLoading(false);
+            setDeleteDialogOpen(false);
         }
-        setLoading(false);
-        setDeleteDialogOpen(false);
     };
 
     const handleToggle = async (field: 'featured' | 'trending' | 'verified', currentValue: boolean) => {

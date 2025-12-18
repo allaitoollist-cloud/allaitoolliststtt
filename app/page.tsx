@@ -73,21 +73,27 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
-  // Fetch all tools
-  const { data: dbTools, error } = await supabase
+  // Fetch all tools (is_draft column may not exist, so we fetch all)
+  const { data: allDbTools, error: allError } = await supabase
     .from('tools')
     .select('*')
     .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('Error fetching tools:', error);
+  if (allError) {
+    console.error('Error fetching all tools:', allError);
   }
 
-  const tools = (dbTools || []).map(dbToolToTool);
+  // Since is_draft column doesn't exist, show all tools
+  const tools = (allDbTools || []).map(dbToolToTool);
+  
+  // Log for debugging
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`Homepage: Found ${tools.length} tools`);
+  }
 
   // Calculate category counts
   const categoryCounts: Record<string, number> = {};
-  dbTools?.forEach(tool => {
+  tools.forEach(tool => {
     const cat = tool.category;
     if (cat) {
       categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;

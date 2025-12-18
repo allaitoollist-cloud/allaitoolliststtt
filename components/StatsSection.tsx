@@ -4,10 +4,15 @@ import { useEffect, useState } from 'react';
 import { Users, Sparkles, TrendingUp, Star } from 'lucide-react';
 
 export function StatsSection() {
-    const [isVisible, setIsVisible] = useState(false);
+    // Start with true to match server render, then animate on client
+    const [isVisible, setIsVisible] = useState(true);
 
     useEffect(() => {
-        setIsVisible(true);
+        // Small delay to ensure hydration completes before animation
+        const timer = setTimeout(() => {
+            setIsVisible(true);
+        }, 0);
+        return () => clearTimeout(timer);
     }, []);
 
     const stats = [

@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import 'react-markdown-editor-lite/lib/index.css';
 import { Button } from '@/components/ui/button';
-import { Bold, Italic, Heading1, Heading2, Link as LinkIcon, Image, List, ListOrdered, Quote, Code } from 'lucide-react';
+import { Bold, Italic, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Link as LinkIcon, Image, List, ListOrdered, Quote, Code } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -44,6 +44,10 @@ export function MarkdownEditor({ value, onChange }: MarkdownEditorProps) {
     const formatItalic = () => insertText('*', '*', 'italic text');
     const formatH1 = () => insertText('# ', '', 'Heading 1');
     const formatH2 = () => insertText('## ', '', 'Heading 2');
+    const formatH3 = () => insertText('### ', '', 'Heading 3');
+    const formatH4 = () => insertText('#### ', '', 'Heading 4');
+    const formatH5 = () => insertText('##### ', '', 'Heading 5');
+    const formatH6 = () => insertText('###### ', '', 'Heading 6');
     const formatLink = () => insertText('[', '](url)', 'link text');
     const formatImage = () => insertText('![', '](image-url)', 'alt text');
     const formatList = () => insertText('- ', '', 'list item');
@@ -55,7 +59,10 @@ export function MarkdownEditor({ value, onChange }: MarkdownEditorProps) {
     // Simple markdown to HTML converter for preview
     const markdownToHtml = (markdown: string) => {
         let html = markdown
-            // Headers
+            // Headers (order matters - most specific first)
+            .replace(/^###### (.*$)/gim, '<h6>$1</h6>')
+            .replace(/^##### (.*$)/gim, '<h5>$1</h5>')
+            .replace(/^#### (.*$)/gim, '<h4>$1</h4>')
             .replace(/^### (.*$)/gim, '<h3>$1</h3>')
             .replace(/^## (.*$)/gim, '<h2>$1</h2>')
             .replace(/^# (.*$)/gim, '<h1>$1</h1>')
@@ -104,6 +111,18 @@ export function MarkdownEditor({ value, onChange }: MarkdownEditorProps) {
                         <Button type="button" variant="ghost" size="sm" onClick={formatH2} title="Heading 2">
                             <Heading2 className="h-4 w-4" />
                         </Button>
+                        <Button type="button" variant="ghost" size="sm" onClick={formatH3} title="Heading 3">
+                            <Heading3 className="h-4 w-4" />
+                        </Button>
+                        <Button type="button" variant="ghost" size="sm" onClick={formatH4} title="Heading 4">
+                            <Heading4 className="h-4 w-4" />
+                        </Button>
+                        <Button type="button" variant="ghost" size="sm" onClick={formatH5} title="Heading 5">
+                            <Heading5 className="h-4 w-4" />
+                        </Button>
+                        <Button type="button" variant="ghost" size="sm" onClick={formatH6} title="Heading 6">
+                            <Heading6 className="h-4 w-4" />
+                        </Button>
                         <div className="w-px h-6 bg-border mx-1" />
                         <Button type="button" variant="ghost" size="sm" onClick={formatLink} title="Insert Link">
                             <LinkIcon className="h-4 w-4" />
@@ -141,6 +160,10 @@ Formatting Examples:
 *italic text*
 # Heading 1
 ## Heading 2
+### Heading 3
+#### Heading 4
+##### Heading 5
+###### Heading 6
 [link text](url)
 ![image alt](image-url)
 - bullet list

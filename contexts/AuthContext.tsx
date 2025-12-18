@@ -75,6 +75,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     // Optional: You might want to return this error or handle it specifically
                     // For now, we'll just log it as the auth account was created successfully
                 }
+
+                // Send welcome email (don't wait for it to complete)
+                fetch('/api/welcome-email', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: data.user.email,
+                        name: username,
+                        username,
+                    }),
+                }).catch(err => {
+                    console.error('Failed to send welcome email:', err);
+                    // Don't fail registration if email fails
+                });
             }
 
             return { error: null };
