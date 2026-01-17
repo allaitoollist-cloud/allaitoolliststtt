@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
         if (!supabaseUrl || !supabaseKey) {
             console.error('❌ Missing SUPABASE_SERVICE_ROLE_KEY - delete operations require service role key');
-            return NextResponse.json({ 
+            return NextResponse.json({
                 error: 'Missing SUPABASE_SERVICE_ROLE_KEY. Delete operations require service role key to bypass RLS.',
                 hint: 'Please set SUPABASE_SERVICE_ROLE_KEY in your environment variables'
             }, { status: 500 });
@@ -39,11 +39,11 @@ export async function POST(request: NextRequest) {
         // Delete single tool
         if (action === 'delete') {
             console.log('🗑️ Deleting tool:', toolId);
-            
+
             // First verify the tool exists
             const { data: existingTool, error: checkError } = await supabase
                 .from('tools')
-                .select('id, name, slug')
+                .select('id, name, slug, category')
                 .eq('id', toolId)
                 .single();
 
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
 
             // Verify deletion - wait a bit for database to update
             await new Promise(resolve => setTimeout(resolve, 500));
-            
+
             const { data: verifyTool } = await supabase
                 .from('tools')
                 .select('id')
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
                     .from('tools')
                     .delete()
                     .eq('id', toolId);
-                
+
                 if (forceDeleteError) {
                     console.error('Force delete also failed:', forceDeleteError);
                     return NextResponse.json({ error: 'Tool deletion failed - tool still exists' }, { status: 500 });
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
             }
 
             console.log('✅ Tool deleted successfully:', existingTool.name);
-            
+
             // Revalidate all pages that show tools
             try {
                 revalidatePath('/');
@@ -98,16 +98,18 @@ export async function POST(request: NextRequest) {
                 revalidatePath('/top-10');
                 revalidatePath('/categories');
                 revalidatePath(`/tool/${existingTool.slug}`);
-                revalidatePath(`/category/${existingTool.category}`);
+                if (existingTool.category) {
+                    revalidatePath(`/category/${existingTool.category}`);
+                }
                 revalidatePath('/admin/tools');
                 console.log('✅ Cache revalidated for all tool pages');
             } catch (revalidateError) {
                 console.warn('Cache revalidation warning:', revalidateError);
                 // Continue even if revalidation fails
             }
-            
-            return NextResponse.json({ 
-                success: true, 
+
+            return NextResponse.json({
+                success: true,
                 message: 'Tool deleted successfully',
                 deletedTool: {
                     id: existingTool.id,
