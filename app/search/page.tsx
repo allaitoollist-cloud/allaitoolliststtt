@@ -53,7 +53,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
     // Apply search query filter
     if (query) {
         const queryLower = query.toLowerCase();
-        tools = tools.filter(tool => 
+        tools = tools.filter(tool =>
             tool.name.toLowerCase().includes(queryLower) ||
             tool.shortDescription?.toLowerCase().includes(queryLower) ||
             tool.category?.toLowerCase().includes(queryLower)
@@ -100,7 +100,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
                 </div>
 
                 {/* Main Tool Grid */}
-                <CategoryClient tools={tools} />
+                <CategoryClient tools={tools} category="Search Results" />
             </main>
 
             <Footer />
