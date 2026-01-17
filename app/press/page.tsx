@@ -2,7 +2,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Metadata } from 'next';
-import { Download, FileText, Image as ImageIcon, LinkIcon, Mail } from 'lucide-react';
+import { Download, FileText, Image as ImageIcon, LinkIcon, Mail, Zap } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
