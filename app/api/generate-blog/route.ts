@@ -195,17 +195,17 @@ export async function POST(request: NextRequest) {
         }
 
         console.log('Generating blog for keywords:', keywords);
-        
+
         let response;
         let lastError: any;
         let lastResponseText = '';
-        
+
         // LongCat API - using correct endpoint and format from documentation
         // https://longcat.chat/platform/docs/
         for (const apiUrl of LONGCHAT_API_URLS) {
             try {
                 console.log(`Calling LongCat API: ${apiUrl}`);
-                
+
                 // LongCat API format - OpenAI compatible
                 // Using LongCat-Flash-Chat model as per documentation
                 const requestBody = {
@@ -260,11 +260,11 @@ Format the response as JSON with these fields:
                     headers: headers,
                     body: JSON.stringify(requestBody)
                 });
-                
+
                 lastResponseText = await response.text();
                 console.log(`LongCat API Response status: ${response.status}`);
                 console.log('API Response preview:', lastResponseText.substring(0, 500));
-                
+
                 // Check if response contains error messages (even if status is 200)
                 const errorIndicators = [
                     '找不到请求路径',
@@ -280,16 +280,16 @@ Format the response as JSON with these fields:
                     'Forbidden',
                     'rate_limit'
                 ];
-                
-                const hasError = errorIndicators.some(indicator => 
+
+                const hasError = errorIndicators.some(indicator =>
                     lastResponseText.toLowerCase().includes(indicator.toLowerCase())
                 );
-                
+
                 if (response.ok && !hasError) {
                     console.log('✅ LongCat API call successful!');
                     break; // Success, exit loop
                 } else {
-                    const errorMsg = hasError 
+                    const errorMsg = hasError
                         ? `API returned error: ${lastResponseText.substring(0, 200)}`
                         : `HTTP ${response.status}: ${lastResponseText.substring(0, 200)}`;
                     lastError = { message: errorMsg };
@@ -300,7 +300,7 @@ Format the response as JSON with these fields:
                 lastError = error;
                 continue; // Try next URL
             }
-            
+
             if (response && response.ok) {
                 break; // Exit loop if successful
             }
@@ -320,7 +320,7 @@ Format the response as JSON with these fields:
             console.error('1. API endpoint is correct');
             console.error('2. API key is valid');
             console.error('3. API format matches LongChat requirements');
-            
+
             // Use fallback blog generation
             console.log('Using fallback blog generation (1500 words)');
             const fallbackBlog = {
@@ -331,12 +331,12 @@ Format the response as JSON with these fields:
                 meta_description: `Learn everything about ${keywords}. Comprehensive guide with practical insights and tips.`,
                 meta_keywords: keywords
             };
-            
+
             const slug = fallbackBlog.title
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/(^-|-$)+/g, '');
-            
+
             return NextResponse.json({
                 success: true,
                 blog: {
@@ -364,12 +364,12 @@ Format the response as JSON with these fields:
                 meta_description: `Learn everything about ${keywords}. Comprehensive guide.`,
                 meta_keywords: keywords
             };
-            
+
             const slug = fallbackBlog.title
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/(^-|-$)+/g, '');
-            
+
             return NextResponse.json({
                 success: true,
                 blog: {
@@ -385,7 +385,7 @@ Format the response as JSON with these fields:
         let data;
         try {
             data = JSON.parse(lastResponseText);
-            
+
             // Check if parsed data contains error
             if (data.error || (data.message && data.message.toLowerCase().includes('error'))) {
                 console.error('Error in parsed response:', data.error || data.message);
@@ -394,7 +394,7 @@ Format the response as JSON with these fields:
         } catch (parseError) {
             console.error('Failed to parse API response:', parseError);
             console.error('Raw response:', lastResponseText.substring(0, 500));
-            
+
             // Use fallback if parsing fails
             const fallbackBlog = {
                 title: `${keywords} - Complete Guide`,
@@ -404,12 +404,12 @@ Format the response as JSON with these fields:
                 meta_description: `Learn everything about ${keywords}. Comprehensive guide.`,
                 meta_keywords: keywords
             };
-            
+
             const slug = fallbackBlog.title
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/(^-|-$)+/g, '');
-            
+
             return NextResponse.json({
                 success: true,
                 blog: {
@@ -420,14 +420,14 @@ Format the response as JSON with these fields:
                 }
             });
         }
-        
+
         console.log('Parsed API response structure:', Object.keys(data));
         console.log('Full response data:', JSON.stringify(data, null, 2).substring(0, 1000));
-        
+
         // Extract content from response - try multiple formats
         let blogContent = '';
         let rawContent = '';
-        
+
         // Try OpenAI-compatible format first
         if (data.choices && Array.isArray(data.choices) && data.choices.length > 0) {
             const choice = data.choices[0];
@@ -440,19 +440,19 @@ Format the response as JSON with these fields:
             } else if (typeof choice === 'string') {
                 rawContent = choice;
             }
-        } 
+        }
         // Try direct content fields
         else if (data.content) {
             rawContent = typeof data.content === 'string' ? data.content : JSON.stringify(data.content);
-        } 
+        }
         // Try message field
         else if (data.message) {
             rawContent = typeof data.message === 'string' ? data.message : (data.message.content || JSON.stringify(data.message));
-        } 
+        }
         // Try text field
         else if (data.text) {
             rawContent = data.text;
-        } 
+        }
         // Try response field
         else if (data.response) {
             rawContent = typeof data.response === 'string' ? data.response : JSON.stringify(data.response);
@@ -483,12 +483,12 @@ Format the response as JSON with these fields:
                 meta_description: `Learn everything about ${keywords}. Comprehensive guide.`,
                 meta_keywords: keywords
             };
-            
+
             const slug = fallbackBlog.title
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/(^-|-$)+/g, '');
-            
+
             return NextResponse.json({
                 success: true,
                 blog: {
@@ -502,19 +502,19 @@ Format the response as JSON with these fields:
 
         // Clean the content - remove markdown code blocks if present
         blogContent = rawContent.trim();
-        
+
         // Remove markdown code block wrappers if present
         if (blogContent.startsWith('```json')) {
             blogContent = blogContent.replace(/^```json\s*/i, '').replace(/\s*```$/i, '');
         } else if (blogContent.startsWith('```')) {
             blogContent = blogContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
         }
-        
+
         console.log('Cleaned content length:', blogContent.length);
 
         // Try to parse as JSON, if not, use as plain content
         let blogData: any = null;
-        
+
         try {
             blogData = JSON.parse(blogContent);
             console.log('✅ Successfully parsed as JSON');
@@ -523,12 +523,12 @@ Format the response as JSON with these fields:
             // If not JSON, create structure from content
             const lines = blogContent.split('\n').filter(line => line.trim());
             let title = lines.find(line => line.trim().startsWith('# '))?.replace(/^#+\s*/, '').trim();
-            
+
             if (!title) {
                 // Try to find title in first few lines
                 title = lines.slice(0, 3).find(line => line.length > 10 && line.length < 100) || keywords;
             }
-            
+
             // Extract excerpt from first paragraph
             let excerpt = '';
             for (const line of lines) {
@@ -540,7 +540,7 @@ Format the response as JSON with these fields:
             if (!excerpt) {
                 excerpt = blogContent.substring(0, 200).replace(/\n/g, ' ').trim();
             }
-            
+
             blogData = {
                 title: title || `${keywords} - Complete Guide`,
                 excerpt: excerpt || `Learn everything about ${keywords}. This comprehensive guide covers all aspects.`,
@@ -555,7 +555,7 @@ Format the response as JSON with these fields:
         if (!blogData.title || blogData.title.trim() === '') {
             blogData.title = `${keywords} - Complete Guide`;
         }
-        
+
         // Ensure content exists and is not empty
         if (!blogData.content || blogData.content.trim() === '') {
             if (blogContent && blogContent.trim() !== '') {
@@ -566,34 +566,34 @@ Format the response as JSON with these fields:
                 blogData.content = generateFallbackBlog(keywords, category);
             }
         }
-        
+
         // Clean content - remove any extra whitespace
         blogData.content = blogData.content.trim();
-        
+
         // Ensure excerpt exists
         if (!blogData.excerpt || blogData.excerpt.trim() === '') {
             const firstParagraph = blogData.content
                 .split('\n\n')
-                .find(p => p.trim().length > 50) || blogData.content;
+                .find((p: string) => p.trim().length > 50) || blogData.content;
             blogData.excerpt = firstParagraph.substring(0, 200).replace(/\n/g, ' ').trim();
             if (blogData.excerpt.length < 200 && blogData.content.length > 200) {
                 blogData.excerpt += '...';
             }
         }
-        
+
         // Ensure meta fields exist
         if (!blogData.meta_title || blogData.meta_title.trim() === '') {
             blogData.meta_title = blogData.title.substring(0, 60);
         }
-        
+
         if (!blogData.meta_description || blogData.meta_description.trim() === '') {
             blogData.meta_description = blogData.excerpt.substring(0, 160);
         }
-        
+
         if (!blogData.meta_keywords || blogData.meta_keywords.trim() === '') {
             blogData.meta_keywords = keywords;
         }
-        
+
         // Final validation - ensure we have minimum required data
         if (!blogData.title || !blogData.content || blogData.content.length < 100) {
             console.error('Generated blog data is invalid, using fallback');
@@ -607,7 +607,7 @@ Format the response as JSON with these fields:
             };
             blogData = fallbackBlog;
         }
-        
+
         console.log('Final blog data:', {
             title: blogData.title,
             contentLength: blogData.content?.length || 0,
