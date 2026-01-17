@@ -1,0 +1,17 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Disallow admin/private areas
+Disallow: /api/
+Disallow: /admin/
+Disallow: /_next/
+Disallow: /private/
+
+# Allow important pages
+Allow: /tool/
+Allow: /category/
+Allow: /
+
+# Sitemap
+Sitemap: https://allaitoollist.com/sitemap.xml

@@ -18,7 +18,7 @@ export interface DatabaseTool {
     review_count: number;
     platform: string[];
     date_added: string;
-    last_updated: string;
+    updated_at: string;
     created_at: string;
     is_draft: boolean;
 }
@@ -110,7 +110,7 @@ export function dbToolToTool(dbTool: DatabaseTool): Tool {
         reviewCount: dbTool.review_count,
         platform: dbTool.platform,
         dateAdded: dbTool.date_added,
-        lastUpdated: dbTool.last_updated,
+        lastUpdated: dbTool.updated_at,
         isDraft: dbTool.is_draft,
     };
 }

@@ -12,7 +12,7 @@ export interface EmailOptions {
 export async function sendEmail({ to, subject, html, from }: EmailOptions) {
   try {
     console.log('📧 sendEmail called:', { to, subject, from: from || 'default' });
-    
+
     if (!process.env.RESEND_API_KEY) {
       console.error('❌ RESEND_API_KEY is not set');
       return { success: false, error: 'Email service not configured' };
@@ -24,19 +24,19 @@ export async function sendEmail({ to, subject, html, from }: EmailOptions) {
     // Note: Resend test domain can only send to the account owner's email
     const defaultFrom = process.env.RESEND_FROM_EMAIL || 'AI Tool List <onboarding@resend.dev>';
     const emailFrom = from || defaultFrom;
-    
+
     // Test mode: If RESEND_TEST_EMAIL is set and domain not verified, only send to account owner
     const testEmail = process.env.RESEND_TEST_EMAIL; // allaitoollist@gmail.com
     const isTestMode = testEmail && !process.env.RESEND_FROM_EMAIL;
-    
+
     // In test mode, redirect ALL emails to account owner email (Resend requirement)
     const emailTo = isTestMode ? testEmail : to;
-    
+
     if (isTestMode) {
       console.log(`⚠️ Test mode active: Redirecting email from "${to}" to "${testEmail}"`);
       console.log(`   (Resend test domain can only send to account owner email)`);
     }
-    
+
     console.log('Email from:', emailFrom);
     console.log('Email to:', emailTo);
     console.log('Test mode:', isTestMode, '| Test email:', testEmail);
@@ -55,20 +55,20 @@ export async function sendEmail({ to, subject, html, from }: EmailOptions) {
       console.error('❌ Error details:', JSON.stringify(error, null, 2));
       console.error('❌ Email from address used:', emailFrom);
       console.error('❌ Domain extracted from email:', emailFrom.match(/@([^\s>]+)/)?.[1]);
-      
+
       // Check if it's a domain verification error
-      const isDomainError = error.message?.includes('testing emails') || 
-                           error.message?.includes('domain') || 
-                           error.message?.includes('not verified') ||
-                           error.statusCode === 403;
-      
+      const isDomainError = error.message?.includes('testing emails') ||
+        error.message?.includes('domain') ||
+        error.message?.includes('not verified') ||
+        error.statusCode === 403;
+
       if (isDomainError) {
         // Extract domain from email
         const domainMatch = emailFrom.match(/@([^\s>]+)/);
         const domain = domainMatch ? domainMatch[1] : 'unknown';
-        
-        return { 
-          success: false, 
+
+        return {
+          success: false,
           error: {
             ...error,
             helpfulMessage: `Domain "${domain}" verification issue. Please check: 1) Domain is verified in Resend dashboard, 2) Email format is correct (noreply@${domain}), 3) Server was restarted after setting RESEND_FROM_EMAIL.`,
@@ -77,7 +77,7 @@ export async function sendEmail({ to, subject, html, from }: EmailOptions) {
           }
         };
       }
-      
+
       return { success: false, error };
     }
 
@@ -594,3 +594,48 @@ export const emailTemplates = {
   }),
 };
 
+// Helper functions for common email scenarios
+export async function sendSubmissionConfirmation(toolName: string, submitterEmail: string) {
+  const template = emailTemplates.toolSubmitted(toolName, submitterEmail);
+  return sendEmail({
+    to: submitterEmail,
+    subject: template.subject,
+    html: template.html,
+  });
+}
+
+export async function sendAdminNewSubmissionEmail(toolName: string, submitterEmail: string, adminEmail: string) {
+  return sendEmail({
+    to: adminEmail,
+    subject: `New Tool Submission: ${toolName}`,
+    html: `
+      <h2>New Tool Submission</h2>
+      <p><strong>Tool Name:</strong> ${toolName}</p>
+      <p><strong>Submitter Email:</strong> ${submitterEmail}</p>
+      <p>Please review this submission in the admin panel.</p>
+    `,
+  });
+}
+
+export async function sendToolApprovedEmail(toolName: string, toolUrl: string, submitterEmail: string) {
+  const template = emailTemplates.toolApproved(toolName, toolUrl, submitterEmail);
+  return sendEmail({
+    to: submitterEmail,
+    subject: template.subject,
+    html: template.html,
+  });
+}
+
+export async function sendFreshnessReminder(toolName: string, toolOwnerEmail: string) {
+  return sendEmail({
+    to: toolOwnerEmail,
+    subject: `Update Required: ${toolName}`,
+    html: `
+      <h2>Tool Update Reminder</h2>
+      <p>Hi there,</p>
+      <p>It's been a while since <strong>${toolName}</strong> was last updated.</p>
+      <p>Please review and update your tool information to keep it fresh and relevant.</p>
+      <p>Best regards,<br>The AI Tool List Team</p>
+    `,
+  });
+}

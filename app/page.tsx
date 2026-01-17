@@ -29,27 +29,16 @@ export const metadata: Metadata = {
   authors: [{ name: 'AI Tool List Team' }],
   creator: 'AI Tool List',
   publisher: 'AI Tool List',
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
-  },
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://yoursite.com',
+    url: 'https://allaitoollist.com',
     title: 'AI Tool List - Discover 1000+ Best AI Tools & Software',
     description: 'The ultimate directory of AI-powered tools. Find, compare and choose the best AI tools for your needs. Updated daily with new tools and reviews.',
-    siteName: 'AI Tool List',
+    siteName: 'All AI Tool List',
     images: [
       {
-        url: 'https://yoursite.com/og-image.jpg',
+        url: 'https://allaitoollist.com/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'AI Tool List - Best AI Tools Directory',
@@ -60,11 +49,11 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'AI Tool List - Discover 1000+ Best AI Tools',
     description: 'Find, compare and choose the best AI tools. Updated daily with new tools, reviews and comparisons.',
-    images: ['https://yoursite.com/twitter-image.jpg'],
-    creator: '@aitoollist',
+    images: ['https://allaitoollist.com/twitter-image.jpg'],
+    creator: '@allaitoollist',
   },
   alternates: {
-    canonical: 'https://yoursite.com',
+    canonical: 'https://allaitoollist.com',
   },
   verification: {
     google: 'your-google-verification-code',
@@ -85,7 +74,7 @@ export default async function Home() {
 
   // Since is_draft column doesn't exist, show all tools
   const tools = (allDbTools || []).map(dbToolToTool);
-  
+
   // Log for debugging
   if (process.env.NODE_ENV === 'development') {
     console.log(`Homepage: Found ${tools.length} tools`);
@@ -127,28 +116,28 @@ export default async function Home() {
   const organizationSchema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'AI Tool List',
-    url: 'https://yoursite.com',
-    logo: 'https://yoursite.com/logo.png',
+    name: 'All AI Tool List',
+    url: 'https://allaitoollist.com',
+    logo: 'https://allaitoollist.com/logo.png',
     description: 'The ultimate directory of AI-powered tools and software',
     sameAs: [
-      'https://twitter.com/aitoollist',
-      'https://facebook.com/aitoollist',
-      'https://linkedin.com/company/aitoollist',
+      'https://twitter.com/allaitoollist',
+      'https://facebook.com/allaitoollist',
+      'https://linkedin.com/company/allaitoollist',
     ],
   };
 
   const websiteSchema = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: 'AI Tool List',
-    url: 'https://yoursite.com',
+    name: 'All AI Tool List',
+    url: 'https://allaitoollist.com',
     description: 'Discover and compare 1000+ AI tools across all categories',
     potentialAction: {
       '@type': 'SearchAction',
       target: {
         '@type': 'EntryPoint',
-        urlTemplate: 'https://yoursite.com/search?q={search_term_string}',
+        urlTemplate: 'https://allaitoollist.com/search?q={search_term_string}',
       },
       'query-input': 'required name=search_term_string',
     },

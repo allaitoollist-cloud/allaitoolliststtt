@@ -87,12 +87,12 @@ export function Footer() {
                                 </div>
                                 <span>hello@aitoollist.com</span>
                             </a>
-                            <div className="flex items-center gap-3 text-muted-foreground">
-                                <div className="p-2 rounded-lg bg-white/5">
+                            <a href="https://wa.me/13073464572" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-muted-foreground hover:text-bright-green transition-colors group">
+                                <div className="p-2 rounded-lg bg-white/5 group-hover:bg-bright-green/10 transition-colors">
                                     <Phone className="h-4 w-4" />
                                 </div>
-                                <span>+1 (555) 123-4567</span>
-                            </div>
+                                <span>+1 (307) 346-4572</span>
+                            </a>
                             <div className="flex items-center gap-3 text-muted-foreground">
                                 <div className="p-2 rounded-lg bg-white/5">
                                     <MapPin className="h-4 w-4" />
@@ -209,7 +209,7 @@ export function Footer() {
                         {categories.map((category) => (
                             <Link
                                 key={category}
-                                href={`/categories/${category.toLowerCase().replace(/\s+/g, '-')}`}
+                                href={`/category/${encodeURIComponent(category)}`}
                                 className="group relative px-4 py-2 text-xs font-medium rounded-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary/50 transition-all hover:scale-105"
                             >
                                 <span className="relative z-10">{category}</span>

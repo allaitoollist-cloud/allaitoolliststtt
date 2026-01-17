@@ -20,6 +20,41 @@ const config: Config = {
         sm: 'calc(var(--radius) - 4px)',
       },
       colors: {
+        // BrightLocal Official Colors
+        'bright-green': {
+          DEFAULT: '#00C896',
+          hover: '#00B885',
+          50: '#E6FFF9',
+          100: '#B3FFE8',
+          200: '#80FFD7',
+          300: '#4DFFC6',
+          400: '#1AFFB5',
+          500: '#00C896',
+          600: '#00B885',
+          700: '#009973',
+          800: '#007A62',
+          900: '#005B50',
+        },
+        'local-blue': {
+          DEFAULT: '#0070F3',
+          hover: '#0060D3',
+          50: '#E6F3FF',
+          100: '#B3DDFF',
+          200: '#80C7FF',
+          300: '#4DB1FF',
+          400: '#1A9BFF',
+          500: '#0070F3',
+          600: '#0060D3',
+          700: '#0050B3',
+          800: '#004093',
+          900: '#003073',
+        },
+        'dark-charcoal': '#111827',
+        'neutral-grey': '#6B7280',
+        'light-grey': '#E5E7EB',
+        'section-bg': '#F9FAFB',
+
+        // Shadcn/UI color system (using BrightLocal colors)
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         card: {

@@ -10,6 +10,7 @@ import { ChatbotWidget } from '@/components/ChatbotWidget';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://allaitoollist.com'),
   title: 'AI Tool List - Discover the Best AI Tools',
   description: 'The most comprehensive directory of AI tools. Find, compare, and master the best AI software.',
   keywords: ['AI tools', 'artificial intelligence', 'AI directory', 'machine learning tools', 'AI software'],
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://aitoollist.com',
+    url: 'https://allaitoollist.com',
     siteName: 'AI Tool List',
     title: 'AI Tool List - Discover the Best AI Tools',
     description: 'The most comprehensive directory of AI tools. Find, compare, and master the best AI software.',

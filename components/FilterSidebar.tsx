@@ -17,6 +17,7 @@ interface FilterSidebarProps {
     selectedCategories: string[];
     selectedPricing: string[];
     selectedPlatforms?: string[];
+    availableCategories?: string[]; // Added prop
     minRating?: number;
     sortBy?: string;
     onCategoryToggle: (category: string) => void;
@@ -31,6 +32,7 @@ export function FilterSidebar({
     selectedCategories,
     selectedPricing,
     selectedPlatforms = [],
+    availableCategories = categories, // Default to imported list if not provided
     minRating = 0,
     sortBy = 'views',
     onCategoryToggle,
@@ -118,7 +120,7 @@ export function FilterSidebar({
                 <Label className="text-sm font-medium">Categories</Label>
                 <ScrollArea className="h-[200px]">
                     <div className="space-y-2">
-                        {categories.filter(cat => cat !== 'All').map((category) => (
+                        {availableCategories.filter(cat => cat !== 'All').map((category) => (
                             <div key={category} className="flex items-center space-x-2">
                                 <Checkbox
                                     id={`category-${category}`}

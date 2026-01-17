@@ -20,7 +20,7 @@ export function FeaturedToolsSection({
     title = "Featured AI Tools",
     subtitle = "Hand-picked by our experts - The best AI tools you shouldn't miss",
     showViewAll = true,
-    maxTools = 6
+    maxTools = 8
 }: FeaturedToolsSectionProps) {
     // Filter only featured tools
     const featuredTools = tools.filter(tool => tool.featured).slice(0, maxTools);
@@ -61,7 +61,7 @@ export function FeaturedToolsSection({
                 </div>
 
                 {/* Featured Tools Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                     {featuredTools.map((tool) => (
                         <ToolCard key={tool.id} tool={tool} />
                     ))}

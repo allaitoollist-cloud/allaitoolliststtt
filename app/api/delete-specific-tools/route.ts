@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
         const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
         if (!supabaseUrl || !supabaseKey) {
-            return NextResponse.json({ 
+            return NextResponse.json({
                 error: 'Missing SUPABASE_SERVICE_ROLE_KEY',
                 hint: 'Delete operations require service role key'
             }, { status: 500 });
@@ -26,11 +26,11 @@ export async function POST(request: NextRequest) {
         // First, get tool names for logging
         const { data: toolsToDelete } = await supabase
             .from('tools')
-            .select('id, name, slug')
+            .select('id, name, slug, category')
             .in('id', toolIdsToDelete);
 
         if (!toolsToDelete || toolsToDelete.length === 0) {
-            return NextResponse.json({ 
+            return NextResponse.json({
                 message: 'No tools found with provided IDs',
                 toolIds: toolIdsToDelete
             });
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
         if (deleteError) {
             console.error('Delete error:', deleteError);
-            return NextResponse.json({ 
+            return NextResponse.json({
                 error: `Failed to delete: ${deleteError.message}`,
                 details: deleteError
             }, { status: 500 });
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
 
         // Verify deletion
         await new Promise(resolve => setTimeout(resolve, 500));
-        
+
         const { data: verifyTools } = await supabase
             .from('tools')
             .select('id, name')
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
 
         if (verifyTools && verifyTools.length > 0) {
             console.error('⚠️ Some tools still exist after deletion!');
-            return NextResponse.json({ 
+            return NextResponse.json({
                 error: 'Some tools were not deleted',
                 stillExist: verifyTools.map(t => ({ id: t.id, name: t.name }))
             }, { status: 500 });
@@ -80,7 +80,9 @@ export async function POST(request: NextRequest) {
             revalidatePath('/admin/tools');
             toolsToDelete.forEach(tool => {
                 revalidatePath(`/tool/${tool.slug}`);
-                revalidatePath(`/category/${tool.category}`);
+                if (tool.category) {
+                    revalidatePath(`/category/${tool.category}`);
+                }
             });
             console.log('✅ Cache revalidated');
         } catch (revalidateError) {
@@ -96,9 +98,9 @@ export async function POST(request: NextRequest) {
 
     } catch (error: any) {
         console.error('Delete error:', error);
-        return NextResponse.json({ 
+        return NextResponse.json({
             error: 'Internal server error',
-            message: error.message 
+            message: error.message
         }, { status: 500 });
     }
 }
