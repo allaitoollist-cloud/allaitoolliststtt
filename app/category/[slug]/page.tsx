@@ -14,9 +14,16 @@ interface PageProps {
     };
 }
 
+// Helper to format category name for display
+const formatCategoryName = (name: string) => {
+    if (name === 'AIxploria Selection') return 'All AI Tool Selection';
+    return name;
+}
+
 // Generate dynamic metadata for each category page
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
     const decodedCategory = decodeURIComponent(params.slug);
+    const displayCategory = formatCategoryName(decodedCategory);
 
     const { data: dbTools } = await supabase
         .from('tools')
@@ -26,18 +33,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const toolCount = dbTools?.length || 0;
 
     return {
-        title: `${decodedCategory} AI Tools - ${toolCount}+ Best ${decodedCategory} Tools | All AI Tool List`,
-        description: `Discover ${toolCount}+ best ${decodedCategory} AI tools. Compare features, pricing, and reviews. Find the perfect ${decodedCategory} tool for your needs. Updated daily.`,
+        title: `${displayCategory} AI Tools - ${toolCount}+ Best ${displayCategory} Tools | All AI Tool List`,
+        description: `Discover ${toolCount}+ best ${displayCategory} AI tools. Compare features, pricing, and reviews. Find the perfect ${displayCategory} tool for your needs. Updated daily.`,
         keywords: [
-            `${decodedCategory} AI tools`,
-            `best ${decodedCategory} tools`,
-            `${decodedCategory} software`,
-            `AI ${decodedCategory}`,
-            `${decodedCategory} tools comparison`,
+            `${displayCategory} AI tools`,
+            `best ${displayCategory} tools`,
+            `${displayCategory} software`,
+            `AI ${displayCategory}`,
+            `${displayCategory} tools comparison`,
         ],
         openGraph: {
-            title: `${decodedCategory} AI Tools - ${toolCount}+ Best Tools`,
-            description: `Discover and compare ${toolCount}+ ${decodedCategory} AI tools. Find the perfect tool for your needs.`,
+            title: `${displayCategory} AI Tools - ${toolCount}+ Best Tools`,
+            description: `Discover and compare ${toolCount}+ ${displayCategory} AI tools. Find the perfect tool for your needs.`,
             url: `https://allaitoollist.com/category/${encodeURIComponent(decodedCategory)}`,
             siteName: 'All AI Tool List',
             type: 'website',
@@ -45,8 +52,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         },
         twitter: {
             card: 'summary_large_image',
-            title: `${decodedCategory} AI Tools - ${toolCount}+ Best Tools`,
-            description: `Discover and compare ${toolCount}+ ${decodedCategory} AI tools.`,
+            title: `${displayCategory} AI Tools - ${toolCount}+ Best Tools`,
+            description: `Discover and compare ${toolCount}+ ${displayCategory} AI tools.`,
         },
         alternates: {
             canonical: `https://allaitoollist.com/category/${encodeURIComponent(decodedCategory)}`,
@@ -54,9 +61,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
 }
 
+
+
 export default async function CategoryPage({ params }: PageProps) {
     // Decode the slug to handle spaces and special characters
     const decodedCategory = decodeURIComponent(params.slug);
+    const displayCategory = formatCategoryName(decodedCategory);
 
     // Fetch tools for this category
     const { data: dbTools, error } = await supabase
@@ -88,8 +98,8 @@ export default async function CategoryPage({ params }: PageProps) {
     const categorySchema = {
         '@context': 'https://schema.org',
         '@type': 'CollectionPage',
-        name: `${decodedCategory} AI Tools`,
-        description: `Collection of ${tools.length} ${decodedCategory} AI tools`,
+        name: `${displayCategory} AI Tools`,
+        description: `Collection of ${tools.length} ${displayCategory} AI tools`,
         url: `https://allaitoollist.com/category/${encodeURIComponent(decodedCategory)}`,
         mainEntity: {
             '@type': 'ItemList',
@@ -118,7 +128,7 @@ export default async function CategoryPage({ params }: PageProps) {
 
             <Navbar />
             <main className="flex-grow">
-                <CategoryClient category={decodedCategory} tools={tools} />
+                <CategoryClient category={displayCategory} tools={tools} />
             </main>
             <Footer />
         </div>

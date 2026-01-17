@@ -58,8 +58,8 @@ export function ChatbotWidget() {
         if (lowerMsg.includes('price') || lowerMsg.includes('cost') || lowerMsg.includes('free')) {
             return 'Submitting and listing your AI tool is completely free! We also have filters to show free vs paid tools.';
         }
-        if (lowerMsg.includes('contact') || lowerMsg.includes('help') || lowerMsg.includes('support')) {
-            return 'You can reach us through the Contact page or email us directly. We typically respond within 24 hours!';
+        if (lowerMsg.includes('contact') || lowerMsg.includes('help') || lowerMsg.includes('support') || lowerMsg.includes('whatsapp')) {
+            return 'You can reach us through the Contact page, email, or chat with us on WhatsApp at +1 (307) 346-4572. We typically respond quickly!';
         }
         if (lowerMsg.includes('blog') || lowerMsg.includes('article')) {
             return 'Check out our Blog for the latest articles on AI tools, tutorials, and industry insights!';
@@ -78,7 +78,7 @@ export function ChatbotWidget() {
         }
 
         // Default response
-        return 'I\'m here to help! You can ask me about:\n• Browsing AI tools\n• Submitting your tool\n• Account & pricing\n• Contact information\n\nWhat would you like to know?';
+        return 'I\'m here to help! You can ask me about:\n• Browsing AI tools\n• Submitting your tool\n• WhatsApp Support (+1 307 346 4572)\n• Contact information\n\nWhat would you like to know?';
     };
 
     const handleSend = () => {
@@ -168,8 +168,8 @@ export function ChatbotWidget() {
                                 )}
                                 <div
                                     className={`max-w-[75%] rounded-lg p-3 ${message.sender === 'user'
-                                            ? 'bg-primary text-primary-foreground'
-                                            : 'bg-card border'
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-card border'
                                         }`}
                                 >
                                     <p className="text-sm whitespace-pre-line">{message.text}</p>
