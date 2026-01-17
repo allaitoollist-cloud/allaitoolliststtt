@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
 
         // Send submission confirmation email
         const emailTemplate = emailTemplates.toolSubmitted(toolName, submitterEmail);
-        
+
         const result = await sendEmail({
             to: submitterEmail,
             subject: emailTemplate.subject,
@@ -31,18 +31,20 @@ export async function POST(request: NextRequest) {
 
         if (!result.success) {
             console.error('Failed to send submission email:', result.error);
-            
+
             // Check if it's a domain verification error
-            const errorMessage = result.error?.message || '';
-            const isDomainError = result.error?.statusCode === 403 || 
-                                 errorMessage.includes('testing emails') || 
-                                 errorMessage.includes('domain') ||
-                                 errorMessage.includes('verify');
-            
+            const errorMessage = (result.error && typeof result.error === 'object' && 'message' in result.error)
+                ? (result.error as any).message
+                : '';
+            const isDomainError = (result.error && typeof result.error === 'object' && 'statusCode' in result.error && (result.error as any).statusCode === 403) ||
+                errorMessage.includes('testing emails') ||
+                errorMessage.includes('domain') ||
+                errorMessage.includes('verify');
+
             return NextResponse.json({
                 success: false,
                 error: result.error,
-                message: isDomainError 
+                message: isDomainError
                     ? 'Resend domain not verified. Please verify your domain in Resend dashboard (https://resend.com/domains) or use your account email for testing.'
                     : 'Failed to send email',
                 needsDomainVerification: isDomainError,
