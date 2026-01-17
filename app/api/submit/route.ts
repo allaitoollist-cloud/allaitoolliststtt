@@ -137,14 +137,14 @@ export async function POST(req: NextRequest) {
         const { data: allTools } = await supabase
             .from('tools')
             .select('id, url');
-        
+
         if (allTools) {
             const matchingTool = allTools.find(tool => {
                 if (!tool.url) return false;
                 const normalizedExisting = normalizeUrl(tool.url);
                 return normalizedExisting === normalizedUrl;
             });
-            
+
             if (matchingTool) {
                 return NextResponse.json({ error: 'This tool is already listed on our directory.' }, { status: 409 });
             }
@@ -156,17 +156,17 @@ export async function POST(req: NextRequest) {
             .from('tool_submissions')
             .select('id, status, tool_url')
             .in('status', ['pending', 'flagged']);
-        
+
         if (allSubmissions) {
             const matchingSub = allSubmissions.find(sub => {
                 if (!sub.tool_url) return false;
                 const normalizedExisting = normalizeUrl(sub.tool_url);
                 return normalizedExisting === normalizedUrl;
             });
-            
+
             if (matchingSub) {
-                return NextResponse.json({ 
-                    error: 'This tool is already pending review. Please wait for our team to review your previous submission.' 
+                return NextResponse.json({
+                    error: 'This tool is already pending review. Please wait for our team to review your previous submission.'
                 }, { status: 409 });
             }
         }
@@ -233,7 +233,7 @@ export async function POST(req: NextRequest) {
 
                 // Send admin notification
                 console.log(`[EMAIL] Attempting to send admin notification for tool: ${tool_name}`);
-                const adminResult = await sendAdminNewSubmissionEmail(tool_name, submitter_email || 'No email');
+                const adminResult = await sendAdminNewSubmissionEmail(tool_name, submitter_email || 'No email', process.env.ADMIN_EMAIL || 'admin@allaitoollist.com');
                 if (adminResult.success) {
                     console.log(`[EMAIL] ✅ Admin notification sent successfully`);
                 } else {
