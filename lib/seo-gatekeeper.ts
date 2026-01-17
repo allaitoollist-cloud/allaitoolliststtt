@@ -12,13 +12,7 @@ const MIN_TOOLS_FOR_INDEXING = 1;
  */
 export function isToolIndexable(tool: DatabaseTool): boolean {
     // 1. LIFECYCLE CHECK (Strict)
-    // If status exists, it MUST be 'published'.
-    if (tool.status && tool.status !== 'published' && tool.status !== 'approved') return false;
-
-    // Fallback for legacy rows without status: check is_draft
-    if (!tool.status && tool.is_draft) return false;
-
-    if (tool.seo_ignore) return false; // Manual override
+    if (tool.is_draft) return false;
 
     // Content Quality Check
     const descLength = (tool.full_description || '').length + (tool.short_description || '').length;
@@ -44,7 +38,7 @@ export async function isCategoryIndexable(categorySlug: string): Promise<boolean
         .from('tools')
         .select('id', { count: 'exact', head: true })
         .eq('category', categorySlug)
-        .in('status', ['published', 'approved']); // Only count published or approved tools
+        .eq('is_draft', false); // Only count published tools
 
     const { count, error } = await query;
 
@@ -62,7 +56,7 @@ export async function getIndexableTools() {
     const { data: tools } = await supabase
         .from('tools')
         .select('*')
-        .in('status', ['published', 'approved']); // Database-level filter first
+        .eq('is_draft', false); // Database-level filter first
 
     if (!tools) return [];
 

@@ -1,7 +1,5 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export interface EmailOptions {
   to: string;
   subject: string;
@@ -13,10 +11,14 @@ export async function sendEmail({ to, subject, html, from }: EmailOptions) {
   try {
     console.log('📧 sendEmail called:', { to, subject, from: from || 'default' });
 
-    if (!process.env.RESEND_API_KEY) {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
       console.error('❌ RESEND_API_KEY is not set');
       return { success: false, error: 'Email service not configured' };
     }
+
+    const resend = new Resend(apiKey);
+    console.log('✅ Resend client initialized');
 
     console.log('✅ RESEND_API_KEY found, sending email...');
 

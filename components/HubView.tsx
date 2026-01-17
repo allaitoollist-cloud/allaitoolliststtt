@@ -117,31 +117,16 @@ export default function HubView({ hubSlug, tools }: HubViewProps) {
                             </div>
                             <div className="flex flex-wrap gap-2 mb-4">
                                 {/* Primary Tags */}
-                                {tool.pricingModel && (
-                                    <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                                        {tool.pricingModel}
-                                    </span>
-                                )}
-                                {tool.hasApi && (
-                                    <span className="px-2 py-1 bg-blue-50 text-blue-600 text-xs rounded-full">
-                                        API Available
-                                    </span>
-                                )}
-                                {/* EAV Technical Attributes (First 3) */}
-                                {tool.technicalAttributes && Object.entries(tool.technicalAttributes).slice(0, 3).map(([key, value]) => (
-                                    <span key={key} className="px-2 py-1 bg-purple-50 text-purple-600 text-xs rounded-full border border-purple-100">
-                                        {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}: <b>{String(value)}</b>
+                                {tool.tags.slice(0, 3).map(t => (
+                                    <span key={t} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                                        {t}
                                     </span>
                                 ))}
                             </div>
                             <h3 className="font-bold text-lg mb-1">{tool.name}</h3>
                             <p className="text-sm text-muted-foreground line-clamp-2 mb-4 flex-grow">{tool.shortDescription}</p>
 
-                            <div className="flex flex-wrap gap-1 mb-4">
-                                {tool.tags.slice(0, 3).map(t => (
-                                    <span key={t} className="text-[10px] bg-secondary px-1.5 py-0.5 rounded text-muted-foreground uppercase">{t}</span>
-                                ))}
-                            </div>
+
 
                             <Link href={`/tool/${tool.slug}`} className="w-full mt-auto">
                                 <Button className="w-full" variant="outline">View Analysis</Button>

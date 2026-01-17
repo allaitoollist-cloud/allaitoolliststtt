@@ -56,7 +56,7 @@ export default function HomeClient({ initialTools, categories = [] }: HomeClient
 
     // Filter tools based on search and filters
     const filteredTools = useMemo(() => {
-        return initialTools.filter((tool) => {
+        const filtered = initialTools.filter((tool) => {
             // Search filter
             const matchesSearch =
                 searchQuery === '' ||

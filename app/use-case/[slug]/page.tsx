@@ -151,7 +151,7 @@ export default async function UseCasePage({ params }: PageProps) {
 
                 {/* 3. Best AI Tools Grid */}
                 <div id="tools">
-                    <CategoryClient tools={tools} />
+                    <CategoryClient tools={tools} category={formattedTitle} />
                 </div>
 
                 {/* 4. How to Choose */}
