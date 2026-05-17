@@ -192,19 +192,22 @@ export async function POST(req: NextRequest) {
         /*                              EXECUTION                                     */
         /* -------------------------------------------------------------------------- */
 
+        const insertPayload: Record<string, any> = {
+            tool_name,
+            tool_url,
+            description,
+            category,
+            pricing,
+            submitter_name,
+            submitter_email,
+            status,
+        };
+        if (plan) insertPayload.plan = plan;
+        if (full_description) insertPayload.full_description = full_description;
+
         const { data: submission, error: insertError } = await supabase
             .from('tool_submissions')
-            .insert({
-                tool_name,
-                tool_url,
-                description,
-                category,
-                pricing,
-                submitter_name,
-                submitter_email,
-                plan: plan || 'free',
-                status: status
-            })
+            .insert(insertPayload)
             .select()
             .single();
 
