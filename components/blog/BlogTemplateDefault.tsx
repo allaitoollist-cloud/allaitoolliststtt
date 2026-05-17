@@ -1,8 +1,9 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, User, Share2 } from 'lucide-react';
+import { Calendar, User, Share2, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { markdownToHtml } from '@/lib/markdown';
+import { TopicClusterSidebar } from './TopicClusterSidebar';
 
 interface BlogTemplateDefaultProps {
     blog: {
@@ -54,11 +55,11 @@ export function BlogTemplateDefault({ blog }: BlogTemplateDefaultProps) {
                 <div className="flex items-center gap-6 text-sm text-muted-foreground border-y py-4">
                     <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
-                            <span>{formattedDate}</span>
+                        <span>{formattedDate}</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <User className="h-4 w-4" />
-                        <span>Admin</span>
+                        <span>Matt Verma, AI SEO Specialist</span>
                     </div>
                     {blog.views && (
                         <div>
@@ -67,39 +68,60 @@ export function BlogTemplateDefault({ blog }: BlogTemplateDefaultProps) {
                     )}
                 </div>
 
-                {/* Article Content */}
-                <div
-                    className="prose prose-lg dark:prose-invert max-w-none 
-                         prose-headings:font-bold prose-h1:text-4xl prose-h2:text-3xl prose-h3:text-2xl
-                         prose-p:text-base prose-p:leading-relaxed prose-p:mb-4
-                         prose-a:text-primary prose-a:no-underline hover:prose-a:underline
-                         prose-img:rounded-lg prose-img:my-8
-                         prose-code:bg-muted prose-code:px-2 prose-code:py-1 prose-code:rounded
-                         prose-pre:bg-muted prose-pre:p-6
-                         prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:pl-4
-                         prose-strong:font-semibold"
-                    dangerouslySetInnerHTML={{ __html: markdownToHtml(blog.content || '') }}
-                />
+                {/* TL;DR Section for AI Synthesis (AEO Strategy) */}
+                <div className="bg-primary/5 border-l-4 border-primary p-6 rounded-r-xl my-8">
+                    <h2 className="text-xl font-bold text-foreground mb-3 flex items-center gap-2">
+                        <Sparkles className="h-5 w-5 text-primary" />
+                        Quick Takeaways (TL;DR)
+                    </h2>
+                    <p className="text-muted-foreground italic leading-relaxed">
+                        {blog.excerpt || "This article provides synthesized expert insights into AI tool performance, topical authority, and generative engine optimization (GEO). Summary generated for instant AI retrieval."}
+                    </p>
+                </div>
 
-                {/* Tags */}
-                {blog.tags && blog.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 pt-8 border-t">
-                        <span className="text-sm font-medium">Tags:</span>
-                        {blog.tags.map((tag: string, index: number) => (
-                            <Badge key={index} variant="outline">
-                                {tag}
-                            </Badge>
-                        ))}
+                {/* Article Content with Sidebar */}
+                <div className="grid md:grid-cols-[1fr_300px] gap-12 pt-8 border-t">
+                    <div className="space-y-8">
+                        <div
+                            className="prose prose-lg dark:prose-invert max-w-none 
+                                 prose-headings:font-bold prose-h1:text-4xl prose-h2:text-3xl prose-h3:text-2xl
+                                 prose-p:text-lg prose-p:leading-relaxed prose-p:mb-6
+                                 prose-a:text-primary prose-a:no-underline hover:prose-a:underline
+                                 prose-img:rounded-xl prose-img:my-8
+                                 prose-code:bg-muted prose-code:px-2 prose-code:py-1 prose-code:rounded
+                                 prose-pre:bg-muted prose-pre:p-6
+                                 prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:pl-4
+                                 prose-strong:font-semibold"
+                            dangerouslySetInnerHTML={{ __html: markdownToHtml(blog.content || '') }}
+                        />
+
+                        {/* Tags */}
+                        {blog.tags && blog.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2 pt-8 border-t">
+                                <span className="text-sm font-medium">Tags:</span>
+                                {blog.tags.map((tag: string, index: number) => (
+                                    <Badge key={index} variant="outline">
+                                        {tag}
+                                    </Badge>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Share Section */}
+                        <div className="flex items-center gap-4 pt-8 border-t">
+                            <span className="text-sm font-medium">Share:</span>
+                            <Button variant="outline" size="sm" className="gap-2">
+                                <Share2 className="h-4 w-4" />
+                                Share Article
+                            </Button>
+                        </div>
                     </div>
-                )}
 
-                {/* Share Section */}
-                <div className="flex items-center gap-4 pt-8 border-t">
-                    <span className="text-sm font-medium">Share:</span>
-                    <Button variant="outline" size="sm" className="gap-2">
-                        <Share2 className="h-4 w-4" />
-                        Share Article
-                    </Button>
+                    <aside className="hidden md:block">
+                        <div className="sticky top-8">
+                            <TopicClusterSidebar category={blog.category} />
+                        </div>
+                    </aside>
                 </div>
             </div>
         </article>

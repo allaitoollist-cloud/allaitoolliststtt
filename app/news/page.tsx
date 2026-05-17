@@ -3,6 +3,12 @@ import { Footer } from '@/components/Footer';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+    title: 'AI News — Latest AI Tool Updates & Launches | All AI Tool List',
+    description: 'Stay updated on the latest AI news — model releases, product launches, funding rounds, and industry trends.',
+};
 import { Calendar, Clock, ArrowRight, Newspaper } from 'lucide-react';
 import Link from 'next/link';
 
@@ -10,61 +16,61 @@ export default function NewsPage() {
     const newsItems = [
         {
             id: 1,
-            title: "OpenAI Announces GPT-5 Development Roadmap",
-            excerpt: "The AI giant reveals plans for their next-generation language model, promising enhanced reasoning capabilities and multimodal integration.",
-            date: "Nov 28, 2024",
+            title: "Claude Opus 4.7 Launches with Extended Thinking & Tool Use",
+            excerpt: "Anthropic releases its most capable model yet, featuring hybrid reasoning, extended thinking mode, and significantly improved tool use for complex agentic tasks.",
+            date: "May 15, 2026",
             readTime: "5 min read",
-            category: "Technology",
+            category: "Model Release",
             image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=800",
             featured: true
         },
         {
             id: 2,
-            title: "Google Gemini Ultra Now Available Worldwide",
-            excerpt: "Google's most capable AI model is now accessible to developers and enterprise customers across 150+ countries.",
-            date: "Nov 27, 2024",
-            readTime: "3 min read",
+            title: "OpenAI GPT-5 Now Available to All ChatGPT Users",
+            excerpt: "After months in limited access, GPT-5 rolls out globally with multimodal reasoning, real-time web access, and a major leap in coding performance.",
+            date: "May 12, 2026",
+            readTime: "4 min read",
             category: "Product Launch",
             image: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&q=80&w=800",
             featured: false
         },
         {
             id: 3,
-            title: "Midjourney V7 Introduces 3D Model Generation",
-            excerpt: "The popular image generator expands into 3D territory, allowing creators to generate textured 3D assets from text prompts.",
-            date: "Nov 26, 2024",
-            readTime: "4 min read",
-            category: "Creative AI",
+            title: "Google Gemini 2.5 Pro Tops All Major Benchmarks",
+            excerpt: "Google DeepMind's latest model achieves state-of-the-art results on coding, math, and science benchmarks, outperforming all competitors in multimodal tasks.",
+            date: "May 10, 2026",
+            readTime: "3 min read",
+            category: "Research",
             image: "https://images.unsplash.com/photo-1617791160505-6f00504e3519?auto=format&fit=crop&q=80&w=800",
             featured: false
         },
         {
             id: 4,
-            title: "AI Regulation: New EU Act Comes into Effect",
-            excerpt: "Comprehensive guidelines for AI development and deployment are now legally binding within the European Union.",
-            date: "Nov 25, 2024",
+            title: "AI Agents Are Replacing Entire Workflows in 2026",
+            excerpt: "A new wave of autonomous AI agents can now handle end-to-end tasks — from research to execution — without human intervention, reshaping how businesses operate.",
+            date: "May 8, 2026",
             readTime: "6 min read",
-            category: "Policy",
+            category: "Industry Trend",
             image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=800",
             featured: false
         },
         {
             id: 5,
-            title: "Microsoft Copilot Integrated into Windows 12",
-            excerpt: "The next version of Windows will feature deep AI integration at the OS level, changing how users interact with their PCs.",
-            date: "Nov 24, 2024",
+            title: "Midjourney V7 Brings Photorealistic Video Generation",
+            excerpt: "Midjourney expands beyond images with V7's new video mode, generating 10-second photorealistic clips from text prompts with unprecedented quality.",
+            date: "May 5, 2026",
             readTime: "4 min read",
-            category: "Software",
+            category: "Creative AI",
             image: "https://images.unsplash.com/photo-1642132652075-2d43371d543d?auto=format&fit=crop&q=80&w=800",
             featured: false
         },
         {
             id: 6,
-            title: "Stability AI Releases Stable Video Diffusion 2.0",
-            excerpt: "New model generates high-quality 4K videos from text and image prompts with improved consistency.",
-            date: "Nov 23, 2024",
-            readTime: "3 min read",
-            category: "Video AI",
+            title: "EU AI Act Enforcement Begins — What Tool Makers Must Know",
+            excerpt: "The EU begins enforcing the landmark AI Act. High-risk AI systems now require mandatory documentation, audits, and registration — impacting hundreds of popular tools.",
+            date: "May 2, 2026",
+            readTime: "5 min read",
+            category: "Policy",
             image: "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?auto=format&fit=crop&q=80&w=800",
             featured: false
         }

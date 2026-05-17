@@ -26,7 +26,7 @@ export async function getLinkingEntities(currentCategoryId?: string, currentTool
         if (cat === 'All') return;
         entities.push({
             term: cat, // Exact match on category name
-            url: `/category/${cat.toLowerCase()}`,
+            url: `/category/${encodeURIComponent(cat)}`,
             priority: 10
         });
         // Add variations? e.g. "Writing AI" -> simple regex later
@@ -38,9 +38,9 @@ export async function getLinkingEntities(currentCategoryId?: string, currentTool
     if (currentCategoryId) {
         const { data: popularTools } = await supabase
             .from('tools')
-            .select('name, slug, id, status')
+            .select('name, slug, id')
             .eq('category', currentCategoryId)
-            .eq('status', 'published') // STRICTLY published only
+            .eq('is_draft', false)
             .neq('id', currentToolId || '')
             .order('views', { ascending: false })
             .limit(10);

@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
+import { rateLimit } from '@/lib/rate-limit';
 
 // API route for tool management actions
 export async function POST(request: NextRequest) {
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
                 revalidatePath('/categories');
                 revalidatePath(`/tool/${existingTool.slug}`);
                 if (existingTool.category) {
-                    revalidatePath(`/category/${existingTool.category}`);
+                    revalidatePath(`/category/${encodeURIComponent(existingTool.category)}`);
                 }
                 revalidatePath('/admin/tools');
                 console.log('✅ Cache revalidated for all tool pages');
@@ -156,7 +157,19 @@ export async function POST(request: NextRequest) {
 }
 
 // GET endpoint for stats
-export async function GET() {
+export async function GET(request: NextRequest) {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ?? 'anonymous';
+    const { allowed, remaining, resetAt } = rateLimit(ip);
+    if (!allowed) {
+        return NextResponse.json({ error: 'Too many requests' }, {
+            status: 429,
+            headers: {
+                'Retry-After': String(Math.ceil((resetAt - Date.now()) / 1000)),
+                'X-RateLimit-Remaining': '0',
+            },
+        });
+    }
+
     try {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
         const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

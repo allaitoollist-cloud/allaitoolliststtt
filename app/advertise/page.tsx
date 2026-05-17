@@ -41,10 +41,10 @@ export default function AdvertisePage() {
                                 </div>
                             </div>
                             <h1 className="text-4xl font-bold tracking-tight sm:text-6xl bg-gradient-to-b from-white via-white/90 to-white/70 bg-clip-text text-transparent mb-6">
-                                Advertise With Us
+                                Advertise Your AI Tool & Drive Growth
                             </h1>
                             <p className="text-lg leading-8 text-muted-foreground">
-                                Showcase your AI tool to a dedicated community of tech-savvy users. Boost your visibility and drive conversions.
+                                Showcase your product to 50,000+ monthly AI enthusiasts. From featured listings to dedicated reviews, get the visibility your tool deserves.
                             </p>
                         </div>
                     </div>

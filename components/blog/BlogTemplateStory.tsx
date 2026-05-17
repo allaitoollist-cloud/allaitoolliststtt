@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, User, Share2, Clock, ArrowDown } from 'lucide-react';
+import { Calendar, User, Share2, Clock, ArrowDown, Sparkles } from 'lucide-react';
 import { markdownToHtml } from '@/lib/markdown';
 
 interface BlogTemplateStoryProps {

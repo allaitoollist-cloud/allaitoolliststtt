@@ -8,44 +8,58 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { ShieldCheck, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { getBrowserClient } from '@/lib/supabase-browser';
+
+const ALLOWED_ADMIN_EMAILS = [
+    'muhammadismailkpt@gmail.com',
+    'allaitoolist@gmail.com',
+];
 
 export default function AdminLoginPage() {
-    const [email, setEmail] = useState('');
+    const [email, setEmail]       = useState('');
     const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading]   = useState(false);
     const router = useRouter();
     const { toast } = useToast();
 
-    // Hardcoded admin credentials
-    const ADMIN_EMAIL = 'muhammadismailkpt@gmail.com';
-    const ADMIN_PASSWORD = 'Ismail9988allaitoollist';
-
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
 
-        // Simple credential check
-        if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-            // Set a simple session flag
-            localStorage.setItem('admin_logged_in', 'true');
-            localStorage.setItem('admin_email', email);
+        try {
+            const supabase = getBrowserClient();
 
-            toast({
-                title: 'Welcome Admin!',
-                description: 'Login successful',
-            });
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-            // Redirect to admin dashboard
+            if (error || !data.user) {
+                toast({
+                    title: 'Access Denied',
+                    description: error?.message || 'Invalid email or password',
+                    variant: 'destructive',
+                });
+                return;
+            }
+
+            // Check if this email is allowed as admin
+            if (!ALLOWED_ADMIN_EMAILS.includes(data.user.email || '')) {
+                await supabase.auth.signOut();
+                toast({
+                    title: 'Access Denied',
+                    description: 'You do not have admin access.',
+                    variant: 'destructive',
+                });
+                return;
+            }
+
+            toast({ title: 'Welcome Admin!', description: 'Login successful' });
             router.push('/admin');
-        } else {
-            toast({
-                title: 'Access Denied',
-                description: 'Invalid email or password',
-                variant: 'destructive',
-            });
-        }
+            router.refresh();
 
-        setLoading(false);
+        } catch {
+            toast({ title: 'Error', description: 'Something went wrong. Try again.', variant: 'destructive' });
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -57,7 +71,7 @@ export default function AdminLoginPage() {
                     </div>
                     <CardTitle className="text-2xl">Admin Portal</CardTitle>
                     <p className="text-sm text-muted-foreground">
-                        Enter your credentials to access the dashboard
+                        Sign in with your Supabase account
                     </p>
                 </CardHeader>
                 <CardContent>
@@ -67,7 +81,7 @@ export default function AdminLoginPage() {
                             <Input
                                 id="email"
                                 type="email"
-                                placeholder="admin@example.com"
+                                placeholder="admin@email.com"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
@@ -88,7 +102,7 @@ export default function AdminLoginPage() {
                             {loading ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Verifying...
+                                    Signing in...
                                 </>
                             ) : (
                                 'Login to Dashboard'

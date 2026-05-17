@@ -63,7 +63,7 @@ export default function CookiesPage() {
                             This policy explains how and why we use cookies on AI Tool List.
                         </p>
                         <p className="text-sm text-muted-foreground mt-4">
-                            Last Updated: November 29, 2024
+                            Last Updated: May 17, 2026
                         </p>
                     </div>
                 </div>

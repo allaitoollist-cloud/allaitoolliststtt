@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
             const dbTool = tool as unknown as DatabaseTool & { submitter_email: string, approval_email_sent: boolean };
             if (dbTool.submitter_email && !dbTool.approval_email_sent) {
                 try {
-                    await sendToolApprovedEmail(dbTool.submitter_email, dbTool.name, dbTool.slug);
+                    await sendToolApprovedEmail(dbTool.name, `https://allaitoollist.com/tool/${dbTool.slug}`, dbTool.submitter_email);
                     await supabase.from('tools').update({ approval_email_sent: true }).eq('id', tool_id);
                 } catch (emailErr) {
                     console.error("Email Sending Failed but Tool Approved:", emailErr);

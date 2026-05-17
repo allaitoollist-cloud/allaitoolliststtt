@@ -48,6 +48,7 @@ export default function AddToolPage() {
         featured: false,
         verified: false,
         is_draft: true, // Default to draft
+        affiliate_url: '',
     });
 
     const generateSlug = (name: string) => {
@@ -142,6 +143,7 @@ export default function AddToolPage() {
                 featured: tool.featured,
                 verified: tool.verified,
                 is_draft: tool.is_draft,
+                affiliate_url: tool.affiliate_url || null,
                 views: 0,
                 rating: 0,
                 review_count: 0,
@@ -261,6 +263,20 @@ export default function AddToolPage() {
                                 </div>
                                 <p className="text-xs text-muted-foreground">
                                     Enter URL and click the wand to auto-fill details
+                                </p>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="affiliate_url">Affiliate Link (optional)</Label>
+                                <Input
+                                    id="affiliate_url"
+                                    type="url"
+                                    value={tool.affiliate_url}
+                                    onChange={(e) => setTool({ ...tool, affiliate_url: e.target.value })}
+                                    placeholder="https://affiliate.example.com?ref=yourid"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    If provided, this link will be used instead of the Website URL for "Visit Tool" buttons
                                 </p>
                             </div>
 

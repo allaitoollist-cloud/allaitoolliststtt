@@ -3,7 +3,7 @@
 import { useComparison } from '@/contexts/ComparisonContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { X, ExternalLink, Star, DollarSign, Tag, Check, Minus } from 'lucide-react';
+import { X, ExternalLink, DollarSign, Tag } from 'lucide-react';
 import Link from 'next/link';
 
 interface ComparisonModalProps {
@@ -13,15 +13,6 @@ interface ComparisonModalProps {
 
 export function ComparisonModal({ isOpen, onClose }: ComparisonModalProps) {
     const { comparisonTools, removeFromComparison } = useComparison();
-
-    const comparisonRows = [
-        { label: 'Name', key: 'name' },
-        { label: 'Category', key: 'category' },
-        { label: 'Pricing', key: 'pricing' },
-        { label: 'Description', key: 'shortDescription' },
-        { label: 'Tags', key: 'tags' },
-        { label: 'Website', key: 'websiteUrl' },
-    ];
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>

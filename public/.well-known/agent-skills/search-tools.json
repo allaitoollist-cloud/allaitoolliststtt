@@ -1,0 +1,24 @@
+{
+  "name": "search-ai-tools",
+  "type": "search",
+  "version": "1.0.0",
+  "description": "Search for AI tools by name, category, use case, or pricing model",
+  "endpoint": "https://allaitoollist.com/api/tools",
+  "method": "GET",
+  "parameters": {
+    "search": {
+      "type": "string",
+      "description": "Search query — tool name, category, or use case"
+    },
+    "category": {
+      "type": "string",
+      "description": "Filter by category slug"
+    },
+    "pricing": {
+      "type": "string",
+      "enum": ["free", "freemium", "paid"],
+      "description": "Filter by pricing model"
+    }
+  },
+  "returns": "application/json"
+}

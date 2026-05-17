@@ -1,28 +1,20 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import Image from 'next/image';
 import { Navbar } from '@/components/Navbar';
 import { Hero } from '@/components/Hero';
-import { FeatureShowcase } from '@/components/FeatureShowcase';
 import { SEOContent } from '@/components/SEOContent';
-import { AdditionalSections } from '@/components/AdditionalSections';
-import { FilterSidebar } from '@/components/FilterSidebar';
 import { ToolCard } from '@/components/ToolCard';
 import { Footer } from '@/components/Footer';
-import { ReviewsSection } from '@/components/ReviewsSection';
-import { CollectionsSection } from '@/components/CollectionsSection';
-import { QuickFilters } from '@/components/QuickFilters';
+import { TrendingCategories } from '@/components/TrendingCategories';
+import { AdUnit } from '@/components/AdUnit';
+import { AINewsSection } from '@/components/AINewsSection';
 import { ComparisonBar } from '@/components/ComparisonBar';
-import { TrendingToolsSection } from '@/components/TrendingToolsSection';
-import { FeaturedToolsSection } from '@/components/FeaturedToolsSection';
-import { NewsletterSection } from '@/components/NewsletterSection';
-import { CategoryGrid } from '@/components/CategoryGrid';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Filter, ExternalLink } from 'lucide-react';
+import { SlidersHorizontal, X, Zap, Star, ArrowRight, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { Tool } from '@/types';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 interface CategoryWithCount {
     name: string;
     count: number;
@@ -34,463 +26,363 @@ interface HomeClientProps {
     categories?: CategoryWithCount[];
 }
 
+const PRICING_OPTIONS = ['Free', 'Freemium', 'Paid', 'Contact for Pricing'];
+
+const pricingBadgeCls = (p: string) => {
+    if (p === 'Free')      return 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200';
+    if (p === 'Freemium')  return 'bg-amber-100  text-amber-800  ring-1 ring-amber-200';
+    if (p === 'Paid')      return 'bg-zinc-100  text-zinc-800   ring-1 ring-zinc-200';
+    return 'bg-gray-100 text-gray-700 ring-1 ring-gray-200';
+};
+
+function ToolRow({ tool, idx }: { tool: Tool; idx: number }) {
+    return (
+        <Link
+            href={`/tool/${tool.slug}`}
+            className="flex items-center gap-4 py-3.5 px-4 rounded-2xl hover:bg-white hover:shadow-md hover:ring-1 hover:ring-orange-100 transition-all duration-200 group"
+        >
+            <span className="text-[13px] font-black text-gray-200 w-6 shrink-0 tabular-nums text-center group-hover:text-orange-300 transition-colors">
+                {String(idx + 1).padStart(2, '0')}
+            </span>
+
+            <div className="w-10 h-10 rounded-xl border border-gray-100 bg-white flex items-center justify-center overflow-hidden shrink-0 shadow-sm group-hover:shadow-md group-hover:border-orange-100 transition-all">
+                {tool.icon
+                    ? <Image src={tool.icon} alt={tool.name} width={40} height={40} className="object-contain" />
+                    : <span className="text-sm font-black text-gray-400">{tool.name.charAt(0)}</span>
+                }
+            </div>
+
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                    <p className="text-[14px] font-black text-gray-900 truncate group-hover:text-orange-600 transition-colors leading-none">
+                        {tool.name}
+                    </p>
+                    {tool.verified && (
+                        <span className="flex items-center justify-center w-3.5 h-3.5 bg-orange-500 rounded-full shrink-0" title="Verified">
+                            <svg viewBox="0 0 24 24" className="w-2 h-2 text-white fill-current" stroke="currentColor" strokeWidth="4"><path d="M20 6L9 17L4 12" fill="none"/></svg>
+                        </span>
+                    )}
+                </div>
+                <p className="text-[12px] text-gray-500 truncate mt-1 group-hover:text-gray-600 transition-colors leading-none">
+                    {tool.shortDescription}
+                </p>
+            </div>
+
+            <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full shrink-0 ${pricingBadgeCls(tool.pricing)}`}>
+                {tool.pricing === 'Contact for Pricing' ? 'Custom' : tool.pricing}
+            </span>
+        </Link>
+    );
+}
+
+const SECTION_CONFIGS = [
+    {
+        id: 'latest',
+        title: 'Recently Added',
+        icon: <Zap className="w-4 h-4 text-orange-500" />,
+        href: '/new',
+        accentColor: 'bg-orange-500',
+        filter: (tools: Tool[]) => tools.slice(0, 10),
+        bgColor: 'bg-orange-50/40',
+        borderColor: 'border-orange-100',
+        headerBg: 'from-orange-50 to-transparent',
+    },
+    {
+        id: 'featured',
+        title: 'Our Selection',
+        icon: <Star className="w-4 h-4 text-amber-500" />,
+        href: '/categories',
+        accentColor: 'bg-amber-400',
+        filter: (tools: Tool[]) => {
+            const feat = tools.filter(t => t.featured);
+            return (feat.length > 0 ? feat : tools.slice(10, 20)).slice(0, 10);
+        },
+        bgColor: 'bg-amber-50/40',
+        borderColor: 'border-amber-100',
+        headerBg: 'from-amber-50 to-transparent',
+    },
+    {
+        id: 'trending',
+        title: 'Most Popular',
+        icon: <TrendingUp className="w-4 h-4 text-rose-500" />,
+        href: '/top-10',
+        accentColor: 'bg-rose-500',
+        filter: (tools: Tool[]) => {
+            const tr = tools.filter(t => t.trending);
+            return (tr.length > 0 ? tr : tools.slice(20, 30)).slice(0, 10);
+        },
+        bgColor: 'bg-rose-50/40',
+        borderColor: 'border-rose-100',
+        headerBg: 'from-rose-50 to-transparent',
+    },
+];
+
 export default function HomeClient({ initialTools, categories = [] }: HomeClientProps) {
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchQuery, setSearchQuery]               = useState('');
+    const [selectedPricing, setSelectedPricing]       = useState<string[]>([]);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-    const [selectedPricing, setSelectedPricing] = useState<string[]>([]);
-    const [quickFilters, setQuickFilters] = useState<string[]>([]);
-
+    const [showFilters, setShowFilters]               = useState(false);
+    const [currentPage, setCurrentPage]               = useState(1);
+    const [sortBy, setSortBy]                         = useState<'latest' | 'popular' | 'name'>('latest');
     const ITEMS_PER_PAGE = 24;
-    const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [sortBy, setSortBy] = useState<'latest' | 'popular' | 'name'>('latest');
 
-    // Derive all unique categories from tools
+    const isFiltering = searchQuery !== '' || selectedPricing.length > 0 || selectedCategories.length > 0;
+
     const allCategories = useMemo(() => {
         const cats = new Set<string>();
-        initialTools.forEach(tool => {
-            if (tool.category) cats.add(tool.category);
-        });
+        initialTools.forEach(t => { if (t.category) cats.add(t.category); });
         return Array.from(cats).sort();
     }, [initialTools]);
 
-    // Filter tools based on search and filters
     const filteredTools = useMemo(() => {
-        const filtered = initialTools.filter((tool) => {
-            // Search filter
-            const matchesSearch =
-                searchQuery === '' ||
-                tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                tool.shortDescription.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (Array.isArray(tool.tags) &&
-                    tool.tags.some(
-                        (tag: string) =>
-                            typeof tag === 'string' &&
-                            tag.toLowerCase().includes(searchQuery.toLowerCase())
-                    ));
-
-            // Category filter
-            const matchesCategory =
-                selectedCategories.length === 0 ||
-                selectedCategories.includes(tool.category);
-
-            // Pricing filter
-            const matchesPricing =
-                selectedPricing.length === 0 ||
-                selectedPricing.includes(tool.pricing);
-
-            return matchesSearch && matchesCategory && matchesPricing;
+        let list = initialTools.filter(tool => {
+            const q = searchQuery.toLowerCase();
+            const matchSearch = !q ||
+                tool.name.toLowerCase().includes(q) ||
+                tool.shortDescription.toLowerCase().includes(q) ||
+                (tool.tags || []).some((t: string) => t.toLowerCase().includes(q));
+            const matchPricing = selectedPricing.length === 0 || selectedPricing.includes(tool.pricing);
+            const matchCat     = selectedCategories.length === 0 || selectedCategories.includes(tool.category);
+            return matchSearch && matchPricing && matchCat;
         });
 
-        // Apply sorting
-        const sorted = [...filtered].sort((a, b) => {
-            if (sortBy === 'latest') {
-                // Sort by date added (newest first)
-                const dateA = a.dateAdded ? new Date(a.dateAdded).getTime() : 0;
-                const dateB = b.dateAdded ? new Date(b.dateAdded).getTime() : 0;
-                return dateB - dateA;
-            } else if (sortBy === 'popular') {
-                // Sort by views (most popular first)
-                return (b.views || 0) - (a.views || 0);
-            } else {
-                // Sort alphabetically by name
-                return a.name.localeCompare(b.name);
-            }
+        list = [...list].sort((a, b) => {
+            if (sortBy === 'latest')  return (new Date(b.dateAdded || 0).getTime()) - (new Date(a.dateAdded || 0).getTime());
+            if (sortBy === 'popular') return (b.views || 0) - (a.views || 0);
+            return a.name.localeCompare(b.name);
         });
+        return list;
+    }, [initialTools, searchQuery, selectedPricing, selectedCategories, sortBy]);
 
-        return sorted;
-    }, [initialTools, searchQuery, selectedCategories, selectedPricing, sortBy]);
+    useEffect(() => { setCurrentPage(1); }, [searchQuery, selectedPricing, selectedCategories]);
 
-    // Reset visible count and page when filters change
-    useEffect(() => {
-        setVisibleCount(ITEMS_PER_PAGE);
-        setCurrentPage(1);
-    }, [searchQuery, selectedCategories, selectedPricing]);
-
-    const handleLoadMore = () => {
-        setVisibleCount(prev => prev + ITEMS_PER_PAGE);
-    };
-
-    const handleCategoryToggle = (category: string) => {
-        setSelectedCategories((prev) =>
-            prev.includes(category)
-                ? prev.filter((c) => c !== category)
-                : [...prev, category]
-        );
-    };
-
-    const handlePricingToggle = (pricing: string) => {
-        setSelectedPricing((prev) =>
-            prev.includes(pricing)
-                ? prev.filter((p) => p !== pricing)
-                : [...prev, pricing]
-        );
-    };
-
-    const handleResetFilters = () => {
-        setSelectedCategories([]);
-        setSelectedPricing([]);
-        setSearchQuery('');
-    };
+    const resetFilters = () => { setSearchQuery(''); setSelectedPricing([]); setSelectedCategories([]); };
+    const totalPages   = Math.ceil(filteredTools.length / ITEMS_PER_PAGE);
+    const pagedTools   = filteredTools.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
     return (
-        <div className="min-h-screen flex flex-col bg-background">
+        <div className="min-h-screen flex flex-col bg-gray-50/30">
             <Navbar onSearch={setSearchQuery} />
+            <Hero onSearch={setSearchQuery} toolCount={initialTools.length || 5375} />
 
             <main className="flex-grow">
-                <Hero onSearch={setSearchQuery} />
 
-                {/* Featured Tools Section - Shows admin-marked featured tools */}
-                <FeaturedToolsSection tools={initialTools} />
+                {/* ─── FILTERED / SEARCH VIEW ─── */}
+                {isFiltering ? (
+                    <div className="max-w-7xl mx-auto px-4 py-12">
+                        {/* Filter bar */}
+                        <div className="bg-white rounded-3xl border border-gray-100 shadow-xl p-6 mb-10">
+                            <div className="flex flex-wrap items-center gap-3">
+                                <div className="flex items-center gap-2 mr-2">
+                                    <span className="text-xs font-black uppercase text-gray-400 tracking-widest">Sort:</span>
+                                    <select
+                                        value={sortBy}
+                                        onChange={e => setSortBy(e.target.value as 'latest' | 'popular' | 'name')}
+                                        className="text-sm border-0 font-bold text-gray-900 focus:ring-0 cursor-pointer bg-transparent"
+                                    >
+                                        <option value="latest">Newest First</option>
+                                        <option value="popular">Most Popular</option>
+                                        <option value="name">Alphabetical</option>
+                                    </select>
+                                </div>
 
-                {/* Category Grid Section */}
-                <CategoryGrid categories={categories} />
+                                <div className="h-6 w-px bg-gray-100 hidden sm:block mx-2" />
 
-                <div className="container mx-auto px-4 py-12">
-                    <div className="flex flex-col md:flex-row gap-8">
-                        {/* Mobile Filter Trigger */}
-                        <div className="md:hidden mb-4">
-                            <Sheet>
-                                <SheetTrigger asChild>
-                                    <Button variant="outline" className="w-full gap-2">
-                                        <Filter className="h-4 w-4" />
-                                        Filters
-                                        {(selectedCategories.length > 0 || selectedPricing.length > 0) && (
-                                            <span className="ml-auto bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs">
-                                                {selectedCategories.length + selectedPricing.length}
-                                            </span>
-                                        )}
-                                    </Button>
-                                </SheetTrigger>
-                                <SheetContent
-                                    side="left"
-                                    className="w-[300px] sm:w-[400px] overflow-y-auto"
+                                {PRICING_OPTIONS.map(p => (
+                                    <button
+                                        key={p}
+                                        onClick={() => setSelectedPricing(prev =>
+                                            prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])}
+                                        className={`text-xs font-bold px-4 py-2 rounded-xl border-2 transition-all ${
+                                            selectedPricing.includes(p)
+                                                ? 'bg-orange-500 border-orange-500 text-white shadow-md shadow-orange-100'
+                                                : 'bg-white border-gray-100 text-gray-500 hover:border-orange-200 hover:text-orange-600'
+                                        }`}
+                                    >
+                                        {p}
+                                    </button>
+                                ))}
+
+                                <button
+                                    onClick={() => setShowFilters(!showFilters)}
+                                    className={`flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-xl border-2 transition-all ${
+                                        selectedCategories.length > 0
+                                            ? 'bg-orange-100 border-orange-200 text-orange-700'
+                                            : 'bg-white border-gray-100 text-gray-500 hover:border-orange-200'
+                                    }`}
                                 >
-                                    <div className="mt-6">
-                                        <FilterSidebar
-                                            selectedCategories={selectedCategories}
-                                            selectedPricing={selectedPricing}
-                                            availableCategories={allCategories}
-                                            onCategoryToggle={handleCategoryToggle}
-                                            onPricingToggle={handlePricingToggle}
-                                            onReset={handleResetFilters}
-                                        />
-                                    </div>
-                                </SheetContent>
-                            </Sheet>
-                        </div>
+                                    <SlidersHorizontal className="w-3.5 h-3.5" />
+                                    Categories {selectedCategories.length > 0 && `(${selectedCategories.length})`}
+                                </button>
 
-                        <aside className="hidden md:block">
-                            <FilterSidebar
-                                selectedCategories={selectedCategories}
-                                selectedPricing={selectedPricing}
-                                availableCategories={allCategories}
-                                onCategoryToggle={handleCategoryToggle}
-                                onPricingToggle={handlePricingToggle}
-                                onReset={handleResetFilters}
-                            />
-                        </aside>
-
-                        <div className="flex-1">
-                            {/* Quick Filters */}
-                            <QuickFilters
-                                selectedFilters={quickFilters}
-                                onFilterToggle={(filter) => {
-                                    setQuickFilters((prev) =>
-                                        prev.includes(filter)
-                                            ? prev.filter((f) => f !== filter)
-                                            : [...prev, filter]
-                                    );
-                                }}
-                                onClearAll={() => setQuickFilters([])}
-                            />
-
-                            {/* Sorting Dropdown */}
-                            <div className="flex justify-end mb-4">
-                                <Select value={sortBy} onValueChange={(value: 'latest' | 'popular' | 'name') => setSortBy(value)}>
-                                    <SelectTrigger className="w-[180px]">
-                                        <SelectValue placeholder="Sort by" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="latest">Latest</SelectItem>
-                                        <SelectItem value="popular">Popular</SelectItem>
-                                        <SelectItem value="name">Name (A-Z)</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <div className="ml-auto flex items-center gap-4">
+                                    <span className="text-sm font-bold text-gray-900">{filteredTools.length} results</span>
+                                    <button onClick={resetFilters} className="text-sm font-black text-red-500 hover:text-red-700 transition-colors flex items-center gap-1">
+                                        <X className="w-4 h-4" /> Reset
+                                    </button>
+                                </div>
                             </div>
 
-                            {/* --- COMPACT CATEGORY SECTIONS (Only if no search/filter active) --- */}
-                            {!searchQuery && selectedCategories.length === 0 && selectedPricing.length === 0 ? (
-                                <div className="space-y-12">
-                                    {/* Section 1: Latest AI (Using 'featured' or sorting by date mock) -> "Latest AI" */}
-                                    <div className="bg-[#0A0A0F]/50 border border-white/5 rounded-2xl p-6">
-                                        <div className="flex justify-between items-center mb-6">
-                                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                                <span className="w-2 h-6 bg-blue-500 rounded-full"></span>
-                                                Latest AI Tools
-                                            </h2>
-                                        </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                            {initialTools.filter(t => t.dateAdded && new Date(t.dateAdded) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).slice(0, 9).map((tool) => (
-                                                <div key={tool.id} className="bg-[#0F0F16] border border-white/5 hover:border-white/10 rounded-xl p-3 flex items-center gap-3 group">
-                                                    <Link href={tool.url} target="_blank" className="flex-shrink-0">
-                                                        <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center overflow-hidden">
-                                                            {/* Mini Icon Logic */}
-                                                            {tool.icon ? <img src={tool.icon} alt={tool.name} className="w-6 h-6 object-contain" /> : <span className="text-xs">AI</span>}
-                                                        </div>
-                                                    </Link>
-                                                    <div className="flex-grow min-w-0">
-                                                        <Link href={tool.url} target="_blank" className="block truncate">
-                                                            <h3 className="text-sm font-semibold text-white group-hover:text-blue-400 truncate">{tool.name}</h3>
-                                                        </Link>
-                                                        <p className="text-[10px] text-gray-500 truncate">{tool.category}</p>
-                                                    </div>
-                                                    <Button asChild size="icon" variant="ghost" className="h-8 w-8 text-gray-500 hover:text-white hover:bg-white/10">
-                                                        <Link href={tool.url} target="_blank">
-                                                            <ExternalLink className="h-4 w-4" />
-                                                        </Link>
-                                                    </Button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <div className="mt-6 text-center">
-                                            <Button variant="outline" className="text-blue-400 border-blue-500/30 hover:bg-blue-500/10 w-full sm:w-auto">
-                                                More New AI Tools &rarr;
-                                            </Button>
-                                        </div>
-                                    </div>
-
-                                    {/* Section 2: AI Chat & Assistants (Category: Chat, Writing, etc) */}
-                                    <div className="bg-[#0A0A0F]/50 border border-white/5 rounded-2xl p-6">
-                                        <div className="flex justify-between items-center mb-6">
-                                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                                <span className="w-2 h-6 bg-emerald-500 rounded-full"></span>
-                                                AI Chat Assistants
-                                            </h2>
-                                        </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                            {initialTools.filter(t => ['Chat', 'Assistant', 'Writing', 'Text'].some(c => t.category?.includes(c))).slice(0, 9).map((tool) => (
-                                                <div key={tool.id} className="bg-[#0F0F16] border border-white/5 hover:border-white/10 rounded-xl p-3 flex items-center gap-3 group">
-                                                    <Link href={tool.url} target="_blank" className="flex-shrink-0">
-                                                        <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center overflow-hidden">
-                                                            {tool.icon ? <img src={tool.icon} alt={tool.name} className="w-6 h-6 object-contain" /> : <span className="text-xs">Chat</span>}
-                                                        </div>
-                                                    </Link>
-                                                    <div className="flex-grow min-w-0">
-                                                        <Link href={tool.url} target="_blank" className="block truncate">
-                                                            <h3 className="text-sm font-semibold text-white group-hover:text-emerald-400 truncate">{tool.name}</h3>
-                                                        </Link>
-                                                        <p className="text-[10px] text-gray-500 truncate">{tool.shortDescription}</p>
-                                                    </div>
-                                                    <Button asChild size="icon" variant="ghost" className="h-8 w-8 text-gray-500 hover:text-white hover:bg-white/10">
-                                                        <Link href={tool.url} target="_blank">
-                                                            <ExternalLink className="h-4 w-4" />
-                                                        </Link>
-                                                    </Button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <div className="mt-6 text-center">
-                                            <Link href="/category/Chat">
-                                                <Button variant="outline" className="text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 w-full sm:w-auto">
-                                                    More Chat Tools &rarr;
-                                                </Button>
-                                            </Link>
-                                        </div>
-                                    </div>
-
-                                    {/* Section 3: Super Tools (Trending) */}
-                                    <div className="bg-[#0A0A0F]/50 border border-white/5 rounded-2xl p-6">
-                                        <div className="flex justify-between items-center mb-6">
-                                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                                <span className="w-2 h-6 bg-purple-500 rounded-full"></span>
-                                                Super Tools (Trending)
-                                            </h2>
-                                        </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                            {initialTools.filter(t => t.trending).slice(0, 9).map((tool) => (
-                                                <div key={tool.id} className="bg-[#0F0F16] border border-white/5 hover:border-white/10 rounded-xl p-3 flex items-center gap-3 group">
-                                                    <Link href={tool.url} target="_blank" className="flex-shrink-0">
-                                                        <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center overflow-hidden">
-                                                            {tool.icon ? <img src={tool.icon} alt={tool.name} className="w-6 h-6 object-contain" /> : <span className="text-xs">Hot</span>}
-                                                        </div>
-                                                    </Link>
-                                                    <div className="flex-grow min-w-0">
-                                                        <Link href={tool.url} target="_blank" className="block truncate">
-                                                            <h3 className="text-sm font-semibold text-white group-hover:text-purple-400 truncate">{tool.name}</h3>
-                                                        </Link>
-                                                        <p className="text-[10px] text-gray-500 truncate">{tool.shortDescription}</p>
-                                                    </div>
-                                                    <Button asChild size="icon" variant="ghost" className="h-8 w-8 text-gray-500 hover:text-white hover:bg-white/10">
-                                                        <Link href={tool.url} target="_blank">
-                                                            <ExternalLink className="h-4 w-4" />
-                                                        </Link>
-                                                    </Button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <div className="mt-6 text-center">
-                                            <Button
-                                                variant="outline"
-                                                className="text-purple-400 border-purple-500/30 hover:bg-purple-500/10 w-full sm:w-auto"
-                                                onClick={() => {
-                                                    // Trigger filter for trending or just show all
-                                                    // For now, let's just show all by setting a dummy filter or scrollTo
-                                                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                                                    setSearchQuery(' '); // Hack to trigger "search mode" which shows the grid
-                                                    setTimeout(() => setSearchQuery(''), 100); // clear it
-                                                    // Actually, better to have a state.
-                                                }}
-                                            >
-                                                View All Trending &rarr;
-                                            </Button>
-                                        </div>
-                                    </div>
-
-                                    {/* Link to Full List */}
-                                    <div className="py-12 flex justify-center">
-                                        <Button
-                                            size="lg"
-                                            className="bg-white text-black hover:bg-gray-200 font-bold px-8 rounded-full shadow-[0_0_20px_rgba(255,255,255,0.3)] transform hover:scale-105 transition-all"
-                                            onClick={() => {
-                                                // Setting a category to 'All' or just triggering re-render?
-                                                // Let's just create a state for viewMode if we want to stay clean
-                                                // For now, I'll just set a state on component.
-                                                // I can't easily add state in replace_file_content without context.
-                                                // I will use a simple query param or just set a filter.
-                                                setSearchQuery(' '); // trigger list view
-                                            }}
+                            {showFilters && (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 mt-6 pt-6 border-t border-gray-50">
+                                    {allCategories.map(cat => (
+                                        <button
+                                            key={cat}
+                                            onClick={() => setSelectedCategories(prev =>
+                                                prev.includes(cat) ? prev.filter(x => x !== cat) : [...prev, cat])}
+                                            className={`text-[11px] font-bold px-3 py-2 rounded-xl border transition-all text-left truncate ${
+                                                selectedCategories.includes(cat)
+                                                    ? 'bg-orange-500 border-orange-500 text-white'
+                                                    : 'bg-gray-50 border-transparent text-gray-600 hover:bg-orange-50 hover:text-orange-700'
+                                            }`}
                                         >
-                                            Explore The Ultimate AI List &rarr;
-                                        </Button>
-                                    </div>
-
-                                </div>
-                            ) : (
-                                /* Keep Existing Filtered Results View */
-                                <div>
-                                    <div className="flex justify-between items-center mb-6">
-                                        <h2 className="text-2xl font-bold">
-                                            {searchQuery ? 'Search Results' : 'Explore All Tools'}
-                                        </h2>
-                                        <span className="text-sm text-muted-foreground">
-                                            {filteredTools.length}{' '}
-                                            {filteredTools.length === 1 ? 'result' : 'results'}
-                                        </span>
-                                    </div>
-
-                                    {filteredTools.length > 0 ? (
-                                        <>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                                {filteredTools.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map((tool) => (
-                                                    <ToolCard key={tool.id} tool={tool} />
-                                                ))}
-                                            </div>
-
-                                            {Math.ceil(filteredTools.length / ITEMS_PER_PAGE) > 1 && (
-                                                <div className="flex items-center justify-center gap-2 mt-12">
-                                                    {/* Previous Button */}
-                                                    <Button
-                                                        variant="outline"
-                                                        onClick={() => {
-                                                            setCurrentPage(p => Math.max(1, p - 1));
-                                                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                                                        }}
-                                                        disabled={currentPage === 1}
-                                                        className="w-10 h-10 p-0"
-                                                    >
-                                                        &lt;
-                                                    </Button>
-
-                                                    {/* Page Numbers */}
-                                                    {Array.from({ length: Math.min(Math.ceil(filteredTools.length / ITEMS_PER_PAGE), 5) }, (_, i) => {
-                                                        const totalPages = Math.ceil(filteredTools.length / ITEMS_PER_PAGE);
-                                                        let pageNumber = i + 1;
-
-                                                        // Dynamic windowing for pages
-                                                        if (totalPages > 5) {
-                                                            if (currentPage > 3) {
-                                                                pageNumber = currentPage - 2 + i;
-                                                            }
-                                                            if (currentPage > totalPages - 2) {
-                                                                pageNumber = totalPages - 4 + i;
-                                                            }
-                                                        }
-
-                                                        if (pageNumber > totalPages) return null;
-
-                                                        return (
-                                                            <Button
-                                                                key={pageNumber}
-                                                                onClick={() => {
-                                                                    setCurrentPage(pageNumber);
-                                                                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                                                                }}
-                                                                variant={currentPage === pageNumber ? "default" : "outline"}
-                                                                className={`w-10 h-10 p-0 ${currentPage === pageNumber ? 'bg-primary text-primary-foreground' : 'bg-transparent text-foreground'}`}
-                                                            >
-                                                                {pageNumber}
-                                                            </Button>
-                                                        );
-                                                    })}
-
-                                                    {/* Next Button */}
-                                                    <Button
-                                                        variant="outline"
-                                                        onClick={() => {
-                                                            setCurrentPage(p => Math.min(Math.ceil(filteredTools.length / ITEMS_PER_PAGE), p + 1));
-                                                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                                                        }}
-                                                        disabled={currentPage === Math.ceil(filteredTools.length / ITEMS_PER_PAGE)}
-                                                        className="w-10 h-10 p-0"
-                                                    >
-                                                        &gt;
-                                                    </Button>
-                                                </div>
-                                            )}
-                                        </>
-                                    ) : (
-                                        <div className="text-center py-12">
-                                            <p className="text-muted-foreground text-lg mb-4">
-                                                No tools found matching your criteria
-                                            </p>
-                                            <Button onClick={handleResetFilters} variant="outline">
-                                                Reset Filters
-                                            </Button>
-                                        </div>
-                                    )}
+                                            {cat}
+                                        </button>
+                                    ))}
                                 </div>
                             )}
                         </div>
+
+                        {/* Results grid */}
+                        {pagedTools.length > 0 ? (
+                            <>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {pagedTools.map(tool => <ToolCard key={tool.id} tool={tool} />)}
+                                </div>
+
+                                {totalPages > 1 && (
+                                    <div className="flex items-center justify-center gap-2 mt-16">
+                                        <button
+                                            onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                                            disabled={currentPage === 1}
+                                            className="w-12 h-12 flex items-center justify-center rounded-2xl border-2 border-gray-100 text-gray-400 hover:bg-gray-50 disabled:opacity-30 transition-all font-black"
+                                        >
+                                            <ArrowRight className="w-5 h-5 rotate-180" />
+                                        </button>
+                                        <div className="flex items-center gap-2 px-2">
+                                            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                                                let p = i + 1;
+                                                if (totalPages > 5) {
+                                                    if (currentPage > 3) p = currentPage - 2 + i;
+                                                    if (currentPage > totalPages - 2) p = totalPages - 4 + i;
+                                                }
+                                                if (p < 1 || p > totalPages) return null;
+                                                return (
+                                                    <button
+                                                        key={p}
+                                                        onClick={() => { setCurrentPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                                                        className={`w-12 h-12 flex items-center justify-center rounded-2xl text-[15px] font-black transition-all ${
+                                                            currentPage === p
+                                                                ? 'bg-orange-500 text-white shadow-lg shadow-orange-100'
+                                                                : 'bg-white text-gray-500 hover:bg-gray-50 border-2 border-transparent'
+                                                        }`}
+                                                    >{p}</button>
+                                                );
+                                            })}
+                                        </div>
+                                        <button
+                                            onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                                            disabled={currentPage === totalPages}
+                                            className="w-12 h-12 flex items-center justify-center rounded-2xl border-2 border-gray-100 text-gray-400 hover:bg-gray-50 disabled:opacity-30 transition-all font-black"
+                                        >
+                                            <ArrowRight className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <div className="text-center py-24 bg-gray-50 rounded-[40px] border-2 border-dashed border-gray-100">
+                                <p className="text-gray-400 text-lg font-bold mb-6">No tools matched your filters.</p>
+                                <button onClick={resetFilters} className="px-10 py-4 bg-gray-900 text-white rounded-2xl font-black hover:bg-orange-600 transition-all shadow-xl hover:shadow-orange-100">
+                                    Clear All Filters
+                                </button>
+                            </div>
+                        )}
                     </div>
+
+                ) : (
+                    /* ─── HOME VIEW ─── */
+                    <div className="max-w-7xl mx-auto px-4 py-14 space-y-20">
+
+                        {/* 3-column curated sections — visual hierarchy */}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            {SECTION_CONFIGS.map(section => {
+                                const tools = section.filter(initialTools);
+                                return (
+                                    <div key={section.id} className="flex flex-col">
+                                        {/* Section header */}
+                                        <div className="flex items-center justify-between mb-5">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className={`w-8 h-8 ${section.bgColor} rounded-lg flex items-center justify-center border ${section.borderColor}`}>
+                                                    {section.icon}
+                                                </div>
+                                                <h2 className="text-[17px] font-black text-gray-900">{section.title}</h2>
+                                            </div>
+                                            <Link
+                                                href={section.href}
+                                                className="text-[11px] font-black text-gray-400 hover:text-orange-500 transition-colors uppercase tracking-widest flex items-center gap-1 hover:gap-1.5"
+                                            >
+                                                See all <ArrowRight className="w-3 h-3" />
+                                            </Link>
+                                        </div>
+
+                                        {/* Tool list */}
+                                        <div className="bg-white rounded-[28px] border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                                            {/* Accent stripe */}
+                                            <div className={`h-1 w-full ${section.accentColor}`} />
+                                            <div className="p-2 space-y-0.5">
+                                                {tools.map((tool, idx) => (
+                                                    <ToolRow key={tool.id} tool={tool} idx={idx} />
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Mid CTA Banner — lighter, high contrast button */}
+                        <div className="relative overflow-hidden rounded-[40px] bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-10 md:p-16 text-center">
+                            {/* Decorative blobs */}
+                            <div className="absolute -top-20 -right-20 w-64 h-64 bg-orange-500/15 rounded-full blur-3xl pointer-events-none" />
+                            <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
+
+                            <div className="relative z-10 max-w-2xl mx-auto">
+                                <div className="inline-flex items-center gap-2 bg-orange-500/20 border border-orange-500/30 rounded-full px-4 py-1.5 mb-6">
+                                    <span className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-pulse" />
+                                    <span className="text-[12px] font-black text-orange-300 uppercase tracking-widest">Full Directory</span>
+                                </div>
+                                <h2 className="text-3xl md:text-5xl font-black text-white mb-5 leading-tight">
+                                    Explore <span className="text-orange-400">{initialTools.length.toLocaleString()}+</span><br />
+                                    Verified AI Tools
+                                </h2>
+                                <p className="text-gray-300 text-[17px] mb-10 font-medium leading-relaxed">
+                                    Hand-curated across dozens of high-impact categories — find exactly what your workflow needs.
+                                </p>
+                                <button
+                                    onClick={() => setSearchQuery(' ')}
+                                    className="inline-flex items-center gap-3 px-10 py-4 bg-orange-500 hover:bg-orange-400 active:bg-orange-600 text-white font-black rounded-2xl shadow-2xl shadow-orange-500/30 transition-all duration-200 hover:scale-105 group text-[16px]"
+                                >
+                                    Browse Full Directory
+                                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                </button>
+                            </div>
+                        </div>
+
+                        <TrendingCategories />
+                        <AINewsSection />
+                        <SEOContent categories={categories} />
+                    </div>
+                )}
+
+                {/* Ad */}
+                <div className="max-w-7xl mx-auto px-4 py-8">
+                    <AdUnit slot="3924871065" format="horizontal" className="text-center" />
                 </div>
-
-                {/* Reviews Section */}
-                <ReviewsSection />
-
-                {/* Trending Tools Section */}
-                <TrendingToolsSection />
-
-                {/* Collections Section */}
-                <CollectionsSection />
-
-                {/* Newsletter Section */}
-                <NewsletterSection />
-
-                {/* Feature Showcase Sections */}
-                <FeatureShowcase />
-
-                {/* Use Cases & Benefits */}
-                <AdditionalSections />
-
-                {/* SEO Content Sections */}
-                <SEOContent categories={categories} />
-            </main >
+            </main>
 
             <Footer />
-
-            {/* Comparison Bar */}
             <ComparisonBar />
-        </div >
+        </div>
     );
 }

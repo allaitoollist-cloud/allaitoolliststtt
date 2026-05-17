@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "serverInfo": {
+    "name": "All AI Tool List",
+    "version": "1.0.0",
+    "description": "Comprehensive AI tools directory — search, browse, and discover 10,000+ AI tools"
+  },
+  "transport": {
+    "type": "http",
+    "endpoint": "https://allaitoollist.com/api/mcp"
+  },
+  "capabilities": {
+    "tools": true,
+    "resources": true,
+    "prompts": false
+  },
+  "contact": {
+    "url": "https://allaitoollist.com/contact"
+  }
+}

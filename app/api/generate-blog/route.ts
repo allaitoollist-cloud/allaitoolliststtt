@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const LONGCHAT_API_KEY = 'ak_1ti8ps2Pp35o4eC8rk0qh7T20zN15';
+const LONGCHAT_API_KEY = process.env.LONGCHAT_API_KEY || '';
 // LongCat API endpoints - according to official documentation
 // https://longcat.chat/platform/docs/
 const LONGCHAT_API_URLS = [

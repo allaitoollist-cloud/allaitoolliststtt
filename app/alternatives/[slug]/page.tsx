@@ -86,7 +86,7 @@ export default async function AlternativesPage({ params }: PageProps) {
 
             <main className="flex-grow">
                 {/* Hero Section */}
-                <div className="bg-gradient-to-br from-bright-green/10 via-local-blue/10 to-bright-green/10 border-b border-border">
+                <div className="bg-gradient-to-br from-primary/10 via-blue-500/5 to-primary/10 border-b border-border">
                     <div className="container mx-auto px-4 py-16">
                         <div className="max-w-4xl mx-auto">
                             {/* Breadcrumb */}
@@ -107,7 +107,7 @@ export default async function AlternativesPage({ params }: PageProps) {
                             </p>
 
                             {/* Original Tool Card */}
-                            <Card className="bg-card border-bright-green/30">
+                            <Card className="bg-card border-primary/30">
                                 <CardContent className="p-6">
                                     <div className="flex items-start gap-4">
                                         {tool.icon && (
@@ -116,7 +116,7 @@ export default async function AlternativesPage({ params }: PageProps) {
                                         <div className="flex-grow">
                                             <div className="flex items-center gap-2 mb-2">
                                                 <h3 className="text-xl font-bold text-foreground">{tool.name}</h3>
-                                                <Badge className="bg-bright-green/10 text-bright-green border-bright-green/20">
+                                                <Badge className="bg-primary/10 text-primary border-primary/20">
                                                     Original Tool
                                                 </Badge>
                                             </div>
@@ -156,7 +156,7 @@ export default async function AlternativesPage({ params }: PageProps) {
                     ) : (
                         <div className="text-center py-12">
                             <p className="text-muted-foreground mb-4">No alternatives found yet.</p>
-                            <Link href={`/category/${tool.category}`}>
+                            <Link href={`/category/${encodeURIComponent(tool.category)}`}>
                                 <Button variant="outline">Browse {tool.category} Tools</Button>
                             </Link>
                         </div>
@@ -171,7 +171,7 @@ export default async function AlternativesPage({ params }: PageProps) {
                             <Card className="bg-card">
                                 <CardContent className="p-6">
                                     <div className="flex items-start gap-3">
-                                        <CheckCircle2 className="h-6 w-6 text-bright-green flex-shrink-0 mt-1" />
+                                        <CheckCircle2 className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
                                         <div>
                                             <h4 className="font-semibold text-foreground mb-2">Better Pricing Options</h4>
                                             <p className="text-sm text-muted-foreground">
@@ -185,7 +185,7 @@ export default async function AlternativesPage({ params }: PageProps) {
                             <Card className="bg-card">
                                 <CardContent className="p-6">
                                     <div className="flex items-start gap-3">
-                                        <CheckCircle2 className="h-6 w-6 text-bright-green flex-shrink-0 mt-1" />
+                                        <CheckCircle2 className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
                                         <div>
                                             <h4 className="font-semibold text-foreground mb-2">Different Features</h4>
                                             <p className="text-sm text-muted-foreground">
@@ -199,7 +199,7 @@ export default async function AlternativesPage({ params }: PageProps) {
                             <Card className="bg-card">
                                 <CardContent className="p-6">
                                     <div className="flex items-start gap-3">
-                                        <CheckCircle2 className="h-6 w-6 text-bright-green flex-shrink-0 mt-1" />
+                                        <CheckCircle2 className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
                                         <div>
                                             <h4 className="font-semibold text-foreground mb-2">Better Performance</h4>
                                             <p className="text-sm text-muted-foreground">
@@ -213,7 +213,7 @@ export default async function AlternativesPage({ params }: PageProps) {
                             <Card className="bg-card">
                                 <CardContent className="p-6">
                                     <div className="flex items-start gap-3">
-                                        <CheckCircle2 className="h-6 w-6 text-bright-green flex-shrink-0 mt-1" />
+                                        <CheckCircle2 className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
                                         <div>
                                             <h4 className="font-semibold text-foreground mb-2">Privacy & Security</h4>
                                             <p className="text-sm text-muted-foreground">
@@ -227,15 +227,15 @@ export default async function AlternativesPage({ params }: PageProps) {
                     </div>
 
                     {/* CTA Section */}
-                    <div className="mt-12 text-center bg-gradient-to-r from-bright-green/10 to-local-blue/10 rounded-2xl p-8">
+                    <div className="mt-12 text-center bg-gradient-to-r from-primary/10 to-blue-500/10 rounded-2xl p-8">
                         <h3 className="text-2xl font-bold text-foreground mb-4">
                             Can't Find the Right Alternative?
                         </h3>
                         <p className="text-muted-foreground mb-6">
                             Browse our complete directory of {tool.category} AI tools.
                         </p>
-                        <Link href={`/category/${tool.category}`}>
-                            <Button size="lg" className="bg-bright-green hover:bg-bright-green-hover text-white">
+                        <Link href={`/category/${encodeURIComponent(tool.category)}`}>
+                            <Button size="lg" className="bg-primary hover:bg-blue-600 text-white">
                                 View All {tool.category} Tools
                                 <ArrowRight className="ml-2 h-5 w-5" />
                             </Button>

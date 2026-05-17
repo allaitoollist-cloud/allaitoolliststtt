@@ -4,57 +4,63 @@ import { Sidebar } from '@/components/admin/Sidebar';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { getBrowserClient } from '@/lib/supabase-browser';
 
-export default function AdminLayout({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
-    const router = useRouter();
+const ALLOWED_ADMIN_EMAILS = [
+    'muhammadismailkpt@gmail.com',
+    'allaitoolist@gmail.com',
+];
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+    const router   = useRouter();
     const pathname = usePathname();
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [authed, setAuthed]   = useState(false);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Skip auth check for login page
         if (pathname === '/admin/login') {
             setLoading(false);
             return;
         }
 
-        // Check if admin is logged in
-        const adminLoggedIn = localStorage.getItem('admin_logged_in');
+        const supabase = getBrowserClient();
 
-        if (adminLoggedIn === 'true') {
-            setIsAuthenticated(true);
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session?.user && ALLOWED_ADMIN_EMAILS.includes(session.user.email || '')) {
+                setAuthed(true);
+            } else {
+                router.replace('/admin/login');
+            }
             setLoading(false);
-        } else {
-            // Redirect to admin login
-            router.push('/admin/login');
-        }
+        });
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (!session || !ALLOWED_ADMIN_EMAILS.includes(session.user?.email || '')) {
+                setAuthed(false);
+                router.replace('/admin/login');
+            }
+        });
+
+        return () => subscription.unsubscribe();
     }, [pathname, router]);
 
-    // Show loading or login redirect
     if (loading) {
-        return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
     }
 
-    // Show login page without layout
     if (pathname === '/admin/login') {
         return <>{children}</>;
     }
 
-    // Show admin layout only if authenticated
-    if (!isAuthenticated) {
-        return null;
-    }
+    if (!authed) return null;
 
     return (
         <div className="min-h-screen flex bg-background">
-            {/* Sidebar */}
             <Sidebar />
-
-            {/* Main Content */}
             <div className="flex-1 flex flex-col">
                 <AdminHeader />
                 <main className="flex-1 p-6 overflow-y-auto">

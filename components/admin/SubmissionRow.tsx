@@ -36,6 +36,7 @@ interface Submission {
     pricing: string;
     submitter_name: string;
     submitter_email: string;
+    plan: string;
     status: string;
     created_at: string;
 }
@@ -253,6 +254,20 @@ export function SubmissionRow({ submission }: { submission: Submission }) {
                             {submission.pricing || 'Not specified'}
                         </Badge>
                     </div>
+                </TableCell>
+                <TableCell>
+                    <Badge
+                        className={
+                            submission.plan === 'sponsored'
+                                ? 'bg-violet-500/15 text-violet-400 border-violet-500/30'
+                                : submission.plan === 'featured'
+                                ? 'bg-orange-500/15 text-orange-400 border-orange-500/30'
+                                : 'bg-white/5 text-muted-foreground border-white/10'
+                        }
+                        variant="outline"
+                    >
+                        {submission.plan === 'sponsored' ? '🚀 Sponsored' : submission.plan === 'featured' ? '⚡ Featured' : 'Free'}
+                    </Badge>
                 </TableCell>
                 <TableCell>
                     <div className="text-sm">

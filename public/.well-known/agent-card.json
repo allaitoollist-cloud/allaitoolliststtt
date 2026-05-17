@@ -1,0 +1,35 @@
+{
+  "name": "All AI Tool List Agent",
+  "version": "1.0.0",
+  "description": "AI agent for discovering, searching, and comparing AI tools in the world's largest AI tools directory",
+  "url": "https://allaitoollist.com",
+  "supportedInterfaces": [
+    {
+      "serviceUrl": "https://allaitoollist.com/api/tools",
+      "transport": "http"
+    }
+  ],
+  "capabilities": ["search", "browse", "compare", "categorize"],
+  "skills": [
+    {
+      "id": "search-ai-tools",
+      "name": "Search AI Tools",
+      "description": "Search for AI tools by name, category, use case, or pricing model"
+    },
+    {
+      "id": "browse-categories",
+      "name": "Browse Categories",
+      "description": "Browse and explore AI tools organized by category, industry, and use case"
+    },
+    {
+      "id": "compare-tools",
+      "name": "Compare AI Tools",
+      "description": "Compare multiple AI tools side by side including features, pricing, and ratings"
+    },
+    {
+      "id": "find-alternatives",
+      "name": "Find Alternatives",
+      "description": "Find alternative AI tools to any given tool"
+    }
+  ]
+}

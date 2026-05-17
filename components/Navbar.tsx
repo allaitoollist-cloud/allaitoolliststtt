@@ -1,252 +1,296 @@
 'use client';
 
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Menu, Bot, Sparkles, Newspaper, BookOpen, Trophy, Flame, X, DollarSign, GitCompare } from 'lucide-react';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Badge } from '@/components/ui/badge';
-import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
+import { useState, useEffect, useRef } from 'react';
 import {
-    NavigationMenu,
-    NavigationMenuContent,
-    NavigationMenuItem,
-    NavigationMenuLink,
-    NavigationMenuList,
-    NavigationMenuTrigger,
-} from '@/components/ui/navigation-menu';
+    Menu, X, ChevronDown, Mail, Zap, Gift, Newspaper, DollarSign,
+    Briefcase, ShieldCheck, Layers, BarChart3, Code,
+    BookOpen, Youtube as YoutubeIcon, User, LogOut, Heart, PlusCircle
+} from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface NavbarProps {
     onSearch?: (query: string) => void;
 }
 
-export function Navbar({ onSearch }: NavbarProps = {}) {
-    // Use useEffect to set banner state on client to avoid hydration mismatch
-    const [showBanner, setShowBanner] = useState(false);
-    const [mounted, setMounted] = useState(false);
+const PRIMARY_NAV = [
+    { label: 'Directory',   href: '/' },
+    { label: 'Categories',  href: '/categories' },
+    { label: 'Tutorials',   href: '/tutorials' },
+    { label: 'Blog',        href: '/blog' },
+];
+
+const MORE_LINKS = [
+    { label: 'New AI Tools',    href: '/new',           icon: Zap,        desc: 'Latest additions' },
+    { label: 'Free AI Tools',   href: '/?pricing=Free', icon: Gift,       desc: '100% free tools' },
+    { label: 'AI News',         href: '/news',          icon: Newspaper,  desc: 'Latest updates' },
+    { label: 'Deals & Bonuses', href: '/deals',         icon: DollarSign, desc: 'Exclusive offers' },
+    { label: 'AI Jobs',         href: '/jobs',          icon: Briefcase,  desc: 'Find AI roles' },
+    { label: 'AI Glossary',     href: '/glossary',      icon: BookOpen,   desc: '100+ AI terms' },
+    { label: 'AI YouTube',      href: '/youtube',       icon: YoutubeIcon,desc: 'Best AI channels' },
+    { label: 'AI Stacks',       href: '/stacks',        icon: Layers,     desc: 'Tool combinations' },
+    { label: 'Reports',         href: '/reports',       icon: BarChart3,  desc: 'Market insights' },
+    { label: 'API Access',      href: '/api-access',    icon: Code,       desc: 'Developer API' },
+    { label: 'Verified Badge',  href: '/verified',      icon: ShieldCheck,desc: 'Get verified' },
+];
+
+const LANGUAGES = [
+    { code: 'en', label: 'English',  flag: '🇺🇸' },
+    { code: 'fr', label: 'Français', flag: '🇫🇷' },
+    { code: 'es', label: 'Español',  flag: '🇪🇸' },
+    { code: 'de', label: 'Deutsch',  flag: '🇩🇪' },
+];
+
+export function Navbar(_props: NavbarProps = {}) {
+    const pathname = usePathname();
+    const [moreOpen,     setMoreOpen]     = useState(false);
+    const [langOpen,     setLangOpen]     = useState(false);
+    const [mobileOpen,   setMobileOpen]   = useState(false);
+    const [userMenuOpen, setUserMenuOpen] = useState(false);
+    const [activeLang,   setActiveLang]   = useState(LANGUAGES[0]);
+    const [scrolled,     setScrolled]     = useState(false);
+
+    const moreRef = useRef<HTMLDivElement>(null);
+    const langRef = useRef<HTMLDivElement>(null);
+    const userRef = useRef<HTMLDivElement>(null);
+
+    const { user, signOut } = useAuth();
 
     useEffect(() => {
-        setMounted(true);
-        // Check localStorage for banner preference
-        const bannerHidden = localStorage.getItem('banner-hidden');
-        setShowBanner(!bannerHidden);
+        const onScroll = () => setScrolled(window.scrollY > 20);
+        window.addEventListener('scroll', onScroll, { passive: true });
+        return () => window.removeEventListener('scroll', onScroll);
     }, []);
 
-    const resources = [
-        {
-            title: 'Top 10 Rankings',
-            href: '/top-10',
-            description: 'Most popular AI tools',
-            icon: Trophy,
-        },
-        {
-            title: 'AI News',
-            href: '/news',
-            description: 'Latest AI updates',
-            icon: Newspaper,
-        },
-        {
-            title: 'Tutorials',
-            href: '/tutorials',
-            description: 'Learn AI tools',
-            icon: BookOpen,
-        },
-        {
-            title: 'Exclusive Deals',
-            href: '/deals',
-            description: 'Save on AI tools',
-            icon: DollarSign,
-        },
-    ];
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false);
+            if (langRef.current && !langRef.current.contains(e.target as Node)) setLangOpen(false);
+            if (userRef.current && !userRef.current.contains(e.target as Node)) setUserMenuOpen(false);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
 
-    const quickActions = [
-        { label: 'Compare Tools', href: '/compare', icon: GitCompare },
-        { label: 'Pricing Plans', href: '/pricing', icon: DollarSign },
-        { label: 'Submit Tool', href: '/submit', icon: Sparkles },
-    ];
+    const isActive = (href: string) =>
+        href === '/' ? pathname === '/' : pathname?.startsWith(href);
 
     return (
-        <>
-            {/* Promo Banner */}
-            {mounted && showBanner && (
-                <div className="relative bg-gradient-to-r from-primary/90 via-purple-600/90 to-pink-600/90 text-white">
-                    <div className="container mx-auto px-4 py-2.5">
-                        <div className="flex items-center justify-center gap-2 text-sm md:text-base">
-                            <Sparkles className="h-4 w-4 animate-pulse" />
-                            <span className="font-medium">
-                                🎉 New: <span className="font-bold">60+ AI Tools</span> Added! Explore Now →
-                            </span>
+        <nav className={`sticky top-0 z-[100] w-full transition-all duration-300 ${
+            scrolled
+                ? 'bg-white/90 backdrop-blur-xl border-b border-gray-100 shadow-lg shadow-gray-200/30 py-2'
+                : 'bg-white border-b border-gray-100 py-3'
+        }`}>
+            <div className="max-w-7xl mx-auto px-4 flex items-center gap-4">
+
+                {/* ── Logo ── */}
+                <Link href="/" className="flex items-center gap-2.5 shrink-0 group mr-2">
+                    <div className="w-9 h-9 bg-orange-500 rounded-xl flex items-center justify-center shadow-md shadow-orange-500/25 group-hover:scale-105 group-hover:shadow-orange-500/40 transition-all duration-200">
+                        <svg viewBox="0 0 32 32" className="w-5 h-5" fill="none">
+                            <rect x="6" y="8" width="20" height="14" rx="4" fill="white"/>
+                            <circle cx="12" cy="14" r="2.5" fill="#f97316"/>
+                            <circle cx="20" cy="14" r="2.5" fill="#f97316"/>
+                            <path d="M12 18.5 Q16 21 20 18.5" stroke="#f97316" strokeWidth="2" strokeLinecap="round" fill="none"/>
+                        </svg>
+                    </div>
+                    <div className="flex flex-col leading-none">
+                        <span className="text-[15px] font-black text-gray-900 tracking-tighter uppercase">All AI List</span>
+                        <span className="text-[9px] font-bold text-orange-500 tracking-[0.15em] uppercase mt-0.5">Verified Tools</span>
+                    </div>
+                </Link>
+
+                {/* ── Desktop Nav — centered pill group ── */}
+                <div className="hidden md:flex items-center flex-1 justify-center">
+                    <div className="flex items-center bg-gray-50 rounded-2xl px-1 py-1 border border-gray-100 gap-0.5">
+                        {PRIMARY_NAV.map(item => (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 ${
+                                    isActive(item.href)
+                                        ? 'bg-white text-orange-600 shadow-sm ring-1 ring-gray-100 font-black'
+                                        : 'text-gray-500 hover:text-gray-900 hover:bg-white/60'
+                                }`}
+                            >
+                                {item.label}
+                            </Link>
+                        ))}
+
+                        <div className="relative" ref={moreRef}>
+                            <button
+                                onClick={() => setMoreOpen(!moreOpen)}
+                                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 ${
+                                    moreOpen
+                                        ? 'bg-white text-orange-600 shadow-sm ring-1 ring-gray-100 font-black'
+                                        : 'text-gray-500 hover:text-gray-900 hover:bg-white/60'
+                                }`}
+                            >
+                                Resources
+                                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${moreOpen ? 'rotate-180 text-orange-500' : ''}`} />
+                            </button>
+
+                            {moreOpen && (
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-72 bg-white border border-gray-100 rounded-[28px] shadow-2xl p-3 z-50 ring-1 ring-gray-100 animate-in fade-in slide-in-from-top-2">
+                                    <div className="grid grid-cols-1 gap-0.5">
+                                        {MORE_LINKS.map((item) => (
+                                            <Link
+                                                key={item.label}
+                                                href={item.href}
+                                                onClick={() => setMoreOpen(false)}
+                                                className="flex items-center gap-3 px-3 py-2.5 rounded-2xl hover:bg-orange-50 transition-all group"
+                                            >
+                                                <div className="w-9 h-9 bg-gray-50 group-hover:bg-orange-100 rounded-xl flex items-center justify-center shrink-0 transition-all">
+                                                    <item.icon className="w-4 h-4 text-gray-400 group-hover:text-orange-500 transition-colors" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-[13px] font-black text-gray-800 group-hover:text-orange-700 leading-none">{item.label}</p>
+                                                    <p className="text-[11px] text-gray-400 mt-0.5 font-medium group-hover:text-gray-500">{item.desc}</p>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
-                    <button
-                        onClick={() => {
-                            setShowBanner(false);
-                            localStorage.setItem('banner-hidden', 'true');
-                        }}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-white/20 rounded-full transition-colors"
+                </div>
+
+                {/* ── Right side actions ── */}
+                <div className="flex items-center gap-2 ml-auto shrink-0">
+
+                    {/* Language — tertiary */}
+                    <div className="relative hidden lg:block" ref={langRef}>
+                        <button
+                            onClick={() => setLangOpen(!langOpen)}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-all"
+                        >
+                            <span className="text-base leading-none">{activeLang.flag}</span>
+                            <ChevronDown className={`w-3 h-3 transition-transform ${langOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {langOpen && (
+                            <div className="absolute top-full right-0 mt-3 w-40 bg-white border border-gray-100 rounded-2xl shadow-2xl p-2 z-50 ring-1 ring-gray-100 animate-in fade-in slide-in-from-top-2">
+                                {LANGUAGES.map((lang) => (
+                                    <button
+                                        key={lang.code}
+                                        onClick={() => { setActiveLang(lang); setLangOpen(false); }}
+                                        className={`w-full flex items-center gap-3 px-3 py-2.5 text-[13px] font-bold transition-all rounded-xl ${
+                                            activeLang.code === lang.code
+                                                ? 'bg-orange-50 text-orange-600 font-black'
+                                                : 'text-gray-600 hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        <span className="text-base">{lang.flag}</span>
+                                        <span>{lang.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Newsletter — secondary */}
+                    <Link
+                        href="/newsletter"
+                        className="hidden lg:flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold text-gray-500 hover:text-orange-600 hover:bg-orange-50 transition-all"
                     >
-                        <X className="h-4 w-4" />
+                        <Mail className="w-4 h-4" />
+                        Newsletter
+                    </Link>
+
+                    {/* Submit Tool — primary CTA, always orange */}
+                    <Link
+                        href="/submit"
+                        className="hidden sm:flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white text-[13px] font-black transition-all duration-200 shadow-md shadow-orange-500/25 hover:shadow-orange-500/40 hover:scale-[1.02] active:scale-95 group"
+                    >
+                        <PlusCircle className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
+                        Submit Tool
+                    </Link>
+
+                    {/* User Menu */}
+                    <div className="relative" ref={userRef}>
+                        {user ? (
+                            <button
+                                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                                className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 hover:bg-orange-200 transition-all border border-orange-200 flex items-center justify-center shadow-sm"
+                            >
+                                <User className="w-4 h-4" />
+                            </button>
+                        ) : (
+                            <Link
+                                href="/login"
+                                className="flex items-center justify-center w-9 h-9 rounded-xl bg-gray-50 text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all border border-gray-200"
+                            >
+                                <User className="w-4 h-4" />
+                            </Link>
+                        )}
+                        {user && userMenuOpen && (
+                            <div className="absolute top-full right-0 mt-3 w-56 bg-white border border-gray-100 rounded-3xl shadow-2xl p-2 z-50 ring-1 ring-gray-100">
+                                <div className="px-4 py-3 border-b border-gray-50 mb-1">
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Logged in as</p>
+                                    <p className="text-[13px] font-black text-gray-900 truncate mt-0.5">{user.email}</p>
+                                </div>
+                                {[
+                                    { href: '/dashboard', label: 'My Dashboard',    icon: BarChart3 },
+                                    { href: '/favorites', label: 'Saved Tools',     icon: Heart },
+                                    { href: '/settings',  label: 'Account Settings',icon: Zap },
+                                ].map(({ href, label, icon: Icon }) => (
+                                    <Link
+                                        key={href}
+                                        href={href}
+                                        onClick={() => setUserMenuOpen(false)}
+                                        className="flex items-center gap-3 px-4 py-2.5 rounded-2xl text-[13px] font-bold text-gray-600 hover:bg-orange-50 hover:text-orange-700 transition-all"
+                                    >
+                                        <Icon className="w-4 h-4" /> {label}
+                                    </Link>
+                                ))}
+                                <button
+                                    onClick={() => { signOut(); setUserMenuOpen(false); }}
+                                    className="flex items-center gap-3 px-4 py-2.5 rounded-2xl text-[13px] font-bold text-red-500 hover:bg-red-50 w-full text-left transition-all mt-1"
+                                >
+                                    <LogOut className="w-4 h-4" /> Sign Out
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Mobile toggle */}
+                    <button
+                        onClick={() => setMobileOpen(!mobileOpen)}
+                        className="md:hidden w-9 h-9 flex items-center justify-center rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors text-gray-700 border border-gray-200"
+                    >
+                        {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
                     </button>
                 </div>
-            )}
+            </div>
 
-            {/* Main Navbar */}
-            <nav className="sticky top-0 z-50 w-full border-b border-white/10 bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80">
-                <div className="container flex h-16 items-center justify-between px-4 md:px-6">
-                    {/* Logo Section */}
-                    <div className="flex items-center gap-6 md:gap-8">
-                        <Link href="/" className="flex items-center space-x-2 group">
-                            <div className="bg-primary/10 p-2 rounded-lg group-hover:bg-primary/20 transition-colors">
-                                <Bot className="h-5 w-5 md:h-6 md:w-6 text-primary" />
-                            </div>
-                            <span className="hidden sm:inline text-lg md:text-xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent group-hover:from-primary group-hover:to-purple-400 transition-all duration-300">
-                                AI Tool List
-                            </span>
+            {/* Mobile menu */}
+            {mobileOpen && (
+                <div className="md:hidden absolute top-full left-0 w-full bg-white border-b border-gray-100 px-4 py-5 flex flex-col gap-1.5 shadow-2xl animate-in fade-in slide-in-from-top-2">
+                    {PRIMARY_NAV.map((item) => (
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={() => setMobileOpen(false)}
+                            className={`px-4 py-3 rounded-2xl text-[15px] font-bold transition-all ${
+                                isActive(item.href)
+                                    ? 'bg-orange-50 text-orange-600 font-black'
+                                    : 'text-gray-700 hover:bg-gray-50'
+                            }`}
+                        >
+                            {item.label}
                         </Link>
-
-                        {/* Desktop Navigation */}
-                        <div className="hidden lg:flex items-center gap-6">
-                            <NavigationMenu>
-                                <NavigationMenuList>
-                                    <NavigationMenuItem>
-                                        <Link href="/categories" legacyBehavior passHref>
-                                            <NavigationMenuLink className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50">
-                                                Categories
-                                            </NavigationMenuLink>
-                                        </Link>
-                                    </NavigationMenuItem>
-
-                                    <NavigationMenuItem>
-                                        <NavigationMenuTrigger>Resources</NavigationMenuTrigger>
-                                        <NavigationMenuContent>
-                                            <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2">
-                                                {resources.map((resource) => (
-                                                    <li key={resource.title}>
-                                                        <Link href={resource.href} legacyBehavior passHref>
-                                                            <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                                                                <div className="flex items-center gap-2">
-                                                                    <resource.icon className="h-4 w-4 text-primary" />
-                                                                    <div className="text-sm font-medium leading-none">
-                                                                        {resource.title}
-                                                                    </div>
-                                                                </div>
-                                                                <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                                                                    {resource.description}
-                                                                </p>
-                                                            </NavigationMenuLink>
-                                                        </Link>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </NavigationMenuContent>
-                                    </NavigationMenuItem>
-
-                                    <NavigationMenuItem>
-                                        <Link href="/blog" legacyBehavior passHref>
-                                            <NavigationMenuLink className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50">
-                                                Blog
-                                            </NavigationMenuLink>
-                                        </Link>
-                                    </NavigationMenuItem>
-
-                                    <NavigationMenuItem>
-                                        <Link href="/about" legacyBehavior passHref>
-                                            <NavigationMenuLink className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50">
-                                                About
-                                            </NavigationMenuLink>
-                                        </Link>
-                                    </NavigationMenuItem>
-
-                                    <NavigationMenuItem>
-                                        <Link href="/contact" legacyBehavior passHref>
-                                            <NavigationMenuLink className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50">
-                                                Contact
-                                            </NavigationMenuLink>
-                                        </Link>
-                                    </NavigationMenuItem>
-                                </NavigationMenuList>
-                            </NavigationMenu>
-                        </div>
-                    </div>
-
-                    {/* Right Section */}
-                    <div className="flex items-center gap-2 md:gap-3">
-                        {/* What's Hot Badge */}
-                        <Link href="/top-10">
-                            <Badge className="hidden md:flex items-center gap-1 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white border-0 cursor-pointer">
-                                <Flame className="h-3 w-3" />
-                                <span className="text-xs font-medium">5 New</span>
-                            </Badge>
-                        </Link>
-
-                        {/* Submit Tool CTA */}
-                        <Link href="/submit" className="hidden md:block">
-                            <Button size="sm" className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 shadow-lg shadow-primary/20 transition-all hover:scale-105">
-                                <Sparkles className="mr-2 h-4 w-4" />
-                                Submit Tool
-                            </Button>
-                        </Link>
-
-                        {/* Mobile Menu */}
-                        <Sheet>
-                            <SheetTrigger asChild>
-                                <Button variant="ghost" size="icon" className="lg:hidden text-muted-foreground">
-                                    <Menu className="h-5 w-5" />
-                                </Button>
-                            </SheetTrigger>
-                            <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-                                <nav className="flex flex-col gap-4 mt-8">
-                                    {/* What's Hot - Mobile */}
-                                    <Link href="/top-10">
-                                        <Badge className="w-full justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white border-0">
-                                            <Flame className="h-3 w-3 mr-1" />
-                                            5 New Tools Today
-                                        </Badge>
-                                    </Link>
-
-                                    <Link href="/categories" className="text-lg font-medium hover:text-primary transition-colors">
-                                        Categories
-                                    </Link>
-
-                                    <div className="space-y-2">
-                                        <div className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                                            Resources
-                                        </div>
-                                        <Link href="/top-10" className="flex items-center gap-2 text-base hover:text-primary transition-colors pl-2">
-                                            <Trophy className="h-4 w-4" />
-                                            Top 10 Rankings
-                                        </Link>
-                                        <Link href="/news" className="flex items-center gap-2 text-base hover:text-primary transition-colors pl-2">
-                                            <Newspaper className="h-4 w-4" />
-                                            AI News
-                                        </Link>
-                                        <Link href="/tutorials" className="flex items-center gap-2 text-base hover:text-primary transition-colors pl-2">
-                                            <BookOpen className="h-4 w-4" />
-                                            Tutorials
-                                        </Link>
-                                    </div>
-
-                                    <Link href="/blog" className="text-lg font-medium hover:text-primary transition-colors">
-                                        Blog
-                                    </Link>
-                                    <Link href="/about" className="text-lg font-medium hover:text-primary transition-colors">
-                                        About
-                                    </Link>
-                                    <Link href="/contact" className="text-lg font-medium hover:text-primary transition-colors">
-                                        Contact
-                                    </Link>
-
-                                    <hr className="border-white/10 my-4" />
-
-                                    <Link href="/submit" className="flex items-center gap-2 text-lg font-medium hover:text-primary transition-colors">
-                                        <Sparkles className="h-5 w-5" />
-                                        Submit Tool
-                                    </Link>
-                                </nav>
-                            </SheetContent>
-                        </Sheet>
-                    </div>
+                    ))}
+                    <div className="h-px bg-gray-100 my-2" />
+                    <Link
+                        href="/submit"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white text-[15px] font-black transition-all shadow-lg shadow-orange-500/20"
+                    >
+                        <PlusCircle className="w-5 h-5" />
+                        Submit Your AI Tool
+                    </Link>
                 </div>
-            </nav>
-        </>
+            )}
+        </nav>
     );
 }

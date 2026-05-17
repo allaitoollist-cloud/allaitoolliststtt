@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Sparkles, CheckCircle2, XCircle, Bot } from 'lucide-react';
@@ -13,7 +12,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 export default function AIAutomationPage() {
     const { toast } = useToast();
     const [urls, setUrls] = useState('');
-    const [apiKey, setApiKey] = useState('');
     const [loading, setLoading] = useState(false);
     const [results, setResults] = useState<any[]>([]);
 
@@ -22,11 +20,6 @@ export default function AIAutomationPage() {
             toast({ title: 'Error', description: 'Please enter at least one URL', variant: 'destructive' });
             return;
         }
-        if (!apiKey.trim()) {
-            toast({ title: 'Error', description: 'Please enter your OpenAI API Key', variant: 'destructive' });
-            return;
-        }
-
         setLoading(true);
         setResults([]);
 
@@ -36,7 +29,7 @@ export default function AIAutomationPage() {
             const response = await fetch('/api/ai-automation', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ urls: urlList, openaiKey: apiKey }),
+                body: JSON.stringify({ urls: urlList }),
             });
 
             const data = await response.json();
@@ -71,25 +64,7 @@ export default function AIAutomationPage() {
                 <div className="space-y-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle>1. Configuration</CardTitle>
-                            <CardDescription>Enter your OpenAI API Key (not saved for security)</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Input
-                                type="password"
-                                placeholder="sk-..."
-                                value={apiKey}
-                                onChange={(e) => setApiKey(e.target.value)}
-                            />
-                            <p className="text-xs text-muted-foreground mt-2">
-                                Uses GPT-3.5-Turbo. 10 tools ≈ $0.05 cost.
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>2. Tool Sources</CardTitle>
+                            <CardTitle>1. Tool Sources</CardTitle>
                             <CardDescription>Paste URLs of new AI tools (one per line)</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">

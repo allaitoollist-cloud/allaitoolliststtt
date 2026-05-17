@@ -1,8 +1,20 @@
+'use client';
+
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Users, FileText, Settings, LogOut, PlusCircle, Mail, FolderOpen, Activity, MessageSquare, Bot } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Settings, LogOut, PlusCircle, Mail, FolderOpen, Activity, MessageSquare, Bot, DollarSign } from 'lucide-react';
+import { getBrowserClient } from '@/lib/supabase-browser';
 
 export function Sidebar() {
+    const router = useRouter();
+
+    const handleLogout = async () => {
+        const supabase = getBrowserClient();
+        await supabase.auth.signOut();
+        router.replace('/admin/login');
+    };
+
     return (
         <aside className="w-64 border-r border-white/10 bg-card/50 hidden md:flex flex-col">
             <div className="p-6 border-b border-white/10">
@@ -15,6 +27,7 @@ export function Sidebar() {
             <nav className="flex-1 p-4 space-y-2">
                 <SidebarLink href="/admin" icon={LayoutDashboard}>Dashboard</SidebarLink>
                 <SidebarLink href="/admin/submissions" icon={FileText}>Submissions</SidebarLink>
+                <SidebarLink href="/admin/sponsorships" icon={DollarSign}>Sponsorships</SidebarLink>
                 <SidebarLink href="/admin/tools" icon={PlusCircle}>Manage Tools</SidebarLink>
                 <SidebarLink href="/admin/categories" icon={FolderOpen}>Categories</SidebarLink>
                 <SidebarLink href="/admin/automation" icon={Bot}>AI Automation</SidebarLink>
@@ -28,7 +41,11 @@ export function Sidebar() {
             </nav>
 
             <div className="p-4 border-t border-white/10">
-                <Button variant="ghost" className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10">
+                <Button
+                    variant="ghost"
+                    className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={handleLogout}
+                >
                     <LogOut className="mr-2 h-4 w-4" />
                     Logout
                 </Button>

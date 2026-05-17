@@ -57,6 +57,7 @@ export default async function AdminSubmissionsPage() {
                             <TableHead>Tool Name</TableHead>
                             <TableHead>URL</TableHead>
                             <TableHead>Category</TableHead>
+                            <TableHead>Plan</TableHead>
                             <TableHead>Submitted By</TableHead>
                             <TableHead>Date</TableHead>
                             <TableHead>Status</TableHead>
@@ -70,7 +71,7 @@ export default async function AdminSubmissionsPage() {
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                                     {error ? 'Error loading submissions' : 'No submissions found'}
                                 </TableCell>
                             </TableRow>

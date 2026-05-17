@@ -1,11 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { getBrowserClient } from '@/lib/supabase-browser';
-import { Mail, Loader2 } from 'lucide-react';
+import { Mail, Loader2, ArrowRight } from 'lucide-react';
 
 export function NewsletterForm() {
     const [email, setEmail] = useState('');
@@ -51,21 +49,36 @@ export function NewsletterForm() {
     };
 
     return (
-        <form onSubmit={handleSubscribe} className="flex flex-col gap-3 w-full">
-            <div className="relative w-full">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                    type="email"
-                    placeholder="Enter your email"
-                    className="pl-9 bg-background/50 border-white/10 w-full"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                />
+        <form onSubmit={handleSubscribe} className="relative group w-full">
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+                <div className="relative flex-1 w-full">
+                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
+                        <Mail className="w-5 h-5" />
+                    </div>
+                    <input
+                        type="email"
+                        placeholder="your@email.com"
+                        className="w-full bg-white/5 border-2 border-white/10 rounded-2xl py-4 pl-14 pr-4 text-white font-bold placeholder:text-gray-500 focus:outline-none focus:border-orange-500/50 focus:bg-white/10 transition-all text-sm md:text-base"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                    />
+                </div>
+                <button 
+                    type="submit" 
+                    disabled={loading}
+                    className="w-full sm:w-auto px-10 py-4 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-black rounded-2xl transition-all shadow-xl shadow-orange-500/20 active:scale-95 flex items-center justify-center gap-2 whitespace-nowrap"
+                >
+                    {loading ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                        <>
+                            Join Now
+                            <ArrowRight className="w-5 h-5" />
+                        </>
+                    )}
+                </button>
             </div>
-            <Button type="submit" disabled={loading} className="w-full">
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Subscribe'}
-            </Button>
         </form>
     );
 }

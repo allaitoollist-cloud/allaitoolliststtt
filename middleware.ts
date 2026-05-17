@@ -1,8 +1,21 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+const DEBUG_ROUTES = [
+    '/api/debug', '/api/fix-', '/api/delete-dummy', '/api/check-env',
+    '/api/debug-tools', '/api/recreate-tool', '/api/delete-tool-debug',
+];
+
 export function middleware(request: NextRequest) {
     const { pathname, search } = request.nextUrl;
+
+    // Block debug/fix routes in production
+    if (
+        process.env.NODE_ENV === 'production' &&
+        DEBUG_ROUTES.some(r => pathname.startsWith(r))
+    ) {
+        return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
 
     // Force HTTPS in production
     if (
@@ -41,6 +54,12 @@ export function middleware(request: NextRequest) {
         // Remove all query params if no valid filters
         url.search = '';
         return NextResponse.redirect(url, 301);
+    }
+
+    // Markdown negotiation for agents (RFC 8288 / Markdown for Agents)
+    const accept = request.headers.get('accept') || '';
+    if (pathname === '/' && accept.includes('text/markdown')) {
+        return NextResponse.rewrite(new URL('/api/markdown', request.url));
     }
 
     return NextResponse.next();

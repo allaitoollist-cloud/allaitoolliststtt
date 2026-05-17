@@ -124,14 +124,14 @@ export function CategoryGrid({ categories = [] }: CategoryGridProps) {
                 <div className="text-center mb-12 md:mb-16">
                     <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 px-4 py-2">
                         <Sparkles className="h-4 w-4 mr-2" />
-                        Explore by Category
+                        AI Tools by Category
                     </Badge>
                     <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-white mb-4">
-                        Find Your Perfect
-                        <span className="bg-gradient-to-r from-primary via-purple-400 to-pink-400 bg-clip-text text-transparent"> AI Tool</span>
+                        2500+ Top
+                        <span className="bg-gradient-to-r from-primary via-purple-400 to-pink-400 bg-clip-text text-transparent"> AI Tools by Category</span>
                     </h2>
                     <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-                        Browse through our curated categories to discover the best AI tools for your needs
+                        Explore specialized AI tools for writing, marketing, image generation, and SEO tasks. Our curated database helps you find the perfect AI software for any workflow.
                     </p>
                 </div>
 

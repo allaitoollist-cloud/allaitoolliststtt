@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, FileText, Eye, TrendingUp, DollarSign } from 'lucide-react';
+import { Users, FileText, Eye, TrendingUp, DollarSign, Zap } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { AnalyticsCharts } from '@/components/admin/AnalyticsCharts';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,7 +35,25 @@ export default async function AdminDashboard() {
         .order('views', { ascending: false })
         .limit(5);
 
-    // Mock stats for revenue as we don't have that data yet
+    // Real sponsorship data
+    const { count: approvedSponsorships } = await supabase
+        .from('sponsorship_requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'approved');
+
+    const { count: pendingSponsorships } = await supabase
+        .from('sponsorship_requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
+
+    const { data: recentSponsorships } = await supabase
+        .from('sponsorship_requests')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+    const totalRevenue = (approvedSponsorships || 0) * 49;
+
     const stats = [
         {
             title: "Total Tools",
@@ -56,10 +75,11 @@ export default async function AdminDashboard() {
             icon: Eye,
         },
         {
-            title: "Revenue (Mo)",
-            value: "$0",
-            change: "Not tracked",
+            title: "Revenue (Est.)",
+            value: `$${totalRevenue}`,
+            change: `${approvedSponsorships || 0} approved · ${pendingSponsorships || 0} pending`,
             icon: DollarSign,
+            alert: (pendingSponsorships || 0) > 0
         },
     ];
 
@@ -117,6 +137,31 @@ export default async function AdminDashboard() {
 
             {/* Analytics Charts */}
             <AnalyticsCharts data={{ dailyViews, categoryStats }} />
+
+            {/* Pending Sponsorships Alert */}
+            {(pendingSponsorships || 0) > 0 && (
+                <Card className="bg-orange-500/10 border-orange-500/30">
+                    <CardContent className="p-5 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                            <Zap className="w-6 h-6 text-orange-400 fill-orange-400 shrink-0" />
+                            <div>
+                                <p className="font-semibold text-orange-300">
+                                    {pendingSponsorships} Pending Sponsorship Request{(pendingSponsorships || 0) > 1 ? 's' : ''}
+                                </p>
+                                <p className="text-sm text-orange-400/70">
+                                    Review and approve after receiving payment via Binance/Payoneer.
+                                </p>
+                            </div>
+                        </div>
+                        <Link
+                            href="/admin/sponsorships"
+                            className="text-sm font-medium text-orange-400 hover:text-orange-300 border border-orange-500/40 px-4 py-2 rounded-lg whitespace-nowrap shrink-0 hover:bg-orange-500/10 transition-colors"
+                        >
+                            Review Now →
+                        </Link>
+                    </CardContent>
+                </Card>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Recent Submissions */}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://agentskills.io/schema/v0.2.0/index.json",
+  "skills": [
+    {
+      "name": "search-ai-tools",
+      "type": "search",
+      "description": "Search for AI tools by name, category, use case, or pricing",
+      "url": "https://allaitoollist.com/.well-known/agent-skills/search-tools.json",
+      "sha256": "5418c606798c1f2a6d91bc1b7579527808f9119f02ca002e407eec6d43f2cbaf"
+    },
+    {
+      "name": "compare-tools",
+      "type": "action",
+      "description": "Compare multiple AI tools side by side",
+      "url": "https://allaitoollist.com/.well-known/agent-skills/compare-tools.json",
+      "sha256": "bd54e50ed758d99f7611fb9eb3be47099d79067094477c3129628142ed1c80c3"
+    }
+  ]
+}

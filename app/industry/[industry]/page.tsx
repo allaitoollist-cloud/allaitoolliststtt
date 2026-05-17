@@ -62,7 +62,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
 
     return {
-        title: `Best AI Tools for ${data.title} - Top ${data.title} AI Software 2024`,
+        title: `Best AI Tools for ${data.title} - Top ${data.title} AI Software 2026`,
         description: `${data.description} Find the best AI tools for ${data.title.toLowerCase()} professionals. Compare features, pricing, and reviews.`,
         keywords: [`AI tools for ${data.title.toLowerCase()}`, ...data.keywords],
         openGraph: {
@@ -103,10 +103,10 @@ export default async function IndustryPage({ params }: PageProps) {
 
             <main className="flex-grow">
                 {/* Hero Section */}
-                <div className="bg-gradient-to-br from-bright-green/10 via-local-blue/10 to-bright-green/10 border-b border-border">
+                <div className="bg-gradient-to-br from-primary/10 via-blue-500/5 to-primary/10 border-b border-border">
                     <div className="container mx-auto px-4 py-16">
                         <div className="max-w-4xl mx-auto text-center">
-                            <div className="inline-flex items-center gap-2 bg-bright-green/10 text-bright-green px-4 py-2 rounded-full mb-6">
+                            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full mb-6">
                                 <Icon className="h-5 w-5" />
                                 <span className="font-semibold">{data.title} Industry</span>
                             </div>
@@ -161,7 +161,7 @@ export default async function IndustryPage({ params }: PageProps) {
                         <h3 className="text-xl font-bold text-foreground mb-6">Related Categories</h3>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             {data.keywords.slice(0, 4).map((keyword) => (
-                                <Link key={keyword} href={`/category/${keyword}`}>
+                                <Link key={keyword} href={`/category/${encodeURIComponent(keyword)}`}>
                                     <Button variant="outline" className="w-full">
                                         {keyword}
                                     </Button>

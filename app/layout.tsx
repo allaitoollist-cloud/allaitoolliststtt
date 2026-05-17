@@ -6,6 +6,9 @@ import { Analytics } from '@/components/Analytics';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ComparisonProvider } from '@/contexts/ComparisonContext';
 import { ChatbotWidget } from '@/components/ChatbotWidget';
+import { WebMCP } from '@/components/WebMCP';
+
+import { UserInteractionsProvider } from '@/contexts/UserInteractionsContext';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -62,14 +65,24 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
+      <head>
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1338968289385722"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body className={inter.className}>
         <AuthProvider>
-          <ComparisonProvider>
-            {children}
-            <Analytics />
-            <Toaster />
-            <ChatbotWidget />
-          </ComparisonProvider>
+          <UserInteractionsProvider>
+            <ComparisonProvider>
+              {children}
+              <Analytics />
+              <Toaster />
+              <ChatbotWidget />
+              <WebMCP />
+            </ComparisonProvider>
+          </UserInteractionsProvider>
         </AuthProvider>
       </body>
     </html>

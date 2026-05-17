@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
             pricing,
             submitter_name,
             submitter_email,
+            plan,
             // Security Fields
             website_honey,
             submission_start_time
@@ -201,8 +202,8 @@ export async function POST(req: NextRequest) {
                 pricing,
                 submitter_name,
                 submitter_email,
+                plan: plan || 'free',
                 status: status
-                // confirmation_email_sent removed (missing in DB)
             })
             .select()
             .single();
@@ -221,7 +222,7 @@ export async function POST(req: NextRequest) {
             try {
                 if (submitter_email) {
                     console.log(`[EMAIL] Attempting to send confirmation to ${submitter_email} for tool: ${tool_name}`);
-                    const confirmationResult = await sendSubmissionConfirmation(submitter_email, tool_name);
+                    const confirmationResult = await sendSubmissionConfirmation(tool_name, submitter_email);
                     if (confirmationResult.success) {
                         console.log(`[EMAIL] ✅ Confirmation email sent successfully to ${submitter_email}`);
                     } else {

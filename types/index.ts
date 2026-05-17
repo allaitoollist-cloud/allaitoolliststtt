@@ -21,6 +21,8 @@ export interface DatabaseTool {
     updated_at: string;
     created_at: string;
     is_draft: boolean;
+    affiliate_url: string | null;
+    upvotes_count?: number;
 }
 
 export interface UserProfile {
@@ -45,6 +47,13 @@ export interface Review {
 }
 
 export interface Favorite {
+    id: string;
+    user_id: string;
+    tool_id: string;
+    created_at: string;
+}
+
+export interface Upvote {
     id: string;
     user_id: string;
     tool_id: string;
@@ -87,6 +96,8 @@ export interface Tool {
     dateAdded?: string;
     lastUpdated?: string;
     isDraft?: boolean;
+    affiliateUrl?: string;
+    upvotesCount?: number;
 }
 
 // Helper function to convert database format to frontend format
@@ -112,6 +123,8 @@ export function dbToolToTool(dbTool: DatabaseTool): Tool {
         dateAdded: dbTool.date_added,
         lastUpdated: dbTool.updated_at,
         isDraft: dbTool.is_draft,
+        affiliateUrl: dbTool.affiliate_url || undefined,
+        upvotesCount: dbTool.upvotes_count || 0,
     };
 }
 
@@ -135,6 +148,8 @@ export function toolToDbTool(tool: Partial<Tool>): Partial<DatabaseTool> {
         rating: tool.rating,
         review_count: tool.reviewCount,
         platform: tool.platform,
+        affiliate_url: tool.affiliateUrl,
+        upvotes_count: tool.upvotesCount,
     };
 }
 

@@ -53,6 +53,7 @@ export default function ToolEditPage({ params }: ToolEditPageProps) {
         featured: false,
         verified: false,
         is_draft: false,
+        affiliate_url: '',
     });
 
     useEffect(() => {
@@ -90,6 +91,7 @@ export default function ToolEditPage({ params }: ToolEditPageProps) {
                     featured: data.featured || false,
                     verified: data.verified || false,
                     is_draft: data.is_draft || false,
+                    affiliate_url: data.affiliate_url || '',
                 });
             }
             setLoading(false);
@@ -124,6 +126,7 @@ export default function ToolEditPage({ params }: ToolEditPageProps) {
                 featured: tool.featured,
                 verified: tool.verified,
                 is_draft: tool.is_draft,
+                affiliate_url: tool.affiliate_url || null,
             })
             .eq('id', params.id);
 
@@ -232,6 +235,20 @@ export default function ToolEditPage({ params }: ToolEditPageProps) {
                                     onChange={(e) => setTool({ ...tool, url: e.target.value })}
                                     placeholder="https://example.com"
                                 />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="affiliate_url">Affiliate Link (optional)</Label>
+                                <Input
+                                    id="affiliate_url"
+                                    type="url"
+                                    value={tool.affiliate_url}
+                                    onChange={(e) => setTool({ ...tool, affiliate_url: e.target.value })}
+                                    placeholder="https://affiliate.example.com?ref=yourid"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    If provided, this link will be used instead of the Website URL for "Visit Tool" buttons
+                                </p>
                             </div>
 
                             <div className="space-y-2">

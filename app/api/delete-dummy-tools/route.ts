@@ -81,7 +81,7 @@ export async function GET() {
             toolsToDelete.forEach(tool => {
                 revalidatePath(`/tool/${tool.slug}`);
                 if (tool.category) {
-                    revalidatePath(`/category/${tool.category}`);
+                    revalidatePath(`/category/${encodeURIComponent(tool.category)}`);
                 }
             });
             console.log('✅ Cache revalidated');

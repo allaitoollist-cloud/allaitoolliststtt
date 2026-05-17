@@ -13,5 +13,8 @@ Allow: /tool/
 Allow: /category/
 Allow: /
 
+# AI content usage preferences (https://contentsignals.org/)
+Content-Signal: ai-train=no, search=yes, ai-input=no
+
 # Sitemap
 Sitemap: https://allaitoollist.com/sitemap.xml

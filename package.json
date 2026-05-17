@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "npx -y kill-port 3000 && next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -71,6 +71,7 @@
     "recharts": "^2.12.7",
     "resend": "^6.6.0",
     "sonner": "^1.5.0",
+    "stripe": "^22.0.2",
     "tailwind-merge": "^2.5.2",
     "tailwindcss": "3.3.3",
     "tailwindcss-animate": "^1.0.7",

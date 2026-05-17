@@ -7,24 +7,19 @@ export const dynamic = 'force-dynamic';
 
 // SEO Metadata
 export const metadata: Metadata = {
-  title: 'AI Tool List - Discover 1000+ Best AI Tools & Software Directory 2024',
-  description: 'Explore the ultimate directory of 1000+ AI tools for writing, coding, design, marketing & more. Compare features, pricing & reviews. Find your perfect AI tool today!',
+  title: 'AI Tool List 2026: The Architecture of Intent & Best AI Tools Directory',
+  description: 'Explore the ultimate AEO-optimized database of AI tools. Structured by informational intent and topical clusters for marketing, writing, coding, and business growth.',
   keywords: [
-    'AI tools',
-    'artificial intelligence tools',
+    'architecture of intent',
+    'AEO optimized AI tools',
+    'GEO SEO strategy 2026',
+    'best AI tools for marketing',
+    'topical knowledge clusters',
+    'AI writing tools list',
     'AI software directory',
-    'best AI tools 2024',
-    'AI writing tools',
-    'AI image generators',
-    'AI coding assistants',
-    'ChatGPT alternatives',
-    'AI productivity tools',
-    'free AI tools',
-    'AI tool comparison',
-    'machine learning tools',
-    'AI marketing tools',
-    'AI design tools',
-    'AI video editors'
+    'informational intent AI',
+    'best AI software for business',
+    'submit AI tool listing'
   ],
   authors: [{ name: 'AI Tool List Team' }],
   creator: 'AI Tool List',
@@ -33,31 +28,27 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: 'https://allaitoollist.com',
-    title: 'AI Tool List - Discover 1000+ Best AI Tools & Software',
-    description: 'The ultimate directory of AI-powered tools. Find, compare and choose the best AI tools for your needs. Updated daily with new tools and reviews.',
+    title: 'AI Tool List 2026: The Best AI Tools Directory & Comparison',
+    description: 'Explore 2500+ AI tools. Compare features, pricing, and reviews. The most comprehensive AI software database for professionals.',
     siteName: 'All AI Tool List',
     images: [
       {
         url: 'https://allaitoollist.com/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: 'AI Tool List - Best AI Tools Directory',
+        alt: 'AI Tool List - Best AI Tools Directory 2026',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'AI Tool List - Discover 1000+ Best AI Tools',
-    description: 'Find, compare and choose the best AI tools. Updated daily with new tools, reviews and comparisons.',
+    title: 'AI Tool List 2026: Discover & Compare Best AI Tools',
+    description: 'Find the best AI software for your workflow. Updated daily with new listings and honest reviews.',
     images: ['https://allaitoollist.com/twitter-image.jpg'],
     creator: '@allaitoollist',
   },
   alternates: {
     canonical: 'https://allaitoollist.com',
-  },
-  verification: {
-    google: 'your-google-verification-code',
-    yandex: 'your-yandex-verification-code',
   },
 };
 
@@ -125,6 +116,19 @@ export default async function Home() {
       'https://facebook.com/allaitoollist',
       'https://linkedin.com/company/allaitoollist',
     ],
+    "knowsAbout": [
+      "Artificial Intelligence",
+      "Generative AI",
+      "AEO (Answer Engine Optimization)",
+      "GEO (Generative Engine Optimization)",
+      "Digital Marketing",
+      "Software Reviews"
+    ],
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "contactType": "customer service",
+      "email": "contact@allaitoollist.com"
+    }
   };
 
   const websiteSchema = {
@@ -149,7 +153,7 @@ export default async function Home() {
     name: 'AI Tools Directory',
     description: 'Comprehensive list of AI-powered tools and software',
     numberOfItems: tools.length,
-    itemListElement: tools.slice(0, 10).map((tool, index) => ({
+    itemListElement: tools.slice(0, 15).map((tool, index) => ({
       '@type': 'ListItem',
       position: index + 1,
       item: {
@@ -157,11 +161,24 @@ export default async function Home() {
         name: tool.name,
         description: tool.shortDescription,
         applicationCategory: tool.category,
+        operatingSystem: "Web, Windows, macOS, iOS, Android",
+        author: {
+          "@type": "Organization",
+          "name": "All AI Tool List Verified"
+        },
         offers: {
           '@type': 'Offer',
           price: tool.pricing === 'Free' ? '0' : undefined,
           priceCurrency: 'USD',
+          availability: "https://schema.org/InStock"
         },
+        ...(tool.rating && {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            "ratingValue": tool.rating,
+            "reviewCount": tool.reviewCount || 0
+          }
+        })
       },
     })),
   };
@@ -180,6 +197,33 @@ export default async function Home() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "What are the best free AI tools for marketing in 2026?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "The best free AI tools for marketing in 2026 include powerful writing assistants for SEO, automated social media managers, and AI analytics platforms with verified free tiers."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What is AEO and GEO in the context of AI tools?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "AEO (Answer Engine Optimization) and GEO (Generative Engine Optimization) are strategies to ensure your AI tool or content is easily synthesized by AI models like ChatGPT, Gemini, and Claude."
+                }
+              }
+            ]
+          })
+        }}
       />
 
       <HomeClient initialTools={tools} categories={categories} />

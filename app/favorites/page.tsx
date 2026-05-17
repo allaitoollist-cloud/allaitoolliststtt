@@ -1,14 +1,54 @@
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { ToolCard } from '@/components/ToolCard';
-import { tools } from '@/data/tools';
 import { Heart, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { getServerUser } from '@/lib/auth-helpers';
+import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
+import { dbToolToTool } from '@/types';
 
-export default function FavoritesPage() {
-    // Mock favorites - in a real app, this would come from a database or local storage
-    const favoriteTools = tools.slice(0, 3);
+export const dynamic = 'force-dynamic';
+
+export default async function FavoritesPage() {
+    const user = await getServerUser();
+    const cookieStore = cookies();
+
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                get(name: string) {
+                    return cookieStore.get(name)?.value;
+                },
+            },
+        }
+    );
+
+    let favoriteTools: any[] = [];
+
+    if (user) {
+        // Fetch favorites and join with tools
+        const { data: favoritesData, error } = await supabase
+            .from('favorites')
+            .select(`
+                tool_id,
+                tools (*)
+            `)
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+
+        if (!error && favoritesData) {
+            favoriteTools = favoritesData
+                .map(fav => fav.tools)
+                .filter(tool => tool !== null)
+                .map(dbTool => dbToolToTool(dbTool as any));
+        } else if (error) {
+            console.error('Error fetching favorites:', error);
+        }
+    }
 
     return (
         <div className="min-h-screen flex flex-col bg-background">
@@ -36,7 +76,22 @@ export default function FavoritesPage() {
 
                 {/* Favorites Grid */}
                 <div className="container mx-auto px-4 py-8 max-w-7xl">
-                    {favoriteTools.length > 0 ? (
+                    {!user ? (
+                         <div className="text-center py-20">
+                             <div className="bg-secondary/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
+                                 <Heart className="h-8 w-8 text-muted-foreground" />
+                             </div>
+                             <h3 className="text-xl font-bold mb-2">Sign in required</h3>
+                             <p className="text-muted-foreground mb-8 max-w-sm mx-auto">
+                                 Please sign in to view and save your favorite AI tools.
+                             </p>
+                             <Link href="/login?redirect=/favorites">
+                                 <Button size="lg" className="bg-primary hover:bg-primary/90">
+                                     Sign In
+                                 </Button>
+                             </Link>
+                         </div>
+                    ) : favoriteTools.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {favoriteTools.map((tool) => (
                                 <ToolCard key={tool.id} tool={tool} />

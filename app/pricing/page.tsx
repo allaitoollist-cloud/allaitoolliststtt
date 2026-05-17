@@ -1,61 +1,47 @@
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Card } from '@/components/ui/card';
-import { Check, Sparkles, Zap, Crown } from 'lucide-react';
+import { Check, Zap, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
 const pricingPlans = [
     {
-        name: 'Basic Listing',
-        price: 'Free',
-        description: 'Get your tool listed in our directory',
-        icon: Sparkles,
-        features: [
-            'Standard listing',
-            'Searchable in directory',
-            'Basic analytics',
-            'Community reviews',
-            '7-day review queue',
-        ],
-        cta: 'Submit for Free',
-        href: '/submit?plan=free',
-        popular: false,
-    },
-    {
         name: 'Featured Listing',
         price: '$49',
         period: '/one-time',
-        description: 'Boost visibility and get more traffic',
+        description: 'Stand out & get more users',
         icon: Zap,
         features: [
-            'Everything in Basic',
-            '⚡ Skip the queue (24h review)',
-            '🔥 "Featured" badge',
-            '⭐ Top of category results',
-            '📈 5x more views (avg)',
-            'Social media shoutout',
+            'Listed in AI directory',
+            'Full rich tool profile',
+            '⚡ Featured badge on listing',
+            '⭐ Priority review (24h)',
+            '🏠 Homepage placement (30 days)',
+            '📣 Social media shoutout',
+            'Category & tag indexing',
         ],
-        cta: 'Get Featured',
-        href: '/submit?plan=featured',
+        cta: 'Get Featured — $49',
+        href: '/submit',
         popular: true,
     },
     {
-        name: 'Premium Partner',
-        price: '$199',
-        period: '/month',
+        name: 'Sponsored Placement',
+        price: '$149',
+        period: '/one-time',
         description: 'Maximum exposure for serious growth',
         icon: Crown,
         features: [
             'Everything in Featured',
-            '🏆 Homepage "Hero" placement',
-            '💌 Newsletter feature (10k+ subs)',
-            '📝 Dedicated blog review',
-            '🎨 Custom banner design',
+            '🏆 Homepage top placement (90 days)',
+            '💌 Newsletter mention (5,000+ subs)',
+            '📣 Social media shoutout',
+            '⚡ Featured badge on listing',
+            'Priority review (24h)',
             'Priority support',
         ],
-        cta: 'Contact Sales',
-        href: '/contact',
+        cta: 'Get Sponsored — $149',
+        href: '/submit',
         popular: false,
     },
 ];
@@ -82,7 +68,7 @@ export default function PricingPage() {
 
                 {/* Pricing Cards */}
                 <div className="container mx-auto px-4 py-12 max-w-7xl">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
                         {pricingPlans.map((plan) => (
                             <Card
                                 key={plan.name}
@@ -144,7 +130,7 @@ export default function PricingPage() {
                             <div className="bg-card/30 p-6 rounded-xl border border-white/5">
                                 <h3 className="font-semibold text-lg mb-2">How long does the review take?</h3>
                                 <p className="text-muted-foreground">
-                                    Standard submissions are reviewed within 7 days. Featured listings skip the queue and are reviewed within 24 hours.
+                                    All paid listings get priority review within 24 hours of payment confirmation.
                                 </p>
                             </div>
                             <div className="bg-card/30 p-6 rounded-xl border border-white/5">

@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, User, Share2, Clock, BookOpen } from 'lucide-react';
+import { Calendar, User, Share2, Clock, BookOpen, Sparkles } from 'lucide-react';
 import { markdownToHtml } from '@/lib/markdown';
 
 interface BlogTemplateMagazineProps {
@@ -36,7 +36,7 @@ export function BlogTemplateMagazine({ blog }: BlogTemplateMagazineProps) {
                         {formattedDate}
                     </span>
                 </div>
-                
+
                 <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-6 max-w-4xl">
                     {blog.title}
                 </h1>
@@ -50,7 +50,7 @@ export function BlogTemplateMagazine({ blog }: BlogTemplateMagazineProps) {
                 <div className="flex flex-wrap items-center gap-4 mt-6 text-sm">
                     <div className="flex items-center gap-2 text-muted-foreground">
                         <User className="h-4 w-4" />
-                        <span className="font-medium">Admin</span>
+                        <span className="font-medium">Matt Verma, AI SEO Specialist</span>
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground">
                         <Clock className="h-4 w-4" />
@@ -68,6 +68,20 @@ export function BlogTemplateMagazine({ blog }: BlogTemplateMagazineProps) {
             <div className="grid md:grid-cols-[1fr_300px] gap-8 lg:gap-12">
                 {/* Main Content */}
                 <div className="space-y-8">
+                    {/* TL;DR Section for AI Synthesis (AEO Strategy) */}
+                    <div className="bg-primary/5 border border-primary/20 p-8 rounded-2xl mb-8 relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-4 opacity-10">
+                            <Sparkles className="h-10 w-10 text-primary" />
+                        </div>
+                        <h2 className="text-xl font-bold text-foreground mb-3 flex items-center gap-2 uppercase tracking-tight">
+                            <Sparkles className="h-5 w-5 text-primary" />
+                            Magazine Summary (TL;DR)
+                        </h2>
+                        <p className="text-muted-foreground italic leading-relaxed font-serif text-lg">
+                            {blog.excerpt || "Expert-led synthesis of the latest AI tool findings and AEO strategies. Manually verified for the 2026 search era."}
+                        </p>
+                    </div>
+
                     {/* Hero Image */}
                     {blog.cover_image && (
                         <figure className="mb-8">
@@ -165,4 +179,3 @@ export function BlogTemplateMagazine({ blog }: BlogTemplateMagazineProps) {
         </article>
     );
 }
-

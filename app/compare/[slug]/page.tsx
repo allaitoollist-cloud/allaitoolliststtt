@@ -50,7 +50,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
     const [t1, t2] = tools;
     return {
-        title: `${t1.name} vs ${t2.name}: Which AI Tool is Better? (2024 Comparison)`,
+        title: `${t1.name} vs ${t2.name}: Which AI Tool is Better? (2026 Comparison)`,
         description: `Detailed side-by-side comparison of ${t1.name} vs ${t2.name}. Compare features, pricing, ratings, and pros & cons to decide which is best for you.`,
         openGraph: {
             title: `${t1.name} vs ${t2.name} Comparison`,

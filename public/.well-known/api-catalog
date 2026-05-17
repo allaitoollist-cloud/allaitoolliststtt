@@ -1,0 +1,33 @@
+{
+  "linkset": [
+    {
+      "anchor": "https://allaitoollist.com",
+      "service-doc": [
+        {
+          "href": "https://allaitoollist.com/.well-known/api-catalog",
+          "type": "application/linkset+json"
+        }
+      ],
+      "describedby": [
+        {
+          "href": "https://allaitoollist.com/.well-known/api-catalog",
+          "type": "application/linkset+json"
+        }
+      ]
+    },
+    {
+      "anchor": "https://allaitoollist.com/api/tools",
+      "service-doc": [
+        {
+          "href": "https://allaitoollist.com/api/tools",
+          "type": "application/json"
+        }
+      ],
+      "type": [
+        {
+          "href": "https://allaitoollist.com/api/tools"
+        }
+      ]
+    }
+  ]
+}

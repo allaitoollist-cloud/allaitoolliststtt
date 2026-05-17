@@ -1,0 +1,28 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/freshness",
+      "schedule": "0 9 * * 1"
+    },
+    {
+      "path": "/api/cron/weekly-newsletter",
+      "schedule": "0 9 * * 1"
+    },
+    {
+      "path": "/api/cron/auto-blog",
+      "schedule": "0 8 * * 0"
+    },
+    {
+      "path": "/api/cron/sitemap-ping",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/indexnow",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/social-post",
+      "schedule": "0 10 * * *"
+    }
+  ]
+}

@@ -51,7 +51,7 @@ async function getToolsForUseCase(slug: string) {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
     const formattedSlug = params.slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-    const title = `Best AI Tools for ${formattedSlug} (2024 Guide)`;
+    const title = `Best AI Tools for ${formattedSlug} (2026 Guide)`;
     const description = `Discover top-rated AI tools for ${formattedSlug}. Streamline your workflow, automate tasks, and compare the best software solutions for ${formattedSlug}.`;
 
     return {
@@ -194,7 +194,7 @@ export default async function UseCasePage({ params }: PageProps) {
                             {categories.filter(c => c !== 'All').map(cat => (
                                 <Link
                                     key={cat}
-                                    href={`/category/${cat.toLowerCase().replace(/\s+/g, '-')}`}
+                                    href={`/category/${encodeURIComponent(cat)}`}
                                     className="px-4 py-2 rounded-full border border-border hover:border-primary hover:text-primary transition-colors text-sm font-medium"
                                 >
                                     {cat}

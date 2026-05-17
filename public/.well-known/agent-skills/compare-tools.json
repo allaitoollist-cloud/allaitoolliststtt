@@ -1,0 +1,16 @@
+{
+  "name": "compare-tools",
+  "type": "action",
+  "version": "1.0.0",
+  "description": "Compare multiple AI tools side by side including features, pricing, and ratings",
+  "endpoint": "https://allaitoollist.com/compare",
+  "method": "GET",
+  "parameters": {
+    "tools": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Array of tool slugs to compare"
+    }
+  },
+  "returns": "text/html"
+}

@@ -4,179 +4,85 @@
 
 @layer base {
   :root {
-    /* BrightLocal Official Color Scheme */
     --background: 0 0% 100%;
-    /* #FFFFFF */
-    --foreground: 217 33% 17%;
-    /* #111827 - Dark Charcoal */
+    --foreground: 20 14% 10%;
 
     --card: 0 0% 100%;
-    /* #FFFFFF */
-    --card-foreground: 217 33% 17%;
-    /* #111827 */
+    --card-foreground: 20 14% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 217 33% 17%;
+    --popover-foreground: 20 14% 10%;
 
-    /* Primary: Bright Green #00C896 */
-    --primary: 167 100% 39%;
+    --primary: 25 95% 53%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary: Local Blue #0070F3 */
-    --secondary: 211 100% 48%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 30 20% 96%;
+    --secondary-foreground: 20 14% 10%;
 
-    /* Muted backgrounds #F9FAFB */
-    --muted: 210 20% 98%;
-    --muted-foreground: 215 14% 34%;
-    /* #374151 */
+    --muted: 30 20% 96%;
+    --muted-foreground: 25 10% 45%;
 
-    /* Accent - using bright green */
-    --accent: 167 100% 39%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 30 30% 94%;
+    --accent-foreground: 20 14% 10%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Borders #E5E7EB */
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 167 100% 39%;
-    --radius: 0.75rem;
+    --border: 30 20% 90%;
+    --input: 30 20% 90%;
+    --ring: 25 95% 53%;
 
-    /* Chart colors */
-    --chart-1: 167 100% 39%;
-    /* Bright Green */
-    --chart-2: 211 100% 48%;
-    /* Local Blue */
-    --chart-3: 173 58% 39%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
   }
 
   .dark {
-    /* Dark mode - keeping BrightLocal colors but adjusted for dark backgrounds */
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
-
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
-
-    /* Primary: Bright Green (slightly brighter for dark mode) */
-    --primary: 167 100% 45%;
-    --primary-foreground: 217 33% 17%;
-
-    /* Secondary: Local Blue (adjusted) */
-    --secondary: 211 100% 55%;
-    --secondary-foreground: 217 33% 17%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 167 100% 45%;
-    --accent-foreground: 217 33% 17%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 167 100% 45%;
+    --background: 0 0% 100%;
+    --foreground: 20 14% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 20 14% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 14% 10%;
+    --primary: 25 95% 53%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 30 20% 96%;
+    --secondary-foreground: 20 14% 10%;
+    --muted: 30 20% 96%;
+    --muted-foreground: 25 10% 45%;
+    --accent: 30 30% 94%;
+    --accent-foreground: 20 14% 10%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 30 20% 90%;
+    --input: 30 20% 90%;
+    --ring: 25 95% 53%;
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
+  * { @apply border-border; }
 
   body {
-    @apply bg-background text-foreground antialiased overflow-x-hidden;
+    @apply bg-[#f5f5f5] text-foreground antialiased overflow-x-hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 
-  /* BrightLocal-style smooth interactions */
-  button {
-    @apply rounded-lg transition-all duration-200;
-  }
-
-  /* Smooth scrolling */
-  html {
-    scroll-behavior: smooth;
-  }
-
-  /* Typography hierarchy - BrightLocal style */
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    @apply text-foreground font-bold;
-  }
-
-  p {
-    @apply text-muted-foreground;
-  }
+  html { scroll-behavior: smooth; }
 }
 
 @layer components {
-
-  /* BrightLocal Primary Button - Bright Green #00C896 */
-  .btn-primary {
-    @apply bg-primary text-primary-foreground hover:bg-[#00B885] font-semibold px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all;
+  .allaitoolist-card {
+    @apply bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:border-gray-300 transition-all;
   }
 
-  /* BrightLocal Secondary Button - Local Blue #0070F3 */
-  .btn-secondary {
-    @apply bg-secondary text-secondary-foreground hover:bg-[#0060D3] font-semibold px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all;
+  .allaitoolist-badge-free {
+    @apply bg-orange-50 text-orange-700 border border-orange-200 text-xs font-semibold px-2 py-0.5 rounded-full;
   }
 
-  /* Outline button */
-  .btn-outline {
-    @apply border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground font-semibold px-6 py-3 rounded-lg transition-all;
+  .allaitoolist-badge-freemium {
+    @apply bg-orange-50 text-orange-700 border border-orange-200 text-xs font-semibold px-2 py-0.5 rounded-full;
   }
 
-  /* Text link - Local Blue */
-  .link-primary {
-    @apply text-secondary hover:underline transition-all;
-  }
-
-  /* Section divider */
-  .section-divider {
-    @apply border-t border-border;
-  }
-
-  /* Alternate section background */
-  .section-alt {
-    @apply bg-muted;
-  }
-}
-
-@layer utilities {
-
-  /* BrightLocal color utilities */
-  .text-neutral-grey {
-    color: #6B7280;
-  }
-
-  .bg-light-grey {
-    background-color: #F9FAFB;
-  }
-
-  .border-light-grey {
-    border-color: #E5E7EB;
-  }
-
-  /* Hover state for primary green */
-  .hover-primary-dark:hover {
-    background-color: #00B885;
-  }
-
-  /* Hover state for secondary blue */
-  .hover-secondary-dark:hover {
-    background-color: #0060D3;
+  .allaitoolist-badge-paid {
+    @apply bg-gray-50 text-gray-700 border border-gray-200 text-xs font-semibold px-2 py-0.5 rounded-full;
   }
 }

@@ -1,8 +1,9 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, User, Share2, Clock } from 'lucide-react';
+import { Calendar, User, Share2, Clock, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { markdownToHtml } from '@/lib/markdown';
+import { TopicClusterSidebar } from './TopicClusterSidebar';
 
 interface BlogTemplateModernProps {
     blog: {
@@ -61,7 +62,7 @@ export function BlogTemplateModern({ blog }: BlogTemplateModernProps) {
                         </div>
                         <div className="flex items-center gap-2 bg-background/50 backdrop-blur-sm px-4 py-2 rounded-full">
                             <User className="h-4 w-4" />
-                            <span>Admin</span>
+                            <span>Matt Verma, AI SEO Specialist</span>
                         </div>
                         <div className="flex items-center gap-2 bg-background/50 backdrop-blur-sm px-4 py-2 rounded-full">
                             <Clock className="h-4 w-4" />
@@ -87,6 +88,22 @@ export function BlogTemplateModern({ blog }: BlogTemplateModernProps) {
                 </div>
             )}
 
+            {/* TL;DR Section for AI Synthesis (AEO Strategy) */}
+            <div className="relative mb-12 bg-primary/5 rounded-2xl p-8 border border-primary/20 overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                    <Sparkles className="h-12 w-12 text-primary" />
+                </div>
+                <div className="relative z-10">
+                    <h2 className="text-xl font-black text-foreground mb-4 flex items-center gap-2 uppercase tracking-tighter">
+                        <Sparkles className="h-5 w-5 text-primary" />
+                        Quick Takeaways (TL;DR)
+                    </h2>
+                    <p className="text-muted-foreground italic text-lg leading-relaxed max-w-4xl">
+                        {blog.excerpt || "This deep-dive provides synthesized expert insights into AI tool performance and Generative Engine Optimization (GEO). Summary optimized for retrieval engines."}
+                    </p>
+                </div>
+            </div>
+
             {/* Article Content with Modern Styling */}
             <div className="grid md:grid-cols-[1fr_250px] gap-8">
                 <div className="prose prose-lg dark:prose-invert max-w-none 
@@ -105,9 +122,12 @@ export function BlogTemplateModern({ blog }: BlogTemplateModernProps) {
                 {/* Sidebar */}
                 <aside className="hidden md:block space-y-6">
                     <div className="sticky top-8 space-y-6">
+                        {/* Topic Cluster Intent Mapping */}
+                        <TopicClusterSidebar category={blog.category} />
+
                         {/* Share Section */}
                         <div className="bg-muted/50 rounded-xl p-6 border">
-                            <h3 className="font-semibold mb-4">Share Article</h3>
+                            <h3 className="font-semibold mb-4 text-xs uppercase tracking-widest text-gray-500">Share Article</h3>
                             <Button variant="outline" size="sm" className="w-full gap-2">
                                 <Share2 className="h-4 w-4" />
                                 Share

@@ -3,6 +3,12 @@ import { Footer } from '@/components/Footer';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+    title: 'AI Tutorials — Learn AI Tools Step by Step | All AI Tool List',
+    description: 'Free video tutorials on the best AI tools. Learn Midjourney, ChatGPT, Runway, prompt engineering and more.',
+};
 import { Play, Clock, BookOpen, Star, User } from 'lucide-react';
 
 export default function TutorialsPage() {

@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, User, Share2 } from 'lucide-react';
+import { Calendar, User, Share2, Clock, ArrowDown, Sparkles } from 'lucide-react';
 import { markdownToHtml } from '@/lib/markdown';
 
 interface BlogTemplateMinimalProps {
@@ -29,7 +29,7 @@ export function BlogTemplateMinimal({ blog }: BlogTemplateMinimalProps) {
                         {blog.category}
                     </Badge>
                 )}
-                
+
                 <h1 className="text-4xl md:text-5xl font-light tracking-tight leading-tight">
                     {blog.title}
                 </h1>

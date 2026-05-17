@@ -158,7 +158,7 @@ export default function PrivacyPolicyPage() {
                             Your privacy is important to us. This policy explains how we collect, use, and protect your personal information.
                         </p>
                         <p className="text-sm text-muted-foreground mt-4">
-                            Last Updated: November 29, 2024
+                            Last Updated: May 17, 2026
                         </p>
                     </div>
                 </div>

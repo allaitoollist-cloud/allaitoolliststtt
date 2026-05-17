@@ -10,14 +10,15 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
     try {
-        const { urls, openaiKey } = await request.json();
+        const { urls } = await request.json();
 
         if (!urls || !Array.isArray(urls) || urls.length === 0) {
             return NextResponse.json({ error: 'URLs are required' }, { status: 400 });
         }
 
+        const openaiKey = process.env.OPENAI_API_KEY;
         if (!openaiKey) {
-            return NextResponse.json({ error: 'OpenAI API Key is required' }, { status: 400 });
+            return NextResponse.json({ error: 'OpenAI API Key not configured on server' }, { status: 500 });
         }
 
         const results = [];
