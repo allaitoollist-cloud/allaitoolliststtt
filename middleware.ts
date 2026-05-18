@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 const DEBUG_ROUTES = [
-    '/api/debug', '/api/fix-', '/api/delete-dummy', '/api/check-env',
+    '/api/debug', '/api/fix-', '/api/delete-dummy',
     '/api/debug-tools', '/api/recreate-tool', '/api/delete-tool-debug',
 ];
 
