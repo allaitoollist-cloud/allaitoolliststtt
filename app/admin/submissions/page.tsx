@@ -1,55 +1,91 @@
-import { Button } from '@/components/ui/button';
+'use client';
+
+import { useState, useEffect, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
-import { Search } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Search, Loader2 } from 'lucide-react';
+import { getBrowserClient } from '@/lib/supabase-browser';
 import { SubmissionRow } from '@/components/admin/SubmissionRow';
 
-export const dynamic = 'force-dynamic';
+const STATUSES = ['all', 'pending', 'approved', 'rejected', 'flagged'];
 
-export default async function AdminSubmissionsPage() {
-    const { data: submissions, error } = await supabase
-        .from('tool_submissions')
-        .select('*')
-        .order('created_at', { ascending: false });
+export default function AdminSubmissionsPage() {
+    const [submissions, setSubmissions] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [search, setSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const supabase = getBrowserClient();
 
-    if (error) {
-        console.error('Error fetching submissions:', error);
-    }
+    const load = async () => {
+        setLoading(true);
+        const { data } = await supabase
+            .from('tool_submissions')
+            .select('*')
+            .order('created_at', { ascending: false });
+        if (data) setSubmissions(data);
+        setLoading(false);
+    };
 
-    const pendingCount = submissions?.filter(s => s.status === 'pending').length || 0;
+    useEffect(() => { load(); }, []);
+
+    const filtered = useMemo(() => {
+        return submissions.filter(s => {
+            const matchStatus = statusFilter === 'all' || s.status === statusFilter;
+            const q = search.toLowerCase();
+            const matchSearch = !q ||
+                s.tool_name?.toLowerCase().includes(q) ||
+                s.submitter_email?.toLowerCase().includes(q) ||
+                s.tool_url?.toLowerCase().includes(q) ||
+                s.category?.toLowerCase().includes(q);
+            return matchStatus && matchSearch;
+        });
+    }, [submissions, search, statusFilter]);
+
+    const pendingCount = submissions.filter(s => s.status === 'pending').length;
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold">Tool Submissions</h1>
-                    <p className="text-muted-foreground">Review and manage tool submissions from users.</p>
-                    {pendingCount > 0 && (
-                        <p className="text-sm text-yellow-500 mt-1">⚠️ {pendingCount} pending submission{pendingCount > 1 ? 's' : ''}</p>
-                    )}
-                </div>
+            <div>
+                <h1 className="text-3xl font-bold">Tool Submissions</h1>
+                <p className="text-muted-foreground">Review and manage tool submissions.</p>
+                {pendingCount > 0 && (
+                    <p className="text-sm text-yellow-500 mt-1">⚠️ {pendingCount} pending submission{pendingCount > 1 ? 's' : ''}</p>
+                )}
             </div>
 
-            {/* Filters */}
-            <div className="flex items-center gap-4">
-                <div className="relative flex-1 max-w-sm">
+            {/* Search + Filters */}
+            <div className="flex flex-wrap items-center gap-3">
+                <div className="relative flex-1 min-w-[200px] max-w-sm">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                        placeholder="Search submissions..."
+                        placeholder="Search by name, email, URL..."
                         className="pl-9 bg-card/50"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
                     />
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                    {STATUSES.map(s => (
+                        <Button
+                            key={s}
+                            size="sm"
+                            variant={statusFilter === s ? 'default' : 'outline'}
+                            onClick={() => setStatusFilter(s)}
+                            className="capitalize"
+                        >
+                            {s}
+                            {s !== 'all' && (
+                                <Badge className="ml-1.5 bg-white/10 text-xs" variant="secondary">
+                                    {submissions.filter(sub => sub.status === s).length}
+                                </Badge>
+                            )}
+                        </Button>
+                    ))}
                 </div>
             </div>
 
-            {/* Submissions Table */}
             <div className="rounded-md border border-white/10 bg-card/50">
                 <Table>
                     <TableHeader>
@@ -65,20 +101,27 @@ export default async function AdminSubmissionsPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {submissions && submissions.length > 0 ? (
-                            submissions.map((submission) => (
-                                <SubmissionRow key={submission.id} submission={submission} />
+                        {loading ? (
+                            <TableRow>
+                                <TableCell colSpan={8} className="text-center py-8">
+                                    <Loader2 className="h-5 w-5 animate-spin mx-auto" />
+                                </TableCell>
+                            </TableRow>
+                        ) : filtered.length > 0 ? (
+                            filtered.map((submission) => (
+                                <SubmissionRow key={submission.id} submission={submission} onRefresh={load} />
                             ))
                         ) : (
                             <TableRow>
                                 <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                                    {error ? 'Error loading submissions' : 'No submissions found'}
+                                    {search || statusFilter !== 'all' ? 'No matching submissions' : 'No submissions found'}
                                 </TableCell>
                             </TableRow>
                         )}
                     </TableBody>
                 </Table>
             </div>
+            <p className="text-sm text-muted-foreground">Showing {filtered.length} of {submissions.length} submissions</p>
         </div>
     );
 }

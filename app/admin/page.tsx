@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, FileText, Eye, TrendingUp, DollarSign, Zap } from 'lucide-react';
+import { Users, FileText, Eye, DollarSign, Zap, Mail } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { AnalyticsCharts } from '@/components/admin/AnalyticsCharts';
 import Link from 'next/link';
@@ -54,6 +54,11 @@ export default async function AdminDashboard() {
 
     const totalRevenue = (approvedSponsorships || 0) * 49;
 
+    const { count: newsletterCount } = await supabase
+        .from('newsletter_subscribers')
+        .select('*', { count: 'exact', head: true })
+        .eq('active', true);
+
     const stats = [
         {
             title: "Total Tools",
@@ -81,18 +86,32 @@ export default async function AdminDashboard() {
             icon: DollarSign,
             alert: (pendingSponsorships || 0) > 0
         },
+        {
+            title: "Newsletter Subscribers",
+            value: newsletterCount || 0,
+            change: "Active subscribers",
+            icon: Mail,
+        },
     ];
 
-    // Mock data for charts (since we don't have real historical data yet)
-    const dailyViews = [
-        { date: 'Mon', views: 120 },
-        { date: 'Tue', views: 145 },
-        { date: 'Wed', views: 132 },
-        { date: 'Thu', views: 198 },
-        { date: 'Fri', views: 240 },
-        { date: 'Sat', views: 180 },
-        { date: 'Sun', views: 210 },
-    ];
+    // Real submissions per day (last 7 days) as proxy for activity
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: recentActivity } = await supabase
+        .from('tool_submissions')
+        .select('created_at')
+        .gte('created_at', sevenDaysAgo);
+
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayCounts: Record<string, number> = {};
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+        dayCounts[dayNames[d.getDay()]] = 0;
+    }
+    recentActivity?.forEach(r => {
+        const day = dayNames[new Date(r.created_at).getDay()];
+        if (day in dayCounts) dayCounts[day]++;
+    });
+    const dailyViews = Object.entries(dayCounts).map(([date, views]) => ({ date, views }));
 
     // Calculate category stats from toolsData
     const categoryCount: Record<string, number> = {};
@@ -116,7 +135,7 @@ export default async function AdminDashboard() {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                 {stats.map((stat) => (
                     <Card key={stat.title} className="bg-card/50 border-white/10">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

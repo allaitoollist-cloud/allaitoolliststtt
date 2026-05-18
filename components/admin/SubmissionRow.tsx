@@ -86,7 +86,7 @@ function getStatusBadgeClass(status: string) {
     }
 }
 
-export function SubmissionRow({ submission }: { submission: Submission }) {
+export function SubmissionRow({ submission, onRefresh }: { submission: Submission; onRefresh?: () => void }) {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [viewDialogOpen, setViewDialogOpen] = useState(false);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -162,7 +162,7 @@ export function SubmissionRow({ submission }: { submission: Submission }) {
             } else {
                 toast({ title: 'Approved', description: `Tool created with slug: ${data.toolSlug ?? 'unknown'}` });
                 setEditDialogOpen(false);
-                router.refresh();
+                router.refresh(); onRefresh?.();
             }
         } catch {
             toast({ title: 'Error', description: 'Network error occurred', variant: 'destructive' });
@@ -183,7 +183,7 @@ export function SubmissionRow({ submission }: { submission: Submission }) {
                 toast({ title: 'Error', description: data.error || 'Failed to reject submission', variant: 'destructive' });
             } else {
                 toast({ title: 'Rejected', description: 'Submission rejected' });
-                router.refresh();
+                router.refresh(); onRefresh?.();
             }
         } catch {
             toast({ title: 'Error', description: 'Network error occurred', variant: 'destructive' });
@@ -209,7 +209,7 @@ export function SubmissionRow({ submission }: { submission: Submission }) {
             } else {
                 toast({ title: 'Saved', description: 'Submission updated successfully' });
                 setEditDialogOpen(false);
-                router.refresh();
+                router.refresh(); onRefresh?.();
             }
         } catch {
             toast({ title: 'Error', description: 'Network error occurred', variant: 'destructive' });
@@ -266,7 +266,7 @@ export function SubmissionRow({ submission }: { submission: Submission }) {
                 toast({ title: 'Error', description: data.error || 'Failed to delete submission', variant: 'destructive' });
             } else {
                 toast({ title: 'Deleted', description: 'Submission deleted' });
-                router.refresh();
+                router.refresh(); onRefresh?.();
             }
         } catch {
             toast({ title: 'Error', description: 'Network error occurred', variant: 'destructive' });
