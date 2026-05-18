@@ -7,19 +7,19 @@ export const dynamic = 'force-dynamic';
 
 // SEO Metadata
 export const metadata: Metadata = {
-  title: 'AI Tool List 2026: The Architecture of Intent & Best AI Tools Directory',
-  description: 'Explore the ultimate AEO-optimized database of AI tools. Structured by informational intent and topical clusters for marketing, writing, coding, and business growth.',
+  title: 'All AI Tool List 2026 — Discover & Compare 5000+ Best AI Tools',
+  description: 'Find the best AI tools for your workflow. Browse 5000+ verified AI tools across 70+ categories — writing, coding, design, marketing, video & more. Updated daily.',
   keywords: [
-    'architecture of intent',
-    'AEO optimized AI tools',
-    'GEO SEO strategy 2026',
-    'best AI tools for marketing',
-    'topical knowledge clusters',
-    'AI writing tools list',
-    'AI software directory',
-    'informational intent AI',
-    'best AI software for business',
-    'submit AI tool listing'
+    'best AI tools 2026',
+    'AI tools directory',
+    'AI software list',
+    'AI writing tools',
+    'AI coding tools',
+    'AI image generators',
+    'AI productivity tools',
+    'free AI tools',
+    'compare AI tools',
+    'AI tools for business',
   ],
   authors: [{ name: 'AI Tool List Team' }],
   creator: 'AI Tool List',
@@ -28,8 +28,8 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: 'https://allaitoollist.com',
-    title: 'AI Tool List 2026: The Best AI Tools Directory & Comparison',
-    description: 'Explore 2500+ AI tools. Compare features, pricing, and reviews. The most comprehensive AI software database for professionals.',
+    title: 'All AI Tool List 2026 — Discover & Compare 5000+ Best AI Tools',
+    description: 'Find the best AI tools for your workflow. Browse 5000+ verified AI tools across 70+ categories. Updated daily.',
     siteName: 'All AI Tool List',
     images: [
       {
@@ -42,8 +42,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'AI Tool List 2026: Discover & Compare Best AI Tools',
-    description: 'Find the best AI software for your workflow. Updated daily with new listings and honest reviews.',
+    title: 'All AI Tool List 2026 — 5000+ Best AI Tools',
+    description: 'Find the best AI tools for your workflow. Updated daily with new listings and honest reviews.',
     images: ['https://allaitoollist.com/twitter-image.jpg'],
     creator: '@allaitoollist',
   },

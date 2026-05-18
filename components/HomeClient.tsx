@@ -369,6 +369,30 @@ export default function HomeClient({ initialTools, categories = [] }: HomeClient
                             </div>
                         </div>
 
+                        {/* Categories Grid with counts */}
+                        {categories.length > 0 && (
+                            <div>
+                                <div className="flex items-center justify-between mb-6">
+                                    <h2 className="text-2xl font-black text-gray-900">Browse by Category</h2>
+                                    <Link href="/categories" className="text-sm font-black text-gray-400 hover:text-orange-500 transition-colors uppercase tracking-widest flex items-center gap-1">
+                                        All Categories <ArrowRight className="w-3 h-3" />
+                                    </Link>
+                                </div>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                                    {categories.slice(0, 20).map(cat => (
+                                        <button
+                                            key={cat.name}
+                                            onClick={() => { setSelectedCategories([cat.name]); setSearchQuery(' '); }}
+                                            className="flex items-center justify-between p-3.5 bg-white rounded-2xl border border-gray-100 hover:border-orange-200 hover:shadow-md hover:bg-orange-50/30 transition-all group text-left"
+                                        >
+                                            <span className="text-[13px] font-black text-gray-800 group-hover:text-orange-700 truncate">{cat.name}</span>
+                                            <span className="text-[11px] font-bold text-gray-400 bg-gray-50 group-hover:bg-orange-100 group-hover:text-orange-600 px-2 py-0.5 rounded-full ml-2 shrink-0 transition-colors">{cat.count}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         <TrendingCategories />
                         <AINewsSection />
                         <SEOContent categories={categories} />
