@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Star, Loader2, AlertCircle, LogIn, Lock } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { createBrowserClient } from '@supabase/ssr';
+import { getBrowserClient } from '@/lib/supabase-browser';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -40,10 +40,7 @@ export function WriteReviewDialog({ toolId, toolName, trigger }: WriteReviewDial
     const { user, loading: authLoading } = useAuth();
 
     // Initialize Supabase client
-    const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabase = getBrowserClient();
 
     const hasUrl = (text: string) => {
         const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9]+\.[a-zA-Z]{2,}\/)/i;

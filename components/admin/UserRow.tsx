@@ -23,7 +23,7 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { MoreHorizontal, Trash2, Shield, ShieldOff } from 'lucide-react';
-import { createBrowserClient } from '@supabase/ssr';
+import { getBrowserClient } from '@/lib/supabase-browser';
 import { useToast } from '@/components/ui/use-toast';
 import { useRouter } from 'next/navigation';
 
@@ -39,10 +39,7 @@ export function UserRow({ user }: { user: User }) {
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
     const router = useRouter();
-    const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabase = getBrowserClient();
 
     const handleToggleAdmin = async () => {
         setLoading(true);

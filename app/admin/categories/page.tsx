@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Trash2, Edit, FolderOpen, Search, Package, Loader2, Save, X, GripVertical } from 'lucide-react';
-import { createBrowserClient } from '@supabase/ssr';
+import { getBrowserClient } from '@/lib/supabase-browser';
 import { useToast } from '@/components/ui/use-toast';
 import {
     Dialog,
@@ -57,10 +57,7 @@ export default function CategoriesPage() {
     });
 
     const { toast } = useToast();
-    const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabase = getBrowserClient();
 
     useEffect(() => {
         loadCategories();

@@ -21,7 +21,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { MoreHorizontal, Mail, CheckCheck, Trash2, Eye } from 'lucide-react';
-import { createBrowserClient } from '@supabase/ssr';
+import { getBrowserClient } from '@/lib/supabase-browser';
 import { useToast } from '@/components/ui/use-toast';
 import { useRouter } from 'next/navigation';
 
@@ -38,10 +38,7 @@ interface ContactMessage {
 export function ContactMessageRow({ message }: { message: ContactMessage }) {
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(false);
-    const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabase = getBrowserClient();
     const { toast } = useToast();
     const router = useRouter();
 

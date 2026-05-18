@@ -18,7 +18,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Save, Eye, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { createBrowserClient } from '@supabase/ssr';
+import { getBrowserClient } from '@/lib/supabase-browser';
 import { useToast } from '@/components/ui/use-toast';
 import { categories, pricingModels, platforms } from '@/types';
 
@@ -32,10 +32,7 @@ export default function ToolEditPage({ params }: ToolEditPageProps) {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
-    const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabase = getBrowserClient();
 
     const [tool, setTool] = useState({
         id: '',

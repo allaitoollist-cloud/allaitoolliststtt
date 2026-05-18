@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
-import { createBrowserClient } from '@supabase/ssr';
+import { getBrowserClient } from '@/lib/supabase-browser';
 import { Mail, Send, Trash2, Download, Users } from 'lucide-react';
 
 export default function NewsletterPage() {
@@ -24,10 +24,7 @@ export default function NewsletterPage() {
     const [subject, setSubject] = useState('');
     const [message, setMessage] = useState('');
     const { toast } = useToast();
-    const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabase = getBrowserClient();
 
     useEffect(() => {
         loadSubscribers();
