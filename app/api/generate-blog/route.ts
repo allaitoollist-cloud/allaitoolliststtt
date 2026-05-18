@@ -52,9 +52,10 @@ Respond with ONLY valid JSON (no markdown wrapper):
         });
 
         if (!response.ok) {
-            const err = await response.text();
-            console.error('OpenAI error:', err);
-            return NextResponse.json({ error: 'OpenAI API error', details: err }, { status: 500 });
+            const err = await response.json().catch(() => response.text());
+            const errMsg = typeof err === 'object' ? err?.error?.message || JSON.stringify(err) : err;
+            console.error('OpenAI error:', errMsg);
+            return NextResponse.json({ error: `OpenAI API error: ${errMsg}` }, { status: 500 });
         }
 
         const data = await response.json();
