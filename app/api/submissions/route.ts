@@ -177,8 +177,7 @@ export async function POST(request: NextRequest) {
                 const toolUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://aitoollist.com'}/tool/${createdTool.slug}`;
                 const emailTemplate = emailTemplates.toolApproved(
                     submissionData.tool_name,
-                    toolUrl,
-                    submissionData.submitter_email
+                    toolUrl
                 );
                 
                 await sendEmail({
