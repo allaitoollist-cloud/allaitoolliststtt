@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getOpenAIKey } from '@/lib/openai';
 
 export async function POST(request: NextRequest) {
     try {
@@ -8,9 +9,9 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Keywords are required' }, { status: 400 });
         }
 
-        const openaiKey = process.env.OPENAI_API_KEY;
+        const openaiKey = await getOpenAIKey();
         if (!openaiKey) {
-            return NextResponse.json({ error: 'OPENAI_API_KEY not configured' }, { status: 500 });
+            return NextResponse.json({ error: 'OpenAI API key not configured. Go to Admin → Settings → API Keys to add it.' }, { status: 500 });
         }
 
         const prompt = `Write a comprehensive, SEO-optimized blog post about: "${keywords}"${category ? ` (category: ${category})` : ''}.

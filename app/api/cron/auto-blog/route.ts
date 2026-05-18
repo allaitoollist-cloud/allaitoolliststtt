@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { getOpenAIKey } from '@/lib/openai';
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,7 +23,7 @@ function slugify(text: string): string {
 }
 
 async function generateBlogWithAI(topic: string, tools: any[]): Promise<{ title: string; content: string; excerpt: string; meta_description: string } | null> {
-    const openaiKey = process.env.OPENAI_API_KEY;
+    const openaiKey = await getOpenAIKey();
     if (!openaiKey) return null;
 
     const toolSummaries = tools.slice(0, 5).map((t, i) =>

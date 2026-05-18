@@ -7,11 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
-import { Save, Loader2 } from 'lucide-react';
+import { Save, Loader2, Key, Eye, EyeOff } from 'lucide-react';
 import { getBrowserClient } from '@/lib/supabase-browser';
 
 export default function SiteSettingsPage() {
     const [loading, setLoading] = useState(false);
+    const [showOpenAI, setShowOpenAI] = useState(false);
     const [settings, setSettings] = useState({
         site_title: '',
         site_description: '',
@@ -21,6 +22,7 @@ export default function SiteSettingsPage() {
         twitter_url: '',
         linkedin_url: '',
         instagram_url: '',
+        openai_api_key: '',
     });
     const { toast } = useToast();
     const supabase = getBrowserClient();
@@ -139,6 +141,38 @@ export default function SiteSettingsPage() {
                             onChange={(e) => setSettings({ ...settings, instagram_url: e.target.value })}
                             placeholder="https://instagram.com/yourhandle"
                         />
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Key className="h-5 w-5 text-primary" />
+                        API Keys
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">Keys are stored securely in the database.</p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="grid gap-2">
+                        <Label>OpenAI API Key</Label>
+                        <div className="relative">
+                            <Input
+                                type={showOpenAI ? 'text' : 'password'}
+                                value={settings.openai_api_key}
+                                onChange={(e) => setSettings({ ...settings, openai_api_key: e.target.value })}
+                                placeholder="sk-proj-..."
+                                className="pr-10 font-mono text-sm"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowOpenAI(!showOpenAI)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            >
+                                {showOpenAI ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Used for AI blog generation. Get your key from platform.openai.com</p>
                     </div>
                 </CardContent>
             </Card>
