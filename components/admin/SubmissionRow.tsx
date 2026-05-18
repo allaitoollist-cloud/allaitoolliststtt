@@ -120,12 +120,16 @@ export function SubmissionRow({ submission, onRefresh }: { submission: Submissio
     }, [submission.status, submission.tool_name]);
 
     const checkToolExists = async () => {
+        if (!submission.tool_name?.trim()) {
+            setToolInfo({ exists: false });
+            return;
+        }
         try {
             const response = await fetch(`/api/check-tool?name=${encodeURIComponent(submission.tool_name)}`);
+            if (!response.ok) { setToolInfo({ exists: false }); return; }
             const data = await response.json();
             if (data.found && data.tools?.length > 0) {
-                const tool = data.tools[0];
-                setToolInfo({ exists: true, slug: tool.slug });
+                setToolInfo({ exists: true, slug: data.tools[0].slug });
             } else {
                 setToolInfo({ exists: false });
             }

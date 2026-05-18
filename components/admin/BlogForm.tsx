@@ -260,15 +260,14 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
 
             <div className="grid gap-6">
                 {/* AI Blog Generator */}
-                {!isEditing && (
-                    <Card className="border-primary/20 bg-primary/5">
+                <Card className="border-primary/20 bg-primary/5">
                         <CardContent className="p-6 space-y-4">
                             <div className="flex items-center gap-2 mb-2">
                                 <Sparkles className="h-5 w-5 text-primary" />
                                 <h3 className="text-lg font-semibold">AI Blog Generator</h3>
                             </div>
                             <p className="text-sm text-muted-foreground">
-                                Enter keywords and let AI write a complete blog post for you. It will be saved as draft.
+                                Enter keywords and let AI write a complete blog post for you.{isEditing ? ' This will replace the current content.' : ' It will be saved as draft.'}
                             </p>
                             <div className="flex gap-2">
                                 <Input
@@ -304,7 +303,6 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
                             </div>
                         </CardContent>
                     </Card>
-                )}
 
                 <Card>
                     <CardContent className="p-6 space-y-4">

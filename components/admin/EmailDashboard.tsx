@@ -31,8 +31,17 @@ export default function EmailDashboard({ logs }: { logs: EmailLog[] }) {
     };
 
     const sendTestEmail = async () => {
-        toast({ title: "Test Email Sent", description: "Check your admin inbox." });
-        // Call API here if implemented
+        try {
+            const res = await fetch('/api/admin/test-email', { method: 'POST' });
+            const data = await res.json();
+            if (res.ok) {
+                toast({ title: 'Test Email Sent', description: 'Check your admin inbox.' });
+            } else {
+                toast({ title: 'Failed', description: data.error || 'Could not send test email', variant: 'destructive' });
+            }
+        } catch {
+            toast({ title: 'Error', description: 'Network error sending test email', variant: 'destructive' });
+        }
     };
 
     return (

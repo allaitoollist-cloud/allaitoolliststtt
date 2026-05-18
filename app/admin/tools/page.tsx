@@ -5,12 +5,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Plus, Upload, Package, Star, TrendingUp, ShieldCheck, FileX, Eye, Loader2 } from 'lucide-react';
+import {
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Search, Plus, Upload, Package, Star, TrendingUp, ShieldCheck, FileX, Eye, Loader2, ChevronDown, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { ToolRow } from '@/components/admin/ToolRow';
-import { DeleteDummyToolsButton } from '@/components/admin/DeleteDummyToolsButton';
 import { getBrowserClient } from '@/lib/supabase-browser';
+import { useToast } from '@/components/ui/use-toast';
 
 const FILTERS = ['all', 'published', 'featured', 'trending', 'verified', 'drafts'];
 
@@ -19,16 +27,18 @@ export default function AdminToolsPage() {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState('all');
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [bulkLoading, setBulkLoading] = useState(false);
+    const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
     const supabase = getBrowserClient();
+    const { toast } = useToast();
 
     const load = async () => {
         setLoading(true);
-        const { data } = await supabase
-            .from('tools')
-            .select('*')
-            .order('created_at', { ascending: false });
+        const { data } = await supabase.from('tools').select('*').order('created_at', { ascending: false });
         if (data) setTools(data);
         setLoading(false);
+        setSelectedIds(new Set());
     };
 
     useEffect(() => { load(); }, []);
@@ -45,11 +55,7 @@ export default function AdminToolsPage() {
     const filtered = useMemo(() => {
         return tools.filter(t => {
             const q = search.toLowerCase();
-            const matchSearch = !q ||
-                t.name?.toLowerCase().includes(q) ||
-                t.category?.toLowerCase().includes(q) ||
-                t.url?.toLowerCase().includes(q) ||
-                t.short_description?.toLowerCase().includes(q);
+            const matchSearch = !q || t.name?.toLowerCase().includes(q) || t.category?.toLowerCase().includes(q) || t.url?.toLowerCase().includes(q) || t.short_description?.toLowerCase().includes(q);
             const matchFilter =
                 filter === 'all' ? true :
                 filter === 'published' ? !t.is_draft :
@@ -61,6 +67,52 @@ export default function AdminToolsPage() {
         });
     }, [tools, search, filter]);
 
+    const allFilteredSelected = filtered.length > 0 && filtered.every(t => selectedIds.has(t.id));
+    const someSelected = selectedIds.size > 0;
+
+    const toggleSelectAll = () => {
+        if (allFilteredSelected) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(filtered.map(t => t.id)));
+        }
+    };
+
+    const toggleSelect = (id: string, checked: boolean) => {
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            checked ? next.add(id) : next.delete(id);
+            return next;
+        });
+    };
+
+    const bulkUpdate = async (field: string, value: boolean) => {
+        setBulkLoading(true);
+        const ids = Array.from(selectedIds);
+        const { error } = await supabase.from('tools').update({ [field]: value }).in('id', ids);
+        if (error) {
+            toast({ title: 'Error', description: `Failed to update tools`, variant: 'destructive' });
+        } else {
+            toast({ title: 'Updated', description: `${ids.length} tool(s) updated.` });
+            await load();
+        }
+        setBulkLoading(false);
+    };
+
+    const bulkDelete = async () => {
+        setBulkLoading(true);
+        const ids = Array.from(selectedIds);
+        const { error } = await supabase.from('tools').delete().in('id', ids);
+        if (error) {
+            toast({ title: 'Error', description: 'Failed to delete tools', variant: 'destructive' });
+        } else {
+            toast({ title: 'Deleted', description: `${ids.length} tool(s) deleted.` });
+            await load();
+        }
+        setBulkLoading(false);
+        setBulkDeleteOpen(false);
+    };
+
     const statCards = [
         { label: 'Total', value: stats.total, icon: Package, color: 'blue', key: 'all' },
         { label: 'Published', value: stats.published, icon: Eye, color: 'green', key: 'published' },
@@ -71,52 +123,40 @@ export default function AdminToolsPage() {
     ];
 
     const colorMap: Record<string, string> = {
-        blue: 'bg-blue-500/10 text-blue-500',
-        green: 'bg-green-500/10 text-green-500',
-        purple: 'bg-purple-500/10 text-purple-500',
-        orange: 'bg-orange-500/10 text-orange-500',
-        emerald: 'bg-emerald-500/10 text-emerald-500',
-        yellow: 'bg-yellow-500/10 text-yellow-500',
+        blue: 'bg-blue-500/10 text-blue-500', green: 'bg-green-500/10 text-green-500',
+        purple: 'bg-purple-500/10 text-purple-500', orange: 'bg-orange-500/10 text-orange-500',
+        emerald: 'bg-emerald-500/10 text-emerald-500', yellow: 'bg-yellow-500/10 text-yellow-500',
     };
 
     return (
         <div className="space-y-6">
+            {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold">Manage Tools</h1>
-                    <p className="text-muted-foreground">View and manage all AI tools in your directory.</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold">Manage Tools</h1>
+                    <p className="text-muted-foreground text-sm">View and manage all AI tools in your directory.</p>
                 </div>
                 <div className="flex gap-2 flex-wrap">
-                    <DeleteDummyToolsButton />
-                    <Button variant="outline" asChild>
-                        <Link href="/admin/tools/import">
-                            <Upload className="mr-2 h-4 w-4" /> Import CSV
-                        </Link>
+                    <Button variant="outline" size="sm" asChild>
+                        <Link href="/admin/tools/import"><Upload className="mr-2 h-4 w-4" />Import CSV</Link>
                     </Button>
-                    <Button asChild>
-                        <Link href="/admin/tools/add">
-                            <Plus className="mr-2 h-4 w-4" /> Add New Tool
-                        </Link>
+                    <Button size="sm" asChild>
+                        <Link href="/admin/tools/add"><Plus className="mr-2 h-4 w-4" />Add Tool</Link>
                     </Button>
                 </div>
             </div>
 
-            {/* Stats Cards — clickable filters */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {/* Stat Cards */}
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
                 {statCards.map(({ label, value, icon: Icon, color, key }) => (
-                    <Card
-                        key={key}
-                        onClick={() => setFilter(key)}
-                        className={`bg-card/50 border-white/10 cursor-pointer transition-all hover:border-white/30 ${filter === key ? 'ring-2 ring-primary' : ''}`}
-                    >
-                        <CardContent className="pt-4 pb-3">
-                            <div className="flex items-center gap-2">
-                                <div className={`p-2 rounded-lg ${colorMap[color]}`}>
-                                    <Icon className="h-4 w-4" />
-                                </div>
+                    <Card key={key} onClick={() => setFilter(key)}
+                        className={`bg-card/50 border-white/10 cursor-pointer transition-all hover:border-white/30 ${filter === key ? 'ring-2 ring-primary' : ''}`}>
+                        <CardContent className="pt-3 pb-2 px-3">
+                            <div className="flex items-center gap-1.5">
+                                <div className={`p-1.5 rounded-lg ${colorMap[color]}`}><Icon className="h-3 w-3" /></div>
                                 <div>
-                                    <p className="text-2xl font-bold">{value}</p>
-                                    <p className="text-xs text-muted-foreground">{label}</p>
+                                    <p className="text-lg font-bold leading-none">{value}</p>
+                                    <p className="text-[10px] text-muted-foreground">{label}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -124,64 +164,112 @@ export default function AdminToolsPage() {
                 ))}
             </div>
 
-            {/* Search + filter */}
+            {/* Search + Filters */}
             <div className="flex flex-wrap items-center gap-3">
-                <div className="relative flex-1 min-w-[200px] max-w-sm">
+                <div className="relative flex-1 min-w-[180px] max-w-sm">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search by name, category, URL..."
-                        className="pl-9 bg-card/50"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
+                    <Input placeholder="Search tools..." className="pl-9 bg-card/50" value={search} onChange={(e) => setSearch(e.target.value)} />
                 </div>
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-1.5 flex-wrap">
                     {FILTERS.map(f => (
-                        <Button
-                            key={f}
-                            size="sm"
-                            variant={filter === f ? 'default' : 'outline'}
-                            onClick={() => setFilter(f)}
-                            className="capitalize"
-                        >
+                        <Button key={f} size="sm" variant={filter === f ? 'default' : 'outline'}
+                            onClick={() => setFilter(f)} className="capitalize text-xs px-2.5">
                             {f}
                         </Button>
                     ))}
                 </div>
-                {search && (
-                    <Button size="sm" variant="ghost" onClick={() => setSearch('')}>
-                        Clear
-                    </Button>
-                )}
+                {search && <Button size="sm" variant="ghost" onClick={() => setSearch('')}>Clear</Button>}
             </div>
 
+            {/* Bulk Action Bar */}
+            {someSelected && (
+                <div className="flex items-center gap-3 px-4 py-2.5 bg-primary/10 border border-primary/20 rounded-lg flex-wrap">
+                    <span className="text-sm font-medium text-primary">{selectedIds.size} selected</span>
+                    <div className="flex gap-2 flex-wrap">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button size="sm" variant="outline" disabled={bulkLoading}>
+                                    Bulk Action <ChevronDown className="ml-1 h-3 w-3" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start">
+                                <DropdownMenuItem onClick={() => bulkUpdate('featured', true)}>
+                                    <Star className="mr-2 h-4 w-4 text-purple-500" /> Mark as Featured
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => bulkUpdate('featured', false)}>
+                                    <Star className="mr-2 h-4 w-4" /> Remove Featured
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => bulkUpdate('trending', true)}>
+                                    <TrendingUp className="mr-2 h-4 w-4 text-orange-500" /> Mark as Trending
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => bulkUpdate('trending', false)}>
+                                    <TrendingUp className="mr-2 h-4 w-4" /> Remove Trending
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => bulkUpdate('verified', true)}>
+                                    <ShieldCheck className="mr-2 h-4 w-4 text-green-500" /> Mark as Verified
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => bulkUpdate('verified', false)}>
+                                    <ShieldCheck className="mr-2 h-4 w-4" /> Remove Verified
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => bulkUpdate('is_draft', false)}>
+                                    <Eye className="mr-2 h-4 w-4 text-blue-500" /> Publish All
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => bulkUpdate('is_draft', true)}>
+                                    <FileX className="mr-2 h-4 w-4 text-yellow-500" /> Move to Draft
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        <Button size="sm" variant="destructive" onClick={() => setBulkDeleteOpen(true)} disabled={bulkLoading}>
+                            <Trash2 className="mr-1.5 h-3 w-3" /> Delete ({selectedIds.size})
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
+                            Deselect All
+                        </Button>
+                    </div>
+                    {bulkLoading && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+                </div>
+            )}
+
             {/* Table */}
-            <div className="rounded-md border border-white/10 bg-card/50">
+            <div className="rounded-md border border-white/10 bg-card/50 overflow-x-auto">
                 <Table>
                     <TableHeader>
                         <TableRow className="border-white/10 hover:bg-white/5">
+                            <TableHead className="w-10">
+                                <Checkbox
+                                    checked={allFilteredSelected}
+                                    onCheckedChange={toggleSelectAll}
+                                    aria-label="Select all"
+                                />
+                            </TableHead>
                             <TableHead>Tool Name</TableHead>
-                            <TableHead>Category</TableHead>
-                            <TableHead>Pricing</TableHead>
-                            <TableHead>Views</TableHead>
-                            <TableHead>Status</TableHead>
+                            <TableHead className="hidden sm:table-cell">Category</TableHead>
+                            <TableHead className="hidden md:table-cell">Pricing</TableHead>
+                            <TableHead className="hidden lg:table-cell">Views</TableHead>
+                            <TableHead className="hidden md:table-cell">Status</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {loading ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center py-8">
+                                <TableCell colSpan={7} className="text-center py-8">
                                     <Loader2 className="h-5 w-5 animate-spin mx-auto" />
                                 </TableCell>
                             </TableRow>
                         ) : filtered.length > 0 ? (
                             filtered.map((tool) => (
-                                <ToolRow key={tool.id} tool={tool} />
+                                <ToolRow
+                                    key={tool.id}
+                                    tool={tool}
+                                    selected={selectedIds.has(tool.id)}
+                                    onSelect={toggleSelect}
+                                    onRefresh={load}
+                                />
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                                     {search ? `No tools matching "${search}"` : 'No tools found'}
                                 </TableCell>
                             </TableRow>
@@ -189,9 +277,25 @@ export default function AdminToolsPage() {
                     </TableBody>
                 </Table>
             </div>
-            <p className="text-sm text-muted-foreground">
-                Showing {filtered.length} of {tools.length} tools
-            </p>
+            <p className="text-sm text-muted-foreground">Showing {filtered.length} of {tools.length} tools</p>
+
+            {/* Bulk Delete Confirm */}
+            <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete {selectedIds.size} tools?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete {selectedIds.size} selected tool{selectedIds.size > 1 ? 's' : ''}. This cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={bulkDelete} disabled={bulkLoading} className="bg-red-600 hover:bg-red-700">
+                            {bulkLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : `Delete ${selectedIds.size} Tools`}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

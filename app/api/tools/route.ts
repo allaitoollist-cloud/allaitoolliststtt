@@ -122,14 +122,25 @@ export async function POST(request: NextRequest) {
 
         // Bulk delete multiple tools
         if (action === 'bulk-delete') {
-            const { error } = await supabase
-                .from('tools')
-                .delete()
-                .in('id', toolIds);
+            if (!Array.isArray(toolIds) || toolIds.length === 0) {
+                return NextResponse.json({ error: 'toolIds array required' }, { status: 400 });
+            }
+            if (toolIds.length > 200) {
+                return NextResponse.json({ error: 'Cannot delete more than 200 tools at once' }, { status: 400 });
+            }
+
+            const { error } = await supabase.from('tools').delete().in('id', toolIds);
 
             if (error) {
                 return NextResponse.json({ error: `Failed to delete: ${error.message}` }, { status: 500 });
             }
+
+            try {
+                revalidatePath('/');
+                revalidatePath('/new');
+                revalidatePath('/trending');
+                revalidatePath('/admin/tools');
+            } catch {}
 
             return NextResponse.json({ success: true, message: `${toolIds.length} tools deleted` });
         }

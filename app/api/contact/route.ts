@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
             to: adminEmail,
             subject: adminEmailTemplate.subject,
             html: adminEmailTemplate.html,
+            replyTo: email,
         });
 
         // Send confirmation email to user

@@ -5,9 +5,10 @@ export interface EmailOptions {
   subject: string;
   html: string;
   from?: string;
+  replyTo?: string;
 }
 
-export async function sendEmail({ to, subject, html, from }: EmailOptions) {
+export async function sendEmail({ to, subject, html, from, replyTo }: EmailOptions) {
   try {
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
@@ -28,6 +29,7 @@ export async function sendEmail({ to, subject, html, from }: EmailOptions) {
       to: emailTo,
       subject,
       html,
+      ...(replyTo && { reply_to: replyTo }),
     });
 
     if (error) {
@@ -297,6 +299,7 @@ export async function sendSubmissionConfirmation(toolName: string, submitterEmai
 export async function sendAdminNewSubmissionEmail(toolName: string, submitterEmail: string, adminEmail: string) {
   return sendEmail({
     to: adminEmail,
+    replyTo: submitterEmail,
     subject: `New Tool Submission: ${toolName}`,
     html: layout(
       '#1a202c',

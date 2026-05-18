@@ -11,6 +11,7 @@ import {
 import { ShareDialog } from '@/components/ShareDialog';
 import { ToolCard } from '@/components/ToolCard';
 import { WriteReviewDialog } from '@/components/WriteReviewDialog';
+import { ViewTracker } from '@/components/ViewTracker';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -111,6 +112,7 @@ export default async function ToolDetailPage({ params }: PageProps) {
 
     return (
         <div className="min-h-screen flex flex-col bg-black text-white">
+            <ViewTracker slug={tool.slug} />
             <Navbar />
 
             <main className="flex-grow">

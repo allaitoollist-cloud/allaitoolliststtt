@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { load } from 'cheerio';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase with Service Role Key for writing to DB
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -13,124 +12,137 @@ export async function POST(request: NextRequest) {
         const { urls } = await request.json();
 
         if (!urls || !Array.isArray(urls) || urls.length === 0) {
-            return NextResponse.json({ error: 'URLs are required' }, { status: 400 });
+            return NextResponse.json({ error: 'URLs array is required' }, { status: 400 });
         }
 
         const openaiKey = process.env.OPENAI_API_KEY;
         if (!openaiKey) {
-            return NextResponse.json({ error: 'OpenAI API Key not configured on server' }, { status: 500 });
+            return NextResponse.json({ error: 'OPENAI_API_KEY not configured' }, { status: 500 });
         }
 
         const results = [];
 
         for (const url of urls) {
-            if (!url) continue;
+            if (!url?.trim()) continue;
 
             try {
                 // 1. Scrape the URL
-                const response = await fetch(url, {
-                    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)' }
+                const pageRes = await fetch(url, {
+                    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)' },
+                    signal: AbortSignal.timeout(10000),
                 });
-                const html = await response.text();
+
+                if (!pageRes.ok) throw new Error(`Failed to fetch URL: HTTP ${pageRes.status}`);
+
+                const html = await pageRes.text();
                 const $ = load(html);
 
-                // Extract basic text for context (limit to 3000 chars to save tokens)
+                // Remove script/style noise
+                $('script, style, nav, footer, header').remove();
+
                 const pageTitle = $('title').text().trim();
-                const metaDesc = $('meta[name="description"]').attr('content') || '';
-                const bodyText = $('body').text().replace(/\s+/g, ' ').substring(0, 3000);
+                const metaDesc = $('meta[name="description"]').attr('content') || $('meta[property="og:description"]').attr('content') || '';
+                const bodyText = $('body').text().replace(/\s+/g, ' ').trim().substring(0, 4000);
 
-                const context = `Title: ${pageTitle}\nDescription: ${metaDesc}\nContent Sample: ${bodyText}`;
+                const context = `URL: ${url}\nTitle: ${pageTitle}\nDescription: ${metaDesc}\nContent: ${bodyText}`;
 
-                // 2. Call OpenAI API
-                const gptResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+                // 2. Call OpenAI gpt-4o-mini
+                const gptRes = await fetch('https://api.openai.com/v1/chat/completions', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${openaiKey}`
+                        'Authorization': `Bearer ${openaiKey}`,
                     },
                     body: JSON.stringify({
-                        model: "gpt-3.5-turbo", // or gpt-4
+                        model: 'gpt-4o-mini',
                         messages: [
                             {
-                                role: "system",
-                                content: "You are an AI Directory Admin. Analyze the provided website content and extract structued data for an AI tool listing. Also write a short blog post about it. Return ONLY valid JSON."
+                                role: 'system',
+                                content: 'You are an AI directory curator. Extract structured data from AI tool websites. Respond with ONLY valid JSON — no markdown, no explanation.',
                             },
                             {
-                                role: "user",
-                                content: `Here is the scraped content of an AI tool website:\n\n${context}\n\n
-                                Please generate a JSON response with the following fields:
-                                1. tool_name (Clean name)
-                                2. slug (URL friendly)
-                                3. short_description (max 150 chars)
-                                4. full_description (marketing style, 3-4 paragraphs)
-                                5. category (Choose one from: Text, Image, Video, Audio, Coding, Marketing, Automation, Other)
-                                6. pricing_model (Free, Freemium, Paid, Contact for Pricing)
-                                7. tags (array of 3-5 strings)
-                                8. features (array of 3-4 key features)
-                                9. blog_title (Catchy title for a blog post about this tool)
-                                10. blog_content (A 500-word blog post in Markdown format introducing this tool, its features, and use cases)
-                                `
-                            }
+                                role: 'user',
+                                content: `Analyze this AI tool website and extract data:\n\n${context}\n\nReturn JSON with these exact fields:
+{
+  "tool_name": "Clean product name",
+  "slug": "url-friendly-slug",
+  "short_description": "max 150 chars, one sentence",
+  "full_description": "3-4 paragraph marketing description",
+  "category": "one of: Text & Writing, Image Generation, Video & Audio, Code & Development, Productivity, Marketing, Design, Data & Analytics, Customer Support, Sales, Education, Research, Other",
+  "pricing": "one of: Free, Freemium, Paid, Contact for Pricing",
+  "tags": ["tag1", "tag2", "tag3"],
+  "features": ["feature1", "feature2", "feature3", "feature4"],
+  "platform": ["Web"]
+}`,
+                            },
                         ],
-                        temperature: 0.7
-                    })
+                        temperature: 0.3,
+                        max_tokens: 1500,
+                    }),
                 });
 
-                const gptData = await gptResponse.json();
-
-                if (gptData.error) {
-                    throw new Error(gptData.error.message);
+                if (!gptRes.ok) {
+                    const err = await gptRes.text();
+                    throw new Error(`OpenAI error: ${err.slice(0, 200)}`);
                 }
 
-                const content = gptData.choices[0].message.content;
-                const jsonStr = content.replace(/```json/g, '').replace(/```/g, ''); // Clean markdown code blocks
-                const aiData = JSON.parse(jsonStr);
+                const gptData = await gptRes.json();
+                let rawContent = gptData.choices?.[0]?.message?.content || '';
 
-                // 3. Save Tool to Database (Draft)
+                // Strip markdown fences
+                rawContent = rawContent.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+
+                let aiData: any;
+                try {
+                    aiData = JSON.parse(rawContent);
+                } catch {
+                    throw new Error(`Could not parse AI response as JSON: ${rawContent.slice(0, 200)}`);
+                }
+
+                // Validate required fields
+                if (!aiData.tool_name || !aiData.slug || !aiData.category) {
+                    throw new Error('AI response missing required fields (tool_name, slug, category)');
+                }
+
+                // Ensure slug is unique
+                let slug = aiData.slug.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/(^-|-$)/g, '');
+                const { data: existing } = await supabase.from('tools').select('id').eq('slug', slug).single();
+                if (existing) slug = `${slug}-${Date.now()}`;
+
+                // 3. Save tool as draft
                 const { data: toolData, error: toolError } = await supabase.from('tools').insert({
                     name: aiData.tool_name,
-                    slug: aiData.slug,
-                    short_description: aiData.short_description,
-                    full_description: aiData.full_description,
+                    slug,
+                    short_description: aiData.short_description || '',
+                    full_description: aiData.full_description || '',
                     url: url,
                     category: aiData.category,
-                    pricing: aiData.pricing_model,
-                    tags: aiData.tags,
-                    features: aiData.features,
-                    platform: ['Web'], // Default
-                    is_draft: true, // SAVE AS DRAFT
-                    verified: false
+                    pricing: aiData.pricing || 'Freemium',
+                    tags: aiData.tags || [],
+                    features: aiData.features || [],
+                    platform: aiData.platform || ['Web'],
+                    is_draft: true,
+                    verified: false,
+                    status: 'draft',
                 }).select().single();
 
-                if (toolError) throw toolError;
+                if (toolError) throw new Error(`DB insert error: ${toolError.message}`);
 
-                // 4. Save Blog to Database (Draft) - Assuming blogs table exists, otherwise skip
-                // We'll return the blog content for now if table doesn't exist
-                /* 
-                const { error: blogError } = await supabase.from('blogs').insert({
-                    title: aiData.blog_title,
-                    content: aiData.blog_content,
-                    tool_id: toolData.id,
-                    is_published: false
-                });
-                */
-
-                results.push({
-                    status: 'success',
-                    url,
-                    tool: aiData.tool_name,
-                    blog: aiData.blog_title
-                });
+                results.push({ status: 'success', url, tool: aiData.tool_name, id: toolData?.id });
 
             } catch (error: any) {
-                console.error(`Error processing ${url}:`, error);
+                console.error(`Error processing ${url}:`, error.message);
                 results.push({ status: 'error', url, message: error.message });
             }
         }
 
-        return NextResponse.json({ results });
+        const succeeded = results.filter(r => r.status === 'success').length;
+        const failed = results.filter(r => r.status === 'error').length;
+
+        return NextResponse.json({ results, summary: { succeeded, failed, total: results.length } });
 
     } catch (error: any) {
+        console.error('AI automation error:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

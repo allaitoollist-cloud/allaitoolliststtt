@@ -26,7 +26,6 @@ import { MoreHorizontal, Search, Trash2, Star, ExternalLink, MessageSquare } fro
 import { getBrowserClient } from '@/lib/supabase-browser';
 import Link from 'next/link';
 import { useToast } from '@/components/ui/use-toast';
-import { useRouter } from 'next/navigation';
 
 interface Review {
     id: string;
@@ -51,7 +50,6 @@ export function ReviewList({ initialReviews }: { initialReviews: Review[] }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
-    const router = useRouter();
     const supabase = getBrowserClient();
 
     const handleDelete = async (id: string) => {
@@ -75,7 +73,6 @@ export function ReviewList({ initialReviews }: { initialReviews: Review[] }) {
                 description: 'Review deleted successfully',
             });
             setReviews(reviews.filter(review => review.id !== id));
-            router.refresh();
         }
         setLoading(false);
     };
