@@ -4,6 +4,16 @@ import { useState, useEffect } from 'react';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from '@/components/ui/dialog';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -22,7 +32,14 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { MoreHorizontal, Check, X, Trash2, ExternalLink, Search } from 'lucide-react';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { MoreHorizontal, Check, X, Trash2, ExternalLink, Edit, Mail, Eye, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -32,6 +49,7 @@ interface Submission {
     tool_name: string;
     tool_url: string;
     description: string;
+    full_description?: string;
     category: string;
     pricing: string;
     submitter_name: string;
@@ -39,50 +57,88 @@ interface Submission {
     plan: string;
     status: string;
     created_at: string;
+    reviewed_at?: string;
+}
+
+const CATEGORIES = [
+    'Text', 'Image', 'Video', 'Audio', 'Code', 'Writing',
+    'Productivity', 'Automation', 'Marketing', 'Design', 'Business',
+    'Education', 'Research', 'Data', 'SEO', 'Social Media',
+    'Customer Support', 'Other',
+];
+
+const PRICING_OPTIONS = ['Free', 'Freemium', 'Paid', 'Contact for Pricing'];
+const PLAN_OPTIONS = ['free', 'featured', 'sponsored'];
+const STATUS_OPTIONS = ['pending', 'approved', 'rejected', 'flagged'];
+
+function getStatusBadgeClass(status: string) {
+    switch (status) {
+        case 'pending':
+            return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
+        case 'approved':
+            return 'bg-green-500/10 text-green-500 border-green-500/20';
+        case 'rejected':
+            return 'bg-red-500/10 text-red-500 border-red-500/20';
+        case 'flagged':
+            return 'bg-orange-500/10 text-orange-500 border-orange-500/20';
+        default:
+            return 'bg-white/5 text-muted-foreground border-white/10';
+    }
 }
 
 export function SubmissionRow({ submission }: { submission: Submission }) {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [viewDialogOpen, setViewDialogOpen] = useState(false);
+    const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [followupDialogOpen, setFollowupDialogOpen] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [toolInfo, setToolInfo] = useState<{ exists: boolean; slug?: string; is_draft?: boolean } | null>(null);
-    const [checkingTool, setCheckingTool] = useState(false);
+    const [toolInfo, setToolInfo] = useState<{ exists: boolean; slug?: string } | null>(null);
+    const [followupMessage, setFollowupMessage] = useState('');
+
+    // Editable fields state — initialized from submission
+    const [editData, setEditData] = useState({
+        tool_name: submission.tool_name,
+        tool_url: submission.tool_url,
+        description: submission.description,
+        full_description: submission.full_description ?? '',
+        category: submission.category,
+        pricing: submission.pricing,
+        submitter_name: submission.submitter_name,
+        submitter_email: submission.submitter_email,
+        plan: submission.plan,
+        status: submission.status,
+    });
+
     const { toast } = useToast();
     const router = useRouter();
 
-    // Check if tool exists for approved submissions
     useEffect(() => {
         if (submission.status === 'approved') {
             checkToolExists();
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [submission.status, submission.tool_name]);
 
     const checkToolExists = async () => {
-        setCheckingTool(true);
         try {
             const response = await fetch(`/api/check-tool?name=${encodeURIComponent(submission.tool_name)}`);
             const data = await response.json();
-            
-            if (data.found && data.tools && data.tools.length > 0) {
+            if (data.found && data.tools?.length > 0) {
                 const tool = data.tools[0];
-                setToolInfo({
-                    exists: true,
-                    slug: tool.slug,
-                    is_draft: tool.is_draft
-                });
+                setToolInfo({ exists: true, slug: tool.slug });
             } else {
                 setToolInfo({ exists: false });
             }
-        } catch (error) {
-            console.error('Error checking tool:', error);
+        } catch {
             setToolInfo({ exists: false });
         }
-        setCheckingTool(false);
     };
 
-    const handleApprove = async () => {
-        setLoading(true);
-        console.log('Approving submission:', submission.id);
+    // ── API helpers ────────────────────────────────────────────────────────────
 
+    const handleApprove = async (dataOverride?: typeof editData) => {
+        setLoading(true);
+        const payload = dataOverride ?? editData;
         try {
             const response = await fetch('/api/submissions', {
                 method: 'POST',
@@ -91,163 +147,165 @@ export function SubmissionRow({ submission }: { submission: Submission }) {
                     action: 'approve',
                     submissionId: submission.id,
                     submissionData: {
-                        tool_name: submission.tool_name,
-                        tool_url: submission.tool_url,
-                        description: submission.description,
-                        category: submission.category,
-                        pricing: submission.pricing,
-                    }
+                        tool_name: payload.tool_name,
+                        tool_url: payload.tool_url,
+                        description: payload.description,
+                        category: payload.category,
+                        pricing: payload.pricing,
+                        submitter_email: payload.submitter_email,
+                    },
                 }),
             });
-
             const data = await response.json();
-
-            console.log('Approval response:', data);
-
             if (!response.ok) {
-                console.error('Error approving:', data.error, data.details);
-                toast({
-                    title: 'Error',
-                    description: data.error || 'Failed to approve submission',
-                    variant: 'destructive',
-                });
+                toast({ title: 'Error', description: data.error || 'Failed to approve submission', variant: 'destructive' });
             } else {
-                // Check if tool was actually created
-                if (data.toolId && data.toolSlug) {
-                    toast({
-                        title: 'Success',
-                        description: `Submission approved! Tool created with slug: ${data.toolSlug}`,
-                    });
-                    // Refresh tool info after a short delay
-                    setTimeout(() => {
-                        checkToolExists();
-                    }, 1000);
-                } else {
-                    toast({
-                        title: 'Warning',
-                        description: 'Submission approved but tool creation status unknown. Please check manually.',
-                        variant: 'destructive',
-                    });
-                }
+                toast({ title: 'Approved', description: `Tool created with slug: ${data.toolSlug ?? 'unknown'}` });
+                setEditDialogOpen(false);
                 router.refresh();
             }
-        } catch (error) {
-            console.error('Network error:', error);
-            toast({
-                title: 'Error',
-                description: 'Network error occurred',
-                variant: 'destructive',
-            });
+        } catch {
+            toast({ title: 'Error', description: 'Network error occurred', variant: 'destructive' });
         }
         setLoading(false);
     };
 
     const handleReject = async () => {
         setLoading(true);
-        console.log('Rejecting submission:', submission.id);
+        try {
+            const response = await fetch('/api/submissions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'reject', submissionId: submission.id }),
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                toast({ title: 'Error', description: data.error || 'Failed to reject submission', variant: 'destructive' });
+            } else {
+                toast({ title: 'Rejected', description: 'Submission rejected' });
+                router.refresh();
+            }
+        } catch {
+            toast({ title: 'Error', description: 'Network error occurred', variant: 'destructive' });
+        }
+        setLoading(false);
+    };
 
+    const handleSaveChanges = async () => {
+        setLoading(true);
         try {
             const response = await fetch('/api/submissions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    action: 'reject',
+                    action: 'update',
                     submissionId: submission.id,
+                    submissionData: editData,
                 }),
             });
-
-            console.log('API Response status:', response.status);
             const data = await response.json();
-            console.log('API Response data:', data);
-
-
             if (!response.ok) {
-                console.error('Error rejecting:', data.error);
-                toast({
-                    title: 'Error',
-                    description: data.error || 'Failed to reject submission',
-                    variant: 'destructive',
-                });
+                toast({ title: 'Error', description: data.error || 'Failed to update submission', variant: 'destructive' });
             } else {
-                toast({
-                    title: 'Success',
-                    description: data.message || 'Submission rejected',
-                });
+                toast({ title: 'Saved', description: 'Submission updated successfully' });
+                setEditDialogOpen(false);
                 router.refresh();
             }
-        } catch (error) {
-            console.error('Network error:', error);
-            toast({
-                title: 'Error',
-                description: 'Network error occurred',
-                variant: 'destructive',
+        } catch {
+            toast({ title: 'Error', description: 'Network error occurred', variant: 'destructive' });
+        }
+        setLoading(false);
+    };
+
+    const handleSaveAndApprove = async () => {
+        await handleApprove(editData);
+    };
+
+    const handleSendFollowup = async () => {
+        if (!followupMessage.trim()) {
+            toast({ title: 'Error', description: 'Message cannot be empty', variant: 'destructive' });
+            return;
+        }
+        setLoading(true);
+        try {
+            const response = await fetch('/api/submissions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'followup',
+                    submissionId: submission.id,
+                    message: followupMessage,
+                    submitterEmail: submission.submitter_email,
+                    toolName: submission.tool_name,
+                }),
             });
+            const data = await response.json();
+            if (!response.ok) {
+                toast({ title: 'Error', description: data.error || 'Failed to send email', variant: 'destructive' });
+            } else {
+                toast({ title: 'Sent', description: 'Follow-up email sent successfully' });
+                setFollowupMessage('');
+                setFollowupDialogOpen(false);
+            }
+        } catch {
+            toast({ title: 'Error', description: 'Network error occurred', variant: 'destructive' });
         }
         setLoading(false);
     };
 
     const handleDelete = async () => {
         setLoading(true);
-        console.log('Deleting submission:', submission.id);
-
         try {
             const response = await fetch('/api/submissions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'delete',
-                    submissionId: submission.id,
-                }),
+                body: JSON.stringify({ action: 'delete', submissionId: submission.id }),
             });
-
             const data = await response.json();
-
             if (!response.ok) {
-                console.error('Error deleting:', data.error);
-                toast({
-                    title: 'Error',
-                    description: data.error || 'Failed to delete submission',
-                    variant: 'destructive',
-                });
+                toast({ title: 'Error', description: data.error || 'Failed to delete submission', variant: 'destructive' });
             } else {
-                toast({
-                    title: 'Success',
-                    description: data.message || 'Submission deleted',
-                });
+                toast({ title: 'Deleted', description: 'Submission deleted' });
                 router.refresh();
             }
-        } catch (error) {
-            console.error('Network error:', error);
-            toast({
-                title: 'Error',
-                description: 'Network error occurred',
-                variant: 'destructive',
-            });
+        } catch {
+            toast({ title: 'Error', description: 'Network error occurred', variant: 'destructive' });
         }
         setLoading(false);
         setDeleteDialogOpen(false);
     };
 
+    // ── Render ─────────────────────────────────────────────────────────────────
+
     return (
         <>
-            <TableRow className="border-white/10 hover:bg-white/5">
-                <TableCell>
+            <TableRow
+                className="border-white/10 hover:bg-white/5 cursor-pointer"
+                onClick={() => setViewDialogOpen(true)}
+            >
+                <TableCell onClick={(e) => e.stopPropagation()}>
                     <div className="font-medium">{submission.tool_name}</div>
                     <div className="text-xs text-muted-foreground line-clamp-1">{submission.description}</div>
                 </TableCell>
-                <TableCell>
-                    <a href={submission.tool_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-sm">
+                <TableCell onClick={(e) => e.stopPropagation()}>
+                    <a
+                        href={submission.tool_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 hover:underline text-sm"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         {submission.tool_url}
                     </a>
                 </TableCell>
                 <TableCell>
                     <div className="flex flex-col gap-1">
                         <Badge variant="outline">{submission.category}</Badge>
-                        <Badge 
-                            variant={submission.pricing === 'Free' ? 'default' : 'secondary'}
+                        <Badge
+                            variant="outline"
                             className={
-                                submission.pricing === 'Free' 
-                                    ? 'bg-green-500/10 text-green-500 border-green-500/20' 
+                                submission.pricing === 'Free'
+                                    ? 'bg-green-500/10 text-green-500 border-green-500/20'
                                     : 'bg-orange-500/10 text-orange-500 border-orange-500/20'
                             }
                         >
@@ -257,6 +315,7 @@ export function SubmissionRow({ submission }: { submission: Submission }) {
                 </TableCell>
                 <TableCell>
                     <Badge
+                        variant="outline"
                         className={
                             submission.plan === 'sponsored'
                                 ? 'bg-violet-500/15 text-violet-400 border-violet-500/30'
@@ -264,9 +323,8 @@ export function SubmissionRow({ submission }: { submission: Submission }) {
                                 ? 'bg-orange-500/15 text-orange-400 border-orange-500/30'
                                 : 'bg-white/5 text-muted-foreground border-white/10'
                         }
-                        variant="outline"
                     >
-                        {submission.plan === 'sponsored' ? '🚀 Sponsored' : submission.plan === 'featured' ? '⚡ Featured' : 'Free'}
+                        {submission.plan === 'sponsored' ? 'Sponsored' : submission.plan === 'featured' ? 'Featured' : 'Free'}
                     </Badge>
                 </TableCell>
                 <TableCell>
@@ -280,47 +338,22 @@ export function SubmissionRow({ submission }: { submission: Submission }) {
                 </TableCell>
                 <TableCell>
                     <div className="flex flex-col gap-1">
-                        <Badge
-                            variant={submission.status === 'pending' ? 'secondary' : submission.status === 'approved' ? 'default' : 'destructive'}
-                            className={
-                                submission.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 border-0' :
-                                    submission.status === 'approved' ? 'bg-green-500/10 text-green-500 hover:bg-green-500/20 border-0' :
-                                        'bg-red-500/10 text-red-500 hover:bg-red-500/20 border-0'
-                            }
-                        >
+                        <Badge variant="outline" className={getStatusBadgeClass(submission.status)}>
                             {submission.status}
                         </Badge>
-                        {submission.status === 'approved' && (
-                            <div className="text-xs">
-                                {checkingTool ? (
-                                    <span className="text-muted-foreground">Checking...</span>
-                                ) : toolInfo?.exists ? (
-                                    <div className="flex items-center gap-1">
-                                        {toolInfo.is_draft ? (
-                                            <span className="text-yellow-500">⚠️ Draft</span>
-                                        ) : (
-                                            <>
-                                                <span className="text-green-500">✓ Tool exists</span>
-                                                {toolInfo.slug && (
-                                                    <Link 
-                                                        href={`/tool/${toolInfo.slug}`}
-                                                        target="_blank"
-                                                        className="text-blue-500 hover:underline ml-1"
-                                                    >
-                                                        <ExternalLink className="h-3 w-3 inline" />
-                                                    </Link>
-                                                )}
-                                            </>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <span className="text-red-500">⚠️ Tool not found</span>
-                                )}
-                            </div>
+                        {submission.status === 'approved' && toolInfo?.exists && toolInfo.slug && (
+                            <Link
+                                href={`/tool/${toolInfo.slug}`}
+                                target="_blank"
+                                className="text-blue-500 hover:underline text-xs flex items-center gap-1"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <ExternalLink className="h-3 w-3" /> View tool
+                            </Link>
                         )}
                     </div>
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-2">
                         {submission.status === 'pending' && (
                             <>
@@ -328,33 +361,23 @@ export function SubmissionRow({ submission }: { submission: Submission }) {
                                     type="button"
                                     variant="ghost"
                                     size="sm"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        console.log('Approve clicked for:', submission.id);
-                                        handleApprove();
-                                    }}
+                                    onClick={() => handleApprove()}
                                     disabled={loading}
                                     className="hover:bg-green-500/20 hover:text-green-500"
                                 >
-                                    <Check className="h-4 w-4 mr-1" />
-                                    {loading ? 'Processing...' : 'Approve'}
+                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4 mr-1" />}
+                                    Approve
                                 </Button>
                                 <Button
                                     type="button"
                                     variant="ghost"
                                     size="sm"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        console.log('Reject clicked for:', submission.id);
-                                        handleReject();
-                                    }}
+                                    onClick={handleReject}
                                     disabled={loading}
                                     className="hover:bg-red-500/20 hover:text-red-500"
                                 >
                                     <X className="h-4 w-4 mr-1" />
-                                    {loading ? 'Processing...' : 'Reject'}
+                                    Reject
                                 </Button>
                             </>
                         )}
@@ -368,54 +391,20 @@ export function SubmissionRow({ submission }: { submission: Submission }) {
                             <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                {submission.status === 'approved' && (
-                                    <>
-                                        <DropdownMenuItem onClick={checkToolExists} disabled={checkingTool}>
-                                            <Search className="mr-2 h-4 w-4" />
-                                            {checkingTool ? 'Checking...' : 'Check Tool Status'}
-                                        </DropdownMenuItem>
-                                        {toolInfo && !toolInfo.exists && (
-                                            <DropdownMenuItem 
-                                                onClick={async () => {
-                                                    setLoading(true);
-                                                    try {
-                                                        const response = await fetch('/api/recreate-tool', {
-                                                            method: 'POST',
-                                                            headers: { 'Content-Type': 'application/json' },
-                                                            body: JSON.stringify({ submissionId: submission.id }),
-                                                        });
-                                                        const data = await response.json();
-                                                        if (response.ok) {
-                                                            toast({
-                                                                title: 'Success',
-                                                                description: data.message || 'Tool recreated successfully!',
-                                                            });
-                                                            setTimeout(() => checkToolExists(), 1000);
-                                                        } else {
-                                                            toast({
-                                                                title: 'Error',
-                                                                description: data.error || 'Failed to recreate tool',
-                                                                variant: 'destructive',
-                                                            });
-                                                        }
-                                                    } catch (error) {
-                                                        toast({
-                                                            title: 'Error',
-                                                            description: 'Network error occurred',
-                                                            variant: 'destructive',
-                                                        });
-                                                    }
-                                                    setLoading(false);
-                                                }}
-                                                disabled={loading}
-                                            >
-                                                <Check className="mr-2 h-4 w-4" />
-                                                {loading ? 'Creating...' : 'Recreate Tool'}
-                                            </DropdownMenuItem>
-                                        )}
-                                    </>
-                                )}
-                                <DropdownMenuItem onClick={() => setDeleteDialogOpen(true)} className="text-red-600">
+                                <DropdownMenuItem onClick={() => setViewDialogOpen(true)}>
+                                    <Eye className="mr-2 h-4 w-4" />
+                                    View Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setEditDialogOpen(true)}>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setFollowupDialogOpen(true)}>
+                                    <Mail className="mr-2 h-4 w-4" />
+                                    Send Follow-up
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => setDeleteDialogOpen(true)} className="text-red-500 focus:text-red-500">
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     Delete
                                 </DropdownMenuItem>
@@ -425,22 +414,287 @@ export function SubmissionRow({ submission }: { submission: Submission }) {
                 </TableCell>
             </TableRow>
 
+            {/* ── View Details Dialog ── */}
+            <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Submission Details</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-2">
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                            <DetailItem label="Tool Name" value={submission.tool_name} />
+                            <DetailItem label="Status">
+                                <Badge variant="outline" className={getStatusBadgeClass(submission.status)}>
+                                    {submission.status}
+                                </Badge>
+                            </DetailItem>
+                            <DetailItem label="URL">
+                                <a href={submission.tool_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline flex items-center gap-1">
+                                    {submission.tool_url} <ExternalLink className="h-3 w-3" />
+                                </a>
+                            </DetailItem>
+                            <DetailItem label="Category" value={submission.category} />
+                            <DetailItem label="Pricing" value={submission.pricing} />
+                            <DetailItem label="Plan" value={submission.plan} />
+                            <DetailItem label="Submitter Name" value={submission.submitter_name} />
+                            <DetailItem label="Submitter Email" value={submission.submitter_email} />
+                            <DetailItem label="Submitted At" value={new Date(submission.created_at).toLocaleString()} />
+                            {submission.reviewed_at && (
+                                <DetailItem label="Reviewed At" value={new Date(submission.reviewed_at).toLocaleString()} />
+                            )}
+                        </div>
+                        <div>
+                            <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Description</p>
+                            <p className="text-sm whitespace-pre-wrap rounded bg-white/5 p-3">{submission.description}</p>
+                        </div>
+                        {submission.full_description && (
+                            <div>
+                                <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Full Description</p>
+                                <p className="text-sm whitespace-pre-wrap rounded bg-white/5 p-3">{submission.full_description}</p>
+                            </div>
+                        )}
+                    </div>
+                    <DialogFooter className="gap-2 flex-wrap">
+                        <Button variant="outline" onClick={() => { setViewDialogOpen(false); setEditDialogOpen(true); }}>
+                            <Edit className="mr-2 h-4 w-4" /> Edit
+                        </Button>
+                        {submission.status === 'pending' && (
+                            <>
+                                <Button
+                                    onClick={() => { setViewDialogOpen(false); handleApprove(); }}
+                                    disabled={loading}
+                                    className="bg-green-600 hover:bg-green-700"
+                                >
+                                    {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Check className="h-4 w-4 mr-2" />}
+                                    Approve
+                                </Button>
+                                <Button
+                                    variant="destructive"
+                                    onClick={() => { setViewDialogOpen(false); handleReject(); }}
+                                    disabled={loading}
+                                >
+                                    <X className="h-4 w-4 mr-2" /> Reject
+                                </Button>
+                            </>
+                        )}
+                        <Button variant="ghost" onClick={() => setViewDialogOpen(false)}>Close</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* ── Edit Dialog ── */}
+            <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Edit Submission</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-2">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                                <Label htmlFor="edit-tool-name">Tool Name</Label>
+                                <Input
+                                    id="edit-tool-name"
+                                    value={editData.tool_name}
+                                    onChange={(e) => setEditData((p) => ({ ...p, tool_name: e.target.value }))}
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor="edit-tool-url">URL</Label>
+                                <Input
+                                    id="edit-tool-url"
+                                    value={editData.tool_url}
+                                    onChange={(e) => setEditData((p) => ({ ...p, tool_url: e.target.value }))}
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <Label>Category</Label>
+                                <Select
+                                    value={editData.category}
+                                    onValueChange={(v) => setEditData((p) => ({ ...p, category: v }))}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select category" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {CATEGORIES.map((c) => (
+                                            <SelectItem key={c} value={c}>{c}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-1">
+                                <Label>Pricing</Label>
+                                <Select
+                                    value={editData.pricing}
+                                    onValueChange={(v) => setEditData((p) => ({ ...p, pricing: v }))}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select pricing" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {PRICING_OPTIONS.map((o) => (
+                                            <SelectItem key={o} value={o}>{o}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-1">
+                                <Label>Plan</Label>
+                                <Select
+                                    value={editData.plan}
+                                    onValueChange={(v) => setEditData((p) => ({ ...p, plan: v }))}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select plan" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {PLAN_OPTIONS.map((o) => (
+                                            <SelectItem key={o} value={o}>{o}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-1">
+                                <Label>Status</Label>
+                                <Select
+                                    value={editData.status}
+                                    onValueChange={(v) => setEditData((p) => ({ ...p, status: v }))}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {STATUS_OPTIONS.map((o) => (
+                                            <SelectItem key={o} value={o}>{o}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor="edit-submitter-name">Submitter Name</Label>
+                                <Input
+                                    id="edit-submitter-name"
+                                    value={editData.submitter_name}
+                                    onChange={(e) => setEditData((p) => ({ ...p, submitter_name: e.target.value }))}
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor="edit-submitter-email">Submitter Email</Label>
+                                <Input
+                                    id="edit-submitter-email"
+                                    type="email"
+                                    value={editData.submitter_email}
+                                    onChange={(e) => setEditData((p) => ({ ...p, submitter_email: e.target.value }))}
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-1">
+                            <Label htmlFor="edit-description">Description</Label>
+                            <Textarea
+                                id="edit-description"
+                                rows={3}
+                                value={editData.description}
+                                onChange={(e) => setEditData((p) => ({ ...p, description: e.target.value }))}
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <Label htmlFor="edit-full-description">Full Description</Label>
+                            <Textarea
+                                id="edit-full-description"
+                                rows={5}
+                                value={editData.full_description}
+                                onChange={(e) => setEditData((p) => ({ ...p, full_description: e.target.value }))}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter className="gap-2 flex-wrap">
+                        <Button variant="outline" onClick={() => setEditDialogOpen(false)} disabled={loading}>
+                            Cancel
+                        </Button>
+                        <Button variant="secondary" onClick={handleSaveChanges} disabled={loading}>
+                            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                            Save Changes
+                        </Button>
+                        <Button onClick={handleSaveAndApprove} disabled={loading} className="bg-green-600 hover:bg-green-700">
+                            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Check className="h-4 w-4 mr-2" />}
+                            Save &amp; Approve
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* ── Follow-up Email Dialog ── */}
+            <Dialog open={followupDialogOpen} onOpenChange={setFollowupDialogOpen}>
+                <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>Send Follow-up Email</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-3 py-2">
+                        <p className="text-sm text-muted-foreground">
+                            Sending to: <span className="font-medium text-foreground">{submission.submitter_email}</span>
+                        </p>
+                        <div className="space-y-1">
+                            <Label htmlFor="followup-message">Message</Label>
+                            <Textarea
+                                id="followup-message"
+                                rows={6}
+                                placeholder="Type your message to the submitter..."
+                                value={followupMessage}
+                                onChange={(e) => setFollowupMessage(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setFollowupDialogOpen(false)} disabled={loading}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleSendFollowup} disabled={loading || !followupMessage.trim()}>
+                            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Mail className="h-4 w-4 mr-2" />}
+                            Send Email
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* ── Delete Confirmation Dialog ── */}
             <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogTitle>Delete Submission?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will permanently delete the submission for "{submission.tool_name}". This action cannot be undone.
+                            This will permanently delete the submission for &quot;{submission.tool_name}&quot;. This action cannot be undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete} disabled={loading} className="bg-red-600 hover:bg-red-700">
+                        <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDelete}
+                            disabled={loading}
+                            className="bg-red-600 hover:bg-red-700"
+                        >
                             {loading ? 'Deleting...' : 'Delete'}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
         </>
+    );
+}
+
+// ── Small helper component ─────────────────────────────────────────────────────
+function DetailItem({
+    label,
+    value,
+    children,
+}: {
+    label: string;
+    value?: string;
+    children?: React.ReactNode;
+}) {
+    return (
+        <div>
+            <p className="text-xs font-semibold uppercase text-muted-foreground mb-0.5">{label}</p>
+            {children ?? <p className="text-sm">{value ?? '—'}</p>}
+        </div>
     );
 }

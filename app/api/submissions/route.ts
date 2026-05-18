@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail, emailTemplates } from '@/lib/email';
 
-// API route for approving/rejecting/deleting submissions
+// API route for approving/rejecting/deleting/updating/following-up on submissions
 // Uses service role key to bypass RLS
 export async function POST(request: NextRequest) {
     console.log('=== Submissions API Called ===');
@@ -32,24 +32,24 @@ export async function POST(request: NextRequest) {
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/(^-|-$)/g, '');
-            
+
             // Check if slug exists and make it unique if needed
             let slug = baseSlug;
             let counter = 1;
             let slugExists = true;
-            
+
             while (slugExists) {
                 const { data: existingTools, error: checkError } = await supabase
                     .from('tools')
                     .select('id')
                     .eq('slug', slug)
                     .limit(1);
-                
+
                 if (checkError) {
                     console.error('Error checking slug:', checkError);
                     break;
                 }
-                
+
                 if (!existingTools || existingTools.length === 0) {
                     slugExists = false;
                 } else {
@@ -111,17 +111,17 @@ export async function POST(request: NextRequest) {
                     pricing: submissionData.pricing,
                     url: submissionData.tool_url,
                 });
-                
+
                 // Check if it's a duplicate slug error
                 if (toolError.code === '23505' || toolError.message?.includes('duplicate') || toolError.message?.includes('unique')) {
-                    return NextResponse.json({ 
+                    return NextResponse.json({
                         error: `Tool with this name/slug already exists. Slug: ${slug}`,
                         details: toolError,
                         code: 'DUPLICATE_SLUG'
                     }, { status: 409 });
                 }
-                
-                return NextResponse.json({ 
+
+                return NextResponse.json({
                     error: `Failed to create tool: ${toolError.message}`,
                     details: toolError,
                     code: toolError.code
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
 
             if (!createdTool) {
                 console.error('Tool creation returned no data');
-                return NextResponse.json({ 
+                return NextResponse.json({
                     error: 'Tool was not created - no data returned',
                 }, { status: 500 });
             }
@@ -152,9 +152,9 @@ export async function POST(request: NextRequest) {
 
             if (verifyError || !verifyTool) {
                 console.error('Verification failed:', verifyError);
-                return NextResponse.json({ 
+                return NextResponse.json({
                     error: 'Tool was created but verification failed',
-                    details: verifyError 
+                    details: verifyError
                 }, { status: 500 });
             }
 
@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
                     submissionData.tool_name,
                     toolUrl
                 );
-                
+
                 await sendEmail({
                     to: submissionData.submitter_email,
                     subject: emailTemplate.subject,
@@ -188,8 +188,8 @@ export async function POST(request: NextRequest) {
                 console.log('✅ Approval email sent to:', submissionData.submitter_email);
             }
 
-            return NextResponse.json({ 
-                success: true, 
+            return NextResponse.json({
+                success: true,
                 message: 'Submission approved and tool created!',
                 toolId: createdTool.id,
                 toolSlug: createdTool.slug
@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
             // Send rejection email to submitter
             if (submission?.submitter_email && submission?.tool_name) {
                 const emailTemplate = emailTemplates.toolRejected(submission.tool_name);
-                
+
                 await sendEmail({
                     to: submission.submitter_email,
                     subject: emailTemplate.subject,
@@ -237,6 +237,112 @@ export async function POST(request: NextRequest) {
             }
 
             return NextResponse.json({ success: true, message: 'Submission deleted' });
+
+        } else if (action === 'update') {
+            // Update submission fields without changing approval status (unless status field is explicitly set)
+            const updateFields: Record<string, string> = {};
+
+            const allowed = [
+                'tool_name', 'tool_url', 'description', 'category',
+                'pricing', 'submitter_name', 'submitter_email', 'plan', 'status',
+            ] as const;
+
+            for (const field of allowed) {
+                if (submissionData[field] !== undefined) {
+                    updateFields[field] = submissionData[field] as string;
+                }
+            }
+
+            const { error } = await supabase
+                .from('tool_submissions')
+                .update(updateFields)
+                .eq('id', submissionId);
+
+            if (error) {
+                return NextResponse.json({ error: `Failed to update: ${error.message}` }, { status: 500 });
+            }
+
+            return NextResponse.json({ success: true, message: 'Submission updated' });
+
+        } else if (action === 'followup') {
+            const { message, submitterEmail, toolName } = body as {
+                message: string;
+                submitterEmail: string;
+                toolName: string;
+            };
+
+            if (!submitterEmail || !message) {
+                return NextResponse.json({ error: 'submitterEmail and message are required' }, { status: 400 });
+            }
+
+            // Build the follow-up email HTML inline using the same layout style as lib/email.ts
+            const safeMessage = message
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/\n/g, '<br/>');
+
+            const followupHtml = `<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>AI Tool List</title>
+  <style>
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #f0f4f8; }
+    @media only screen and (max-width: 640px) {
+      .main-table { width: 100% !important; }
+      .inner-td { padding: 24px 16px !important; }
+      .header-td { padding: 32px 16px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background-color:#f0f4f8;">
+<div style="width:100%;background-color:#f0f4f8;padding:24px 0;">
+  <table class="main-table" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:640px;margin:0 auto;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.10);">
+    <!-- HEADER -->
+    <tr>
+      <td class="header-td" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:40px 32px;text-align:center;">
+        <h1 style="color:#ffffff;margin:0 0 8px;font-family:Arial,sans-serif;font-size:28px;font-weight:800;">A Message From Our Team</h1>
+        <p style="color:rgba(255,255,255,0.85);margin:0;font-family:Arial,sans-serif;font-size:15px;">Regarding your submission: ${toolName}</p>
+      </td>
+    </tr>
+    <!-- BODY -->
+    <tr>
+      <td class="inner-td" style="background:#ffffff;padding:40px 32px;">
+        <p style="margin:0 0 16px;font-family:Arial,sans-serif;font-size:16px;color:#4a5568;">Hello,</p>
+        <p style="margin:0 0 24px;font-family:Arial,sans-serif;font-size:15px;color:#4a5568;line-height:1.7;">${safeMessage}</p>
+        <p style="margin:0;font-family:Arial,sans-serif;font-size:14px;color:#718096;">Best regards,<br/><strong style="color:#1a202c;">The AI Tool List Team</strong></p>
+      </td>
+    </tr>
+    <!-- FOOTER -->
+    <tr>
+      <td style="background:#f8fafc;padding:24px 32px;text-align:center;border-top:1px solid #e2e8f0;">
+        <p style="margin:0 0 4px;color:#94a3b8;font-size:13px;font-family:Arial,sans-serif;">AI Tool List &mdash; Discover the Best AI Tools</p>
+        <p style="margin:0;font-size:12px;font-family:Arial,sans-serif;"><a href="https://allaitoollist.com" style="color:#667eea;text-decoration:none;">allaitoollist.com</a></p>
+      </td>
+    </tr>
+  </table>
+</div>
+</body>
+</html>`;
+
+            const emailResult = await sendEmail({
+                to: submitterEmail,
+                subject: `Follow-up on Your Submission: ${toolName}`,
+                html: followupHtml,
+            });
+
+            if (!emailResult.success) {
+                console.error('Failed to send follow-up email:', emailResult.error);
+                return NextResponse.json({ error: 'Failed to send follow-up email' }, { status: 500 });
+            }
+
+            console.log('✅ Follow-up email sent to:', submitterEmail);
+            return NextResponse.json({ success: true, message: 'Follow-up email sent' });
         }
 
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
