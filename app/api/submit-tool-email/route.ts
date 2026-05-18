@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
         console.log('Sending email to:', submitterEmail, 'for tool:', toolName);
 
         // Send submission confirmation email
-        const emailTemplate = emailTemplates.toolSubmitted(toolName, submitterEmail);
+        const emailTemplate = emailTemplates.toolSubmitted(toolName);
 
         const result = await sendEmail({
             to: submitterEmail,
