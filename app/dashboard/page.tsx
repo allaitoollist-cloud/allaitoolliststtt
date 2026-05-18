@@ -66,15 +66,27 @@ export default async function DashboardPage() {
         .eq('submitter_email', user.email)
         .order('created_at', { ascending: false });
 
-    // Match approved submissions to live tools
-    const approvedToolNames = submissions?.filter(s => s.status === 'approved').map(s => s.tool_name) || [];
+    // Match approved submissions to live tools by slug (more reliable than name)
+    const approvedSubs = submissions?.filter(s => s.status === 'approved') || [];
     let liveTools: any[] = [];
-    if (approvedToolNames.length > 0) {
-        const { data } = await supabase
-            .from('tools')
-            .select('id, name, slug, featured')
-            .in('name', approvedToolNames);
-        if (data) liveTools = data;
+    if (approvedSubs.length > 0) {
+        const slugsToTry = approvedSubs
+            .map(s => s.tool_slug || s.tool_name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''))
+            .filter(Boolean);
+        const namesToTry = approvedSubs.map(s => s.tool_name).filter(Boolean);
+
+        const [bySlug, byName] = await Promise.all([
+            slugsToTry.length > 0
+                ? supabase.from('tools').select('id, name, slug, featured').in('slug', slugsToTry)
+                : Promise.resolve({ data: [] }),
+            namesToTry.length > 0
+                ? supabase.from('tools').select('id, name, slug, featured').in('name', namesToTry)
+                : Promise.resolve({ data: [] }),
+        ]);
+
+        const combined = [...(bySlug.data || []), ...(byName.data || [])];
+        const seen = new Set<string>();
+        liveTools = combined.filter(t => { if (seen.has(t.id)) return false; seen.add(t.id); return true; });
     }
 
     return (

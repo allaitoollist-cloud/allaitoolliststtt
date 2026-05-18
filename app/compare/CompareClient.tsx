@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Check, Minus, X, Search, Plus } from 'lucide-react';
 import Link from 'next/link';
 
@@ -28,9 +29,20 @@ const FEATURES = [
 ];
 
 export function CompareClient({ tools }: { tools: Tool[] }) {
-    const [selected, setSelected] = useState<Tool[]>([]);
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const [selected, setSelected] = useState<Tool[]>(() => {
+        const slugs = searchParams.get('tools')?.split(',').filter(Boolean) || [];
+        return slugs.map(slug => tools.find(t => t.slug === slug)).filter(Boolean) as Tool[];
+    });
     const [search, setSearch] = useState('');
     const [showSearch, setShowSearch] = useState(false);
+
+    useEffect(() => {
+        const slugs = selected.map(t => t.slug).join(',');
+        const params = new URLSearchParams(slugs ? { tools: slugs } : {});
+        router.replace(`/compare${slugs ? `?${params}` : ''}`, { scroll: false });
+    }, [selected]);
 
     const filtered = useMemo(() =>
         tools.filter(t =>

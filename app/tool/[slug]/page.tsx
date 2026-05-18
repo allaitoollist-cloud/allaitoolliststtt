@@ -9,6 +9,7 @@ import {
     TrendingUp, Zap, Users, Award, Bookmark, Layout, Search, MessageSquare, ChevronRight, Code
 } from 'lucide-react';
 import { ShareDialog } from '@/components/ShareDialog';
+import { FavoriteButton } from '@/components/FavoriteButton';
 import { ToolCard } from '@/components/ToolCard';
 import { WriteReviewDialog } from '@/components/WriteReviewDialog';
 import { ViewTracker } from '@/components/ViewTracker';
@@ -192,10 +193,7 @@ export default async function ToolDetailPage({ params }: PageProps) {
                                         </a>
                                     </Button>
 
-                                    <Button variant="outline" className="bg-zinc-900 border-white/10 hover:bg-zinc-800 text-white px-8 py-7 text-lg rounded-2xl font-bold" size="lg">
-                                        <Bookmark className="mr-2 h-5 w-5" />
-                                        Save
-                                    </Button>
+                                    <FavoriteButton toolId={tool.id} toolSlug={tool.slug} />
 
                                     <ShareDialog
                                         url={`https://allaitoollist.com/tool/${tool.slug}`}
@@ -224,8 +222,8 @@ export default async function ToolDetailPage({ params }: PageProps) {
                                                 </div>
                                                 <div className="bg-zinc-800/50 p-6 rounded-3xl border border-white/5 text-center">
                                                     <Star className="w-6 h-6 text-amber-500 mx-auto mb-2 fill-amber-500" />
-                                                    <div className="text-3xl font-black text-white">{tool.rating?.toFixed(1) || '4.5'}</div>
-                                                    <div className="text-xs text-zinc-500 font-bold uppercase tracking-widest mt-1">Avg Rating</div>
+                                                    <div className="text-3xl font-black text-white">{tool.rating ? tool.rating.toFixed(1) : '—'}</div>
+                                                    <div className="text-xs text-zinc-500 font-bold uppercase tracking-widest mt-1">{tool.rating ? 'Avg Rating' : 'No Ratings'}</div>
                                                 </div>
                                             </div>
                                         </div>
@@ -241,7 +239,11 @@ export default async function ToolDetailPage({ params }: PageProps) {
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-zinc-500 font-bold text-sm uppercase">Verified</span>
-                                                <span className="text-zinc-300 font-black">24h ago</span>
+                                                <span className="text-zinc-300 font-black">
+                                                    {tool.verified
+                                                        ? (dbTool.verified_at ? new Date(dbTool.verified_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Yes')
+                                                        : 'No'}
+                                                </span>
                                             </div>
                                         </div>
                                     </CardContent>

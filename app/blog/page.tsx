@@ -124,7 +124,7 @@ export default async function BlogPage() {
                                                     </div>
                                                     <div className="flex items-center gap-1">
                                                         <Clock className="h-4 w-4" />
-                                                        <span>5 min read</span>
+                                                        <span>{Math.max(1, Math.ceil((blog.content?.split(/\s+/).length || 300) / 200))} min read</span>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-2 text-primary font-medium pt-2">

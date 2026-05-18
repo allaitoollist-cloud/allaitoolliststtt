@@ -66,11 +66,7 @@ const PLANS = [
 
 const ENDPOINTS = [
     { method: 'GET', path: '/api/tools', desc: 'List all tools with filters (category, pricing, search)' },
-    { method: 'GET', path: '/api/tools/:slug', desc: 'Get full details for a specific tool' },
     { method: 'GET', path: '/api/categories', desc: 'List all tool categories with counts' },
-    { method: 'GET', path: '/api/tools/trending', desc: 'Get currently trending AI tools' },
-    { method: 'GET', path: '/api/tools/featured', desc: 'Get featured/editor-picked tools' },
-    { method: 'GET', path: '/api/tools/:slug/alternatives', desc: 'Get alternatives for a specific tool' },
 ];
 
 const CODE_EXAMPLE = `// Fetch AI tools by category
