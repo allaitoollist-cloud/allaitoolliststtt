@@ -25,20 +25,19 @@ import {
 import { MoreHorizontal, Trash2, Shield, ShieldOff } from 'lucide-react';
 import { getBrowserClient } from '@/lib/supabase-browser';
 import { useToast } from '@/components/ui/use-toast';
-import { useRouter } from 'next/navigation';
 
 interface User {
     id: string;
     email: string;
     created_at: string;
+    last_sign_in_at?: string;
     is_admin?: boolean;
 }
 
-export function UserRow({ user }: { user: User }) {
+export function UserRow({ user, onRefresh }: { user: User; onRefresh?: () => void }) {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
-    const router = useRouter();
     const supabase = getBrowserClient();
 
     const handleToggleAdmin = async () => {
@@ -61,7 +60,7 @@ export function UserRow({ user }: { user: User }) {
                 title: 'Success',
                 description: `User ${newAdminStatus ? 'promoted to' : 'removed from'} admin`,
             });
-            router.refresh();
+            onRefresh?.();
         }
         setLoading(false);
     };
@@ -81,7 +80,7 @@ export function UserRow({ user }: { user: User }) {
                 title: 'Success',
                 description: 'User deleted successfully',
             });
-            router.refresh();
+            onRefresh?.();
         }
         setLoading(false);
         setDeleteDialogOpen(false);
@@ -102,6 +101,9 @@ export function UserRow({ user }: { user: User }) {
                     ) : (
                         <Badge variant="secondary">User</Badge>
                     )}
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                    {user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : '—'}
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                     {new Date(user.created_at).toLocaleDateString()}

@@ -23,7 +23,6 @@ import {
 import { MoreHorizontal, Mail, CheckCheck, Trash2, Eye } from 'lucide-react';
 import { getBrowserClient } from '@/lib/supabase-browser';
 import { useToast } from '@/components/ui/use-toast';
-import { useRouter } from 'next/navigation';
 
 interface ContactMessage {
     id: string;
@@ -35,12 +34,11 @@ interface ContactMessage {
     created_at: string;
 }
 
-export function ContactMessageRow({ message }: { message: ContactMessage }) {
+export function ContactMessageRow({ message, onRefresh }: { message: ContactMessage; onRefresh?: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const supabase = getBrowserClient();
     const { toast } = useToast();
-    const router = useRouter();
 
     const handleMarkAsRead = async () => {
         setLoading(true);
@@ -60,7 +58,7 @@ export function ContactMessageRow({ message }: { message: ContactMessage }) {
                 title: 'Success',
                 description: 'Message marked as read',
             });
-            router.refresh();
+            onRefresh?.();
         }
         setLoading(false);
     };
@@ -85,7 +83,7 @@ export function ContactMessageRow({ message }: { message: ContactMessage }) {
                 title: 'Success',
                 description: 'Message deleted',
             });
-            router.refresh();
+            onRefresh?.();
         }
         setLoading(false);
     };
