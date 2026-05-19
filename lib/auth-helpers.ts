@@ -77,7 +77,6 @@ export async function isAdmin() {
     // HARDCODED ACCESS for your specific emails
     const allowedEmails = ['muhammadismailkpt@gmail.com', 'allaitoolist@gmail.com'];
     if (user.email && allowedEmails.includes(user.email)) {
-        console.log(`[AuthDebug] Access granted via hardcoded email: ${user.email}`);
         return true;
     }
 
@@ -86,14 +85,6 @@ export async function isAdmin() {
         .select('is_admin')
         .eq('id', user.id)
         .single();
-
-    if (error) {
-        console.error('isAdmin Check Error:', error);
-    }
-
-    console.log(`[AuthDebug] User: ${user.email} (${user.id})`);
-    console.log(`[AuthDebug] Profile found:`, profile);
-    console.log(`[AuthDebug] is_admin:`, profile?.is_admin);
 
     return profile?.is_admin || false;
 }

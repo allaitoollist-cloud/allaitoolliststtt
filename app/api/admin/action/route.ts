@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
             // 1. Fetch current status to prevent redundant updates
             const { data: currentTool } = await supabase
                 .from('tools')
-                .select('status, name, slug, review_status, submitter_email')
+                .select('status, name, slug, submitter_email')
                 .eq('id', tool_id)
                 .single();
 
@@ -44,9 +44,7 @@ export async function POST(req: NextRequest) {
                 .from('tools')
                 .update({
                     status: 'published',
-                    published_at: new Date().toISOString(), // Critical for 'Recently Added'
-                    is_draft: false,
-                    review_status: 'approved',
+                    published_at: new Date().toISOString(),
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', tool_id)
@@ -94,11 +92,7 @@ export async function POST(req: NextRequest) {
 
             const { error } = await supabase
                 .from('tools')
-                .update({
-                    status: 'rejected',
-                    is_draft: true,
-                    review_status: 'rejected'
-                })
+                .update({ status: 'rejected', updated_at: new Date().toISOString() })
                 .eq('id', tool_id);
 
             if (error) return NextResponse.json({ error: 'Failed to reject tool' }, { status: 500 });

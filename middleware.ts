@@ -45,17 +45,6 @@ export function middleware(request: NextRequest) {
         );
     }
 
-    // Clean up filter parameters (prevent duplicate URLs)
-    // If there are query params but no actual filters, redirect to clean URL
-    const url = request.nextUrl.clone();
-    const hasFilters = url.searchParams.has('category') || url.searchParams.has('pricing');
-
-    if (!hasFilters && url.search) {
-        // Remove all query params if no valid filters
-        url.search = '';
-        return NextResponse.redirect(url, 301);
-    }
-
     // Markdown negotiation for agents (RFC 8288 / Markdown for Agents)
     const accept = request.headers.get('accept') || '';
     if (pathname === '/' && accept.includes('text/markdown')) {
