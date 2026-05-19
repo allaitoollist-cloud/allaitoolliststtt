@@ -49,7 +49,7 @@ export default function ToolEditPage({ params }: ToolEditPageProps) {
         trending: false,
         featured: false,
         verified: false,
-        is_draft: false,
+        status: 'published',
         affiliate_url: '',
     });
 
@@ -87,7 +87,7 @@ export default function ToolEditPage({ params }: ToolEditPageProps) {
                     trending: data.trending || false,
                     featured: data.featured || false,
                     verified: data.verified || false,
-                    is_draft: data.is_draft || false,
+                    status: data.status || 'published',
                     affiliate_url: data.affiliate_url || '',
                 });
             }
@@ -122,7 +122,7 @@ export default function ToolEditPage({ params }: ToolEditPageProps) {
                 trending: tool.trending,
                 featured: tool.featured,
                 verified: tool.verified,
-                is_draft: tool.is_draft,
+                status: tool.status,
                 affiliate_url: tool.affiliate_url || null,
             })
             .eq('id', params.id);
@@ -171,7 +171,7 @@ export default function ToolEditPage({ params }: ToolEditPageProps) {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    {tool.is_draft && (
+                    {tool.status === 'draft' && (
                         <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-500">
                             Draft
                         </Badge>
@@ -379,8 +379,8 @@ export default function ToolEditPage({ params }: ToolEditPageProps) {
                                     <p className="text-xs text-muted-foreground">Hide from public</p>
                                 </div>
                                 <Switch
-                                    checked={tool.is_draft}
-                                    onCheckedChange={(checked) => setTool({ ...tool, is_draft: checked })}
+                                    checked={tool.status === 'draft'}
+                                    onCheckedChange={(checked) => setTool({ ...tool, status: checked ? 'draft' : 'published' })}
                                 />
                             </div>
 

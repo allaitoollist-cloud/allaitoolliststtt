@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 const DEBUG_ROUTES = [
-    '/api/debug', '/api/fix-', '/api/delete-dummy',
+    '/api/debug', '/api/fix-', '/api/delete-dummy', '/api/delete-specific',
     '/api/debug-tools', '/api/recreate-tool', '/api/delete-tool-debug',
+    '/api/fix-drafts', '/api/fix-rls', '/api/fix-tools-delete-policy',
+    '/admin-debug', '/debug',
 ];
 
 export function middleware(request: NextRequest) {

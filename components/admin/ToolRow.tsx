@@ -43,6 +43,7 @@ interface Tool {
     featured: boolean;
     verified: boolean;
     is_draft?: boolean;
+    status?: string;
 }
 
 interface ToolRowProps {
@@ -78,12 +79,25 @@ export function ToolRow({ tool, selected, onSelect, onRefresh }: ToolRowProps) {
         }
     };
 
-    const handleToggle = async (field: 'featured' | 'trending' | 'verified' | 'is_draft', currentValue: boolean) => {
+    const isDraft = (t: typeof tool) => t.status === 'draft' || (!t.status && t.is_draft);
+
+    const handleToggle = async (field: 'featured' | 'trending' | 'verified', currentValue: boolean) => {
         const { error } = await supabase.from('tools').update({ [field]: !currentValue }).eq('id', tool.id);
         if (error) {
             toast({ title: 'Error', description: `Failed to update ${field}`, variant: 'destructive' });
         } else {
             toast({ title: 'Updated', description: `${field} toggled.` });
+            onRefresh();
+        }
+    };
+
+    const handleTogglePublish = async () => {
+        const newStatus = isDraft(tool) ? 'published' : 'draft';
+        const { error } = await supabase.from('tools').update({ status: newStatus }).eq('id', tool.id);
+        if (error) {
+            toast({ title: 'Error', description: 'Failed to update status', variant: 'destructive' });
+        } else {
+            toast({ title: 'Updated', description: `Tool ${newStatus}.` });
             onRefresh();
         }
     };
@@ -121,7 +135,7 @@ export function ToolRow({ tool, selected, onSelect, onRefresh }: ToolRowProps) {
                         {tool.featured && <Badge className="bg-purple-500/10 text-purple-500 border-0 gap-1 text-xs"><Star className="h-3 w-3 fill-purple-500" />Featured</Badge>}
                         {tool.trending && <Badge className="bg-orange-500/10 text-orange-500 border-0 gap-1 text-xs"><TrendingUp className="h-3 w-3" />Trending</Badge>}
                         {tool.verified && <Badge className="bg-green-500/10 text-green-500 border-0 gap-1 text-xs"><ShieldCheck className="h-3 w-3" />Verified</Badge>}
-                        {tool.is_draft && <Badge className="bg-yellow-500/10 text-yellow-500 border-0 gap-1 text-xs"><FileX className="h-3 w-3" />Draft</Badge>}
+                        {isDraft(tool) && <Badge className="bg-yellow-500/10 text-yellow-500 border-0 gap-1 text-xs"><FileX className="h-3 w-3" />Draft</Badge>}
                     </div>
                 </TableCell>
                 <TableCell className="text-right">
@@ -156,9 +170,9 @@ export function ToolRow({ tool, selected, onSelect, onRefresh }: ToolRowProps) {
                                 <ShieldCheck className={`mr-2 h-4 w-4 ${tool.verified ? 'text-green-500' : ''}`} />
                                 {tool.verified ? 'Remove Verified' : 'Mark as Verified'}
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleToggle('is_draft', tool.is_draft || false)}>
-                                <FileX className={`mr-2 h-4 w-4 ${tool.is_draft ? 'text-yellow-500' : ''}`} />
-                                {tool.is_draft ? 'Publish' : 'Move to Draft'}
+                            <DropdownMenuItem onClick={handleTogglePublish}>
+                                <FileX className={`mr-2 h-4 w-4 ${isDraft(tool) ? 'text-yellow-500' : ''}`} />
+                                {isDraft(tool) ? 'Publish' : 'Move to Draft'}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => setDeleteDialogOpen(true)} className="text-red-600">

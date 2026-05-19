@@ -43,13 +43,15 @@ export default function AdminToolsPage() {
 
     useEffect(() => { load(); }, []);
 
+    const isPublished = (t: any) => t.status === 'published' || (!t.status && !t.is_draft);
+
     const stats = useMemo(() => ({
         total: tools.length,
-        published: tools.filter(t => !t.is_draft).length,
+        published: tools.filter(isPublished).length,
         featured: tools.filter(t => t.featured).length,
         trending: tools.filter(t => t.trending).length,
         verified: tools.filter(t => t.verified).length,
-        drafts: tools.filter(t => t.is_draft).length,
+        drafts: tools.filter(t => !isPublished(t)).length,
     }), [tools]);
 
     const filtered = useMemo(() => {
@@ -58,11 +60,11 @@ export default function AdminToolsPage() {
             const matchSearch = !q || t.name?.toLowerCase().includes(q) || t.category?.toLowerCase().includes(q) || t.url?.toLowerCase().includes(q) || t.short_description?.toLowerCase().includes(q);
             const matchFilter =
                 filter === 'all' ? true :
-                filter === 'published' ? !t.is_draft :
+                filter === 'published' ? isPublished(t) :
                 filter === 'featured' ? t.featured :
                 filter === 'trending' ? t.trending :
                 filter === 'verified' ? t.verified :
-                filter === 'drafts' ? t.is_draft : true;
+                filter === 'drafts' ? !isPublished(t) : true;
             return matchSearch && matchFilter;
         });
     }, [tools, search, filter]);
@@ -86,7 +88,7 @@ export default function AdminToolsPage() {
         });
     };
 
-    const bulkUpdate = async (field: string, value: boolean) => {
+    const bulkUpdate = async (field: string, value: boolean | string) => {
         setBulkLoading(true);
         const ids = Array.from(selectedIds);
         const { error } = await supabase.from('tools').update({ [field]: value }).in('id', ids);
@@ -211,10 +213,10 @@ export default function AdminToolsPage() {
                                 <DropdownMenuItem onClick={() => bulkUpdate('verified', false)}>
                                     <ShieldCheck className="mr-2 h-4 w-4" /> Remove Verified
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => bulkUpdate('is_draft', false)}>
+                                <DropdownMenuItem onClick={() => bulkUpdate('status', 'published')}>
                                     <Eye className="mr-2 h-4 w-4 text-blue-500" /> Publish All
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => bulkUpdate('is_draft', true)}>
+                                <DropdownMenuItem onClick={() => bulkUpdate('status', 'draft')}>
                                     <FileX className="mr-2 h-4 w-4 text-yellow-500" /> Move to Draft
                                 </DropdownMenuItem>
                             </DropdownMenuContent>

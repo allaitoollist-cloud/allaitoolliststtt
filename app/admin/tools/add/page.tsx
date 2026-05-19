@@ -44,7 +44,7 @@ export default function AddToolPage() {
         trending: false,
         featured: false,
         verified: false,
-        is_draft: true, // Default to draft
+        status: 'draft',
         affiliate_url: '',
     });
 
@@ -139,7 +139,7 @@ export default function AddToolPage() {
                 trending: tool.trending,
                 featured: tool.featured,
                 verified: tool.verified,
-                is_draft: tool.is_draft,
+                status: tool.status,
                 affiliate_url: tool.affiliate_url || null,
                 views: 0,
                 rating: 0,
@@ -185,7 +185,7 @@ export default function AddToolPage() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    {tool.is_draft && (
+                    {tool.status === 'draft' && (
                         <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-500">
                             Will be saved as Draft
                         </Badge>
@@ -420,8 +420,8 @@ export default function AddToolPage() {
                                     <p className="text-xs text-muted-foreground">Hide from public until ready</p>
                                 </div>
                                 <Switch
-                                    checked={tool.is_draft}
-                                    onCheckedChange={(checked) => setTool({ ...tool, is_draft: checked })}
+                                    checked={tool.status === 'draft'}
+                                    onCheckedChange={(checked) => setTool({ ...tool, status: checked ? 'draft' : 'published' })}
                                 />
                             </div>
 
