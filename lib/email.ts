@@ -45,295 +45,315 @@ export async function sendEmail({ to, subject, html, from, replyTo }: EmailOptio
   }
 }
 
-// ─── Shared layout wrapper ────────────────────────────────────────────────────
-function layout(headerBg: string, headerContent: string, bodyContent: string) {
+/* ─────────────────────────────────────────────────────────────────────────────
+   Brand colors (matches website)
+   Primary orange : #f97316
+   Dark text      : #1a1007
+   Body text      : #4a4540
+   Muted text     : #79716a
+   Border         : #e8dfd7
+   Light bg       : #fef8f4   (very light orange tint for info boxes)
+   Page bg        : #f5f5f5
+───────────────────────────────────────────────────────────────────────────── */
+
+const ORANGE  = '#f97316';
+const DARK    = '#1a1007';
+const BODY    = '#4a4540';
+const MUTED   = '#79716a';
+const BORDER  = '#e8dfd7';
+const LIGHT   = '#fef8f4';
+const PAGE_BG = '#f5f5f5';
+
+/* ── Shared layout ─────────────────────────────────────────────────────────── */
+function layout(content: string): string {
   return `<!DOCTYPE html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>AI Tool List</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+  <title>All AI Tool List</title>
   <!--[if mso]>
   <noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
   <![endif]-->
   <style>
-    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
-    body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #f0f4f8; }
-    .wrapper { width: 100%; background-color: #f0f4f8; }
-    .main-table { width: 100%; max-width: 640px; margin: 0 auto; }
-    @media only screen and (max-width: 640px) {
-      .main-table { width: 100% !important; }
-      .inner-td { padding: 24px 16px !important; }
-      .header-td { padding: 32px 16px !important; }
-      .btn { display: block !important; width: 100% !important; text-align: center !important; box-sizing: border-box !important; }
-      h1 { font-size: 24px !important; }
-      h2 { font-size: 20px !important; }
+    body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
+    table,td{mso-table-lspace:0pt;mso-table-rspace:0pt}
+    body{margin:0!important;padding:0!important;width:100%!important;background:${PAGE_BG}}
+    @media only screen and (max-width:620px){
+      .outer{padding:0!important}
+      .card{border-radius:0!important;border-left:none!important;border-right:none!important}
+      .body-td{padding:28px 20px!important}
+      .footer-td{padding:20px!important}
+      .btn a{display:block!important;width:100%!important;box-sizing:border-box!important}
+      h1{font-size:22px!important}
+      h2{font-size:18px!important}
     }
   </style>
 </head>
-<body style="margin:0;padding:0;background-color:#f0f4f8;">
-<div class="wrapper" style="width:100%;background-color:#f0f4f8;padding:24px 0;">
-  <!--[if mso]><table width="640" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
-  <table class="main-table" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:640px;margin:0 auto;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.10);">
-    <!-- HEADER -->
-    <tr>
-      <td class="header-td" style="background:${headerBg};padding:40px 32px;text-align:center;">
-        ${headerContent}
-      </td>
-    </tr>
-    <!-- BODY -->
-    <tr>
-      <td class="inner-td" style="background:#ffffff;padding:40px 32px;">
-        ${bodyContent}
-      </td>
-    </tr>
-    <!-- FOOTER -->
-    <tr>
-      <td style="background:#f8fafc;padding:24px 32px;text-align:center;border-top:1px solid #e2e8f0;">
-        <p style="margin:0 0 4px;color:#94a3b8;font-size:13px;font-family:Arial,sans-serif;">AI Tool List &mdash; Discover the Best AI Tools</p>
-        <p style="margin:0;font-size:12px;font-family:Arial,sans-serif;"><a href="https://allaitoollist.com" style="color:#667eea;text-decoration:none;">allaitoollist.com</a></p>
-      </td>
-    </tr>
-  </table>
-  <!--[if mso]></td></tr></table><![endif]-->
-</div>
+<body style="margin:0;padding:0;background:${PAGE_BG};">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${PAGE_BG};">
+  <tr>
+    <td class="outer" style="padding:32px 16px;">
+      <!--[if mso]><table width="600" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+      <table class="card" cellpadding="0" cellspacing="0" border="0"
+        style="width:100%;max-width:600px;margin:0 auto;background:#ffffff;border-radius:12px;border:1px solid ${BORDER};overflow:hidden;">
+
+        <!-- LOGO HEADER -->
+        <tr>
+          <td style="padding:22px 32px;border-bottom:1px solid ${BORDER};">
+            <table cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="width:4px;border-radius:2px;background:${ORANGE};font-size:1px;line-height:1px;">&nbsp;</td>
+                <td style="padding-left:10px;font-family:Arial,sans-serif;font-size:17px;font-weight:800;color:${DARK};letter-spacing:-0.3px;">
+                  All AI Tool List
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- BODY -->
+        <tr>
+          <td class="body-td" style="padding:36px 32px;background:#ffffff;">
+            ${content}
+          </td>
+        </tr>
+
+        <!-- FOOTER -->
+        <tr>
+          <td class="footer-td" style="padding:20px 32px;background:${PAGE_BG};border-top:1px solid ${BORDER};text-align:center;">
+            <p style="margin:0 0 4px;color:${MUTED};font-size:13px;font-family:Arial,sans-serif;">
+              All AI Tool List &mdash; Discover the Best AI Tools
+            </p>
+            <p style="margin:0;font-size:12px;font-family:Arial,sans-serif;">
+              <a href="https://allaitoollist.com" style="color:${ORANGE};text-decoration:none;">allaitoollist.com</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+      <!--[if mso]></td></tr></table><![endif]-->
+    </td>
+  </tr>
+</table>
 </body>
 </html>`;
 }
 
-function btn(href: string, text: string, bg = '#667eea') {
-  return `<table cellpadding="0" cellspacing="0" border="0" style="margin:24px auto 0;">
+/* ── Reusable building blocks ──────────────────────────────────────────────── */
+function heading(text: string, sub?: string): string {
+  return `<h1 style="margin:0 0 ${sub ? '8px' : '24px'};font-family:Arial,sans-serif;font-size:26px;font-weight:800;color:${DARK};line-height:1.2;">${text}</h1>
+  ${sub ? `<p style="margin:0 0 28px;font-family:Arial,sans-serif;font-size:15px;color:${MUTED};">${sub}</p>` : ''}`;
+}
+
+function infoBox(rows: Array<{ label: string; value: string }>): string {
+  const rowsHtml = rows.map(({ label, value }) => `
     <tr>
-      <td align="center" style="border-radius:10px;background:${bg};">
-        <a href="${href}" class="btn" style="display:inline-block;padding:14px 32px;color:#ffffff;font-family:Arial,sans-serif;font-size:15px;font-weight:700;text-decoration:none;border-radius:10px;background:${bg};">${text}</a>
+      <td style="padding:10px 0;border-bottom:1px solid ${BORDER};">
+        <p style="margin:0 0 2px;font-family:Arial,sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:${MUTED};">${label}</p>
+        <p style="margin:0;font-family:Arial,sans-serif;font-size:15px;font-weight:600;color:${DARK};">${value}</p>
+      </td>
+    </tr>`).join('');
+
+  return `<table cellpadding="0" cellspacing="0" border="0" width="100%"
+    style="background:${LIGHT};border:1px solid ${BORDER};border-left:3px solid ${ORANGE};border-radius:8px;margin-bottom:24px;">
+    <tr><td style="padding:16px 20px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%">
+        ${rowsHtml}
+      </table>
+    </td></tr>
+  </table>`;
+}
+
+function noteBox(text: string): string {
+  return `<table cellpadding="0" cellspacing="0" border="0" width="100%"
+    style="background:${LIGHT};border:1px solid ${BORDER};border-left:3px solid ${ORANGE};border-radius:8px;margin-bottom:24px;">
+    <tr><td style="padding:16px 20px;">
+      <p style="margin:0;font-family:Arial,sans-serif;font-size:14px;color:${BODY};line-height:1.6;">${text}</p>
+    </td></tr>
+  </table>`;
+}
+
+function btn(href: string, text: string): string {
+  return `<table class="btn" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 24px;">
+    <tr>
+      <td style="border-radius:8px;background:${ORANGE};">
+        <a href="${href}"
+          style="display:inline-block;padding:13px 28px;color:#ffffff;font-family:Arial,sans-serif;font-size:15px;font-weight:700;text-decoration:none;border-radius:8px;background:${ORANGE};">
+          ${text}
+        </a>
       </td>
     </tr>
   </table>`;
 }
 
-function infoRow(label: string, value: string) {
-  return `<tr>
-    <td style="padding:10px 0;border-bottom:1px solid #e2e8f0;">
-      <p style="margin:0;font-family:Arial,sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;">${label}</p>
-      <p style="margin:4px 0 0;font-family:Arial,sans-serif;font-size:16px;font-weight:600;color:#1a202c;">${value}</p>
-    </td>
-  </tr>`;
+function p(text: string, mb = '20px'): string {
+  return `<p style="margin:0 0 ${mb};font-family:Arial,sans-serif;font-size:15px;color:${BODY};line-height:1.7;">${text}</p>`;
 }
 
-// ─── Templates ───────────────────────────────────────────────────────────────
+function sign(): string {
+  return `<p style="margin:24px 0 0;font-family:Arial,sans-serif;font-size:14px;color:${MUTED};">
+    Best regards,<br/>
+    <strong style="color:${DARK};">The All AI Tool List Team</strong>
+  </p>`;
+}
+
+/* ── Templates ─────────────────────────────────────────────────────────────── */
 export const emailTemplates = {
 
   toolSubmitted: (toolName: string) => ({
-    subject: `Thank You for Submitting "${toolName}" to AI Tool List`,
-    html: layout(
-      'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
-      `<h1 style="color:#ffffff;margin:0 0 8px;font-family:Arial,sans-serif;font-size:28px;font-weight:800;">Thank You! 🙏</h1>
-       <p style="color:rgba(255,255,255,0.85);margin:0;font-family:Arial,sans-serif;font-size:15px;">Your submission has been received</p>`,
-      `<p style="margin:0 0 16px;font-family:Arial,sans-serif;font-size:16px;color:#4a5568;">Hello,</p>
-       <p style="margin:0 0 24px;font-family:Arial,sans-serif;font-size:16px;line-height:1.6;color:#4a5568;">
-         Thank you for submitting <strong style="color:#667eea;">"${toolName}"</strong> to AI Tool List! Our team will review it shortly.
-       </p>
-       <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f7f9fc;border-left:4px solid #667eea;border-radius:8px;margin-bottom:24px;">
-         <tr><td style="padding:20px;">
-           ${infoRow('Tool Name', toolName)}
-           ${infoRow('Status', '⏳ Under Review')}
-         </td></tr>
-       </table>
-       <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #e2e8f0;border-radius:8px;margin-bottom:24px;">
-         <tr><td style="padding:20px;">
-           <p style="margin:0 0 12px;font-family:Arial,sans-serif;font-size:16px;font-weight:700;color:#1a202c;">What happens next?</p>
-           <p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:14px;color:#4a5568;line-height:1.6;"><span style="color:#667eea;font-weight:700;">1.</span> Our team reviews your tool for quality</p>
-           <p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:14px;color:#4a5568;line-height:1.6;"><span style="color:#667eea;font-weight:700;">2.</span> If approved, it goes live to thousands of users</p>
-           <p style="margin:0;font-family:Arial,sans-serif;font-size:14px;color:#4a5568;line-height:1.6;"><span style="color:#667eea;font-weight:700;">3.</span> You'll get an email when it's published</p>
-         </td></tr>
-       </table>
-       <p style="margin:0;font-family:Arial,sans-serif;font-size:14px;color:#718096;">Best regards,<br/><strong style="color:#1a202c;">The AI Tool List Team</strong></p>`
-    ),
+    subject: `Submission Received: "${toolName}"`,
+    html: layout(`
+      ${heading('Submission Received', 'Your tool is now under review')}
+      ${p(`Thank you for submitting <strong style="color:${DARK};">${toolName}</strong>. Our team will review it and get back to you shortly.`)}
+      ${infoBox([
+        { label: 'Tool Name', value: toolName },
+        { label: 'Status',    value: 'Under Review' },
+      ])}
+      ${noteBox(`
+        <strong>What happens next?</strong><br/>
+        1. Our team reviews your tool for quality and relevance.<br/>
+        2. If approved, it goes live to thousands of AI enthusiasts.<br/>
+        3. You'll receive an email confirmation once it's published.
+      `)}
+      ${sign()}
+    `),
   }),
 
   toolApproved: (toolName: string, toolUrl: string) => ({
-    subject: `🎉 Your Tool "${toolName}" Has Been Published!`,
-    html: layout(
-      'linear-gradient(135deg,#10b981 0%,#059669 100%)',
-      `<h1 style="color:#ffffff;margin:0 0 8px;font-family:Arial,sans-serif;font-size:28px;font-weight:800;">🎉 Congratulations!</h1>
-       <p style="color:rgba(255,255,255,0.85);margin:0;font-family:Arial,sans-serif;font-size:15px;">Your tool has been published!</p>`,
-      `<p style="margin:0 0 16px;font-family:Arial,sans-serif;font-size:16px;color:#4a5568;">Hello,</p>
-       <p style="margin:0 0 24px;font-family:Arial,sans-serif;font-size:16px;line-height:1.6;color:#4a5568;">
-         Great news! <strong style="color:#10b981;">"${toolName}"</strong> has been <strong>approved and published</strong> on AI Tool List!
-       </p>
-       <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#ecfdf5;border:2px solid #10b981;border-radius:8px;margin-bottom:24px;">
-         <tr><td style="padding:20px;">
-           ${infoRow('Tool Name', toolName)}
-           ${infoRow('Status', '✅ Published & Live')}
-         </td></tr>
-       </table>
-       ${btn(toolUrl, 'View Your Tool →', '#10b981')}
-       <p style="margin:24px 0 0;font-family:Arial,sans-serif;font-size:14px;color:#718096;">Best regards,<br/><strong style="color:#1a202c;">The AI Tool List Team</strong></p>`
-    ),
+    subject: `Published: "${toolName}" is now live`,
+    html: layout(`
+      ${heading('Your Tool is Live!', `"${toolName}" has been approved and published`)}
+      ${p(`Great news! <strong style="color:${DARK};">${toolName}</strong> has been reviewed, approved, and is now live on All AI Tool List.`)}
+      ${infoBox([
+        { label: 'Tool Name', value: toolName },
+        { label: 'Status',    value: 'Published &amp; Live' },
+      ])}
+      ${btn(toolUrl, 'View Your Tool &rarr;')}
+      ${p('Share your listing with your users — every view counts toward trending rankings.', '0')}
+      ${sign()}
+    `),
   }),
 
   toolRejected: (toolName: string, reason?: string) => ({
-    subject: `Update on Your Submission: "${toolName}"`,
-    html: layout(
-      'linear-gradient(135deg,#f59e0b 0%,#d97706 100%)',
-      `<h1 style="color:#ffffff;margin:0 0 8px;font-family:Arial,sans-serif;font-size:28px;font-weight:800;">Submission Update</h1>
-       <p style="color:rgba(255,255,255,0.85);margin:0;font-family:Arial,sans-serif;font-size:15px;">Review Complete</p>`,
-      `<p style="margin:0 0 16px;font-family:Arial,sans-serif;font-size:16px;color:#4a5568;">Hello,</p>
-       <p style="margin:0 0 24px;font-family:Arial,sans-serif;font-size:16px;line-height:1.6;color:#4a5568;">
-         Thank you for submitting <strong style="color:#f59e0b;">"${toolName}"</strong>. After review, we're unable to approve it at this time.
-       </p>
-       ${reason ? `<table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#fef3c7;border-left:4px solid #f59e0b;border-radius:8px;margin-bottom:24px;"><tr><td style="padding:20px;"><p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;color:#92400e;">Reason</p><p style="margin:0;font-family:Arial,sans-serif;font-size:15px;color:#92400e;">${reason}</p></td></tr></table>` : ''}
-       <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #e2e8f0;border-radius:8px;margin-bottom:24px;">
-         <tr><td style="padding:20px;">
-           <p style="margin:0 0 10px;font-family:Arial,sans-serif;font-size:14px;color:#4a5568;line-height:1.6;"><span style="color:#f59e0b;font-weight:700;">•</span> Review our submission guidelines</p>
-           <p style="margin:0 0 10px;font-family:Arial,sans-serif;font-size:14px;color:#4a5568;line-height:1.6;"><span style="color:#f59e0b;font-weight:700;">•</span> Make necessary improvements</p>
-           <p style="margin:0;font-family:Arial,sans-serif;font-size:14px;color:#4a5568;line-height:1.6;"><span style="color:#f59e0b;font-weight:700;">•</span> Submit again in the future</p>
-         </td></tr>
-       </table>
-       <p style="margin:0;font-family:Arial,sans-serif;font-size:14px;color:#718096;">Best regards,<br/><strong style="color:#1a202c;">The AI Tool List Team</strong></p>`
-    ),
+    subject: `Submission Update: "${toolName}"`,
+    html: layout(`
+      ${heading('Submission Update', 'We have reviewed your submission')}
+      ${p(`Thank you for submitting <strong style="color:${DARK};">${toolName}</strong>. After our review, we are unable to approve it at this time.`)}
+      ${reason ? noteBox(`<strong>Reason:</strong> ${reason}`) : ''}
+      ${noteBox(`
+        You're welcome to make improvements and resubmit in the future.<br/>
+        Make sure your tool has a clear description, a working URL, and fits our categories.
+      `)}
+      ${btn('https://allaitoollist.com/submit', 'Submit Again &rarr;')}
+      ${sign()}
+    `),
   }),
 
   contactFormReceived: (name: string, email: string, subject: string, message: string) => ({
-    subject: `New Contact: ${subject}`,
-    html: layout(
-      'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
-      `<h1 style="color:#ffffff;margin:0 0 8px;font-family:Arial,sans-serif;font-size:24px;font-weight:800;">New Contact Message</h1>
-       <p style="color:rgba(255,255,255,0.85);margin:0;font-family:Arial,sans-serif;font-size:15px;">Via allaitoollist.com</p>`,
-      `<table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f7f9fc;border-left:4px solid #667eea;border-radius:8px;margin-bottom:24px;">
-         <tr><td style="padding:20px;">
-           ${infoRow('Name', name)}
-           ${infoRow('Email', `<a href="mailto:${email}" style="color:#667eea;">${email}</a>`)}
-           ${infoRow('Subject', subject)}
-         </td></tr>
-       </table>
-       <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #e2e8f0;border-radius:8px;">
-         <tr><td style="padding:20px;">
-           <p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;">Message</p>
-           <p style="margin:0;font-family:Arial,sans-serif;font-size:15px;color:#4a5568;line-height:1.7;white-space:pre-wrap;">${message}</p>
-         </td></tr>
-       </table>`
-    ),
+    subject: `Contact: ${subject}`,
+    html: layout(`
+      ${heading('New Contact Message', 'Submitted via allaitoollist.com')}
+      ${infoBox([
+        { label: 'Name',    value: name },
+        { label: 'Email',   value: `<a href="mailto:${email}" style="color:${ORANGE};text-decoration:none;">${email}</a>` },
+        { label: 'Subject', value: subject },
+      ])}
+      <table cellpadding="0" cellspacing="0" border="0" width="100%"
+        style="border:1px solid ${BORDER};border-radius:8px;margin-bottom:24px;">
+        <tr><td style="padding:16px 20px;">
+          <p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:${MUTED};">Message</p>
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:15px;color:${BODY};line-height:1.7;white-space:pre-wrap;">${message}</p>
+        </td></tr>
+      </table>
+    `),
   }),
 
   contactFormConfirmation: (name: string) => ({
-    subject: 'Thank You for Contacting AI Tool List',
-    html: layout(
-      'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
-      `<h1 style="color:#ffffff;margin:0 0 8px;font-family:Arial,sans-serif;font-size:28px;font-weight:800;">Thank You! ✨</h1>
-       <p style="color:rgba(255,255,255,0.85);margin:0;font-family:Arial,sans-serif;font-size:15px;">We've received your message</p>`,
-      `<p style="margin:0 0 16px;font-family:Arial,sans-serif;font-size:16px;color:#4a5568;">Hello ${name},</p>
-       <p style="margin:0 0 24px;font-family:Arial,sans-serif;font-size:16px;line-height:1.6;color:#4a5568;">
-         We've received your message and will get back to you as soon as possible.
-       </p>
-       <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#eff6ff;border-left:4px solid #667eea;border-radius:8px;margin-bottom:24px;">
-         <tr><td style="padding:20px;">
-           <p style="margin:0;font-family:Arial,sans-serif;font-size:14px;color:#1d4ed8;line-height:1.6;">
-             <strong>⏱️ Response Time:</strong> We typically respond within 24–48 hours.
-           </p>
-         </td></tr>
-       </table>
-       <p style="margin:0;font-family:Arial,sans-serif;font-size:14px;color:#718096;">Best regards,<br/><strong style="color:#1a202c;">The AI Tool List Team</strong></p>`
-    ),
+    subject: 'We received your message',
+    html: layout(`
+      ${heading('Message Received', 'Thank you for reaching out')}
+      ${p(`Hello <strong style="color:${DARK};">${name}</strong>,`)}
+      ${p("We've received your message and will get back to you as soon as possible.")}
+      ${noteBox('<strong>Response time:</strong> We typically reply within 24&ndash;48 hours.')}
+      ${sign()}
+    `),
   }),
 
   welcomeEmail: (name: string, username: string) => ({
-    subject: 'Welcome to AI Tool List! 🚀',
-    html: layout(
-      'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
-      `<h1 style="color:#ffffff;margin:0 0 8px;font-family:Arial,sans-serif;font-size:28px;font-weight:800;">Welcome! 🚀</h1>
-       <p style="color:rgba(255,255,255,0.85);margin:0;font-family:Arial,sans-serif;font-size:15px;">You're now part of the AI Tool List community</p>`,
-      `<p style="margin:0 0 16px;font-family:Arial,sans-serif;font-size:16px;color:#4a5568;">Hello ${name || username},</p>
-       <p style="margin:0 0 24px;font-family:Arial,sans-serif;font-size:16px;line-height:1.6;color:#4a5568;">
-         We're thrilled to have you! Discover and share the best AI tools with thousands of users.
-       </p>
-       <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f7f9fc;border-left:4px solid #667eea;border-radius:8px;margin-bottom:24px;">
-         <tr><td style="padding:20px;">
-           <p style="margin:0 0 12px;font-family:Arial,sans-serif;font-size:15px;font-weight:700;color:#1a202c;">What you can do:</p>
-           <p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:14px;color:#4a5568;line-height:1.6;">🔍 &nbsp;Discover thousands of AI tools</p>
-           <p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:14px;color:#4a5568;line-height:1.6;">⭐ &nbsp;Save your favorite tools</p>
-           <p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:14px;color:#4a5568;line-height:1.6;">📤 &nbsp;Submit new AI tools</p>
-           <p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:14px;color:#4a5568;line-height:1.6;">⚖️ &nbsp;Compare tools side by side</p>
-           <p style="margin:0;font-family:Arial,sans-serif;font-size:14px;color:#4a5568;line-height:1.6;">💬 &nbsp;Read reviews and ratings</p>
-         </td></tr>
-       </table>
-       ${btn('https://allaitoollist.com', 'Start Discovering AI Tools →')}
-       <p style="margin:24px 0 0;font-family:Arial,sans-serif;font-size:14px;color:#718096;">Happy exploring!<br/><strong style="color:#1a202c;">The AI Tool List Team</strong></p>`
-    ),
+    subject: 'Welcome to All AI Tool List',
+    html: layout(`
+      ${heading('Welcome!', 'You\'re now part of the AI Tool List community')}
+      ${p(`Hello <strong style="color:${DARK};">${name || username}</strong>, we're glad to have you!`)}
+      ${p("Discover thousands of AI tools, save your favorites, and submit new ones to share with the community.")}
+      ${noteBox(`
+        &bull;&nbsp; Browse thousands of AI tools by category<br/>
+        &bull;&nbsp; Save and compare tools side by side<br/>
+        &bull;&nbsp; Submit new AI tools for review<br/>
+        &bull;&nbsp; Get weekly updates via newsletter
+      `)}
+      ${btn('https://allaitoollist.com', 'Start Exploring &rarr;')}
+      ${sign()}
+    `),
   }),
 
   newsletterWelcome: (email: string) => ({
-    subject: '🤖 Welcome to All AI Tool List Newsletter!',
-    html: layout(
-      'linear-gradient(135deg,#1d4ed8 0%,#4f46e5 100%)',
-      `<h1 style="color:#ffffff;margin:0 0 8px;font-family:Arial,sans-serif;font-size:28px;font-weight:800;">You're subscribed! 🎉</h1>
-       <p style="color:rgba(255,255,255,0.85);margin:0;font-family:Arial,sans-serif;font-size:15px;">Every Monday — Top 5 new AI tools</p>`,
-      `<p style="margin:0 0 24px;font-family:Arial,sans-serif;font-size:16px;line-height:1.6;color:#4a5568;">
-         Welcome! Every Monday morning you'll get our curated list of the top 5 new AI tools — reviewed and rated by our team.
-       </p>
-       <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#eff6ff;border-radius:8px;margin-bottom:24px;">
-         <tr><td style="padding:20px;">
-           <p style="margin:0 0 10px;font-family:Arial,sans-serif;font-size:15px;font-weight:700;color:#1d4ed8;">What to expect:</p>
-           <p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:14px;color:#374151;line-height:1.6;">✅ &nbsp;5 new AI tools every Monday</p>
-           <p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:14px;color:#374151;line-height:1.6;">🎁 &nbsp;Exclusive deals for subscribers</p>
-           <p style="margin:0;font-family:Arial,sans-serif;font-size:14px;color:#374151;line-height:1.6;">🚫 &nbsp;No spam, ever — unsubscribe anytime</p>
-         </td></tr>
-       </table>
-       ${btn('https://allaitoollist.com', 'Browse AI Tools Now →', '#2563eb')}
-       <p style="margin:24px 0 0;text-align:center;font-family:Arial,sans-serif;font-size:12px;color:#9ca3af;">
-         <a href="https://allaitoollist.com/api/newsletter/unsubscribe?email=${encodeURIComponent(email)}" style="color:#9ca3af;">Unsubscribe</a>
-       </p>`
-    ),
+    subject: 'You\'re subscribed to All AI Tool List',
+    html: layout(`
+      ${heading('Subscribed!', 'Weekly AI tools — every Monday')}
+      ${p("Thank you for subscribing. Every Monday you'll get our curated list of the best new AI tools, reviewed by our team.")}
+      ${noteBox(`
+        &bull;&nbsp; Top new AI tools every Monday<br/>
+        &bull;&nbsp; Exclusive deals for subscribers<br/>
+        &bull;&nbsp; No spam &mdash; unsubscribe anytime
+      `)}
+      ${btn('https://allaitoollist.com', 'Browse AI Tools &rarr;')}
+      <p style="margin:24px 0 0;text-align:center;font-family:Arial,sans-serif;font-size:12px;color:${MUTED};">
+        <a href="https://allaitoollist.com/api/newsletter/unsubscribe?email=${encodeURIComponent(email)}"
+          style="color:${MUTED};text-decoration:underline;">Unsubscribe</a>
+      </p>
+    `),
   }),
+
 };
 
-// ─── Helper functions ─────────────────────────────────────────────────────────
+/* ── Helper exports ────────────────────────────────────────────────────────── */
 export async function sendSubmissionConfirmation(toolName: string, submitterEmail: string) {
-  const template = emailTemplates.toolSubmitted(toolName);
-  return sendEmail({ to: submitterEmail, subject: template.subject, html: template.html });
+  const t = emailTemplates.toolSubmitted(toolName);
+  return sendEmail({ to: submitterEmail, subject: t.subject, html: t.html });
 }
 
 export async function sendAdminNewSubmissionEmail(toolName: string, submitterEmail: string, adminEmail: string) {
   return sendEmail({
     to: adminEmail,
     replyTo: submitterEmail,
-    subject: `New Tool Submission: ${toolName}`,
-    html: layout(
-      '#1a202c',
-      `<h1 style="color:#ffffff;margin:0 0 8px;font-family:Arial,sans-serif;font-size:24px;font-weight:800;">New Submission</h1>
-       <p style="color:rgba(255,255,255,0.7);margin:0;font-family:Arial,sans-serif;font-size:14px;">Action required in admin panel</p>`,
-      `<table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f7f9fc;border-left:4px solid #667eea;border-radius:8px;margin-bottom:24px;">
-         <tr><td style="padding:20px;">
-           ${infoRow('Tool Name', toolName)}
-           ${infoRow('Submitter', submitterEmail)}
-         </td></tr>
-       </table>
-       ${btn('https://allaitoollist.com/admin/submissions', 'Review in Admin Panel →')}`
-    ),
+    subject: `New Submission: ${toolName}`,
+    html: layout(`
+      ${heading('New Tool Submission', 'Action required in admin panel')}
+      ${infoBox([
+        { label: 'Tool Name',  value: toolName },
+        { label: 'Submitter', value: submitterEmail },
+      ])}
+      ${btn('https://allaitoollist.com/admin/submissions', 'Review in Admin Panel &rarr;')}
+    `),
   });
 }
 
 export async function sendToolApprovedEmail(toolName: string, toolUrl: string, submitterEmail: string) {
-  const template = emailTemplates.toolApproved(toolName, toolUrl);
-  return sendEmail({ to: submitterEmail, subject: template.subject, html: template.html });
+  const t = emailTemplates.toolApproved(toolName, toolUrl);
+  return sendEmail({ to: submitterEmail, subject: t.subject, html: t.html });
 }
 
 export async function sendFreshnessReminder(toolName: string, toolOwnerEmail: string) {
   return sendEmail({
     to: toolOwnerEmail,
-    subject: `Update Required: ${toolName}`,
-    html: layout(
-      'linear-gradient(135deg,#f59e0b 0%,#d97706 100%)',
-      `<h1 style="color:#ffffff;margin:0;font-family:Arial,sans-serif;font-size:24px;font-weight:800;">Update Reminder</h1>`,
-      `<p style="margin:0 0 16px;font-family:Arial,sans-serif;font-size:16px;color:#4a5568;">Hi there,</p>
-       <p style="margin:0 0 24px;font-family:Arial,sans-serif;font-size:16px;line-height:1.6;color:#4a5568;">
-         It's been a while since <strong>${toolName}</strong> was last updated. Please review and refresh your tool information.
-       </p>
-       ${btn('https://allaitoollist.com/admin', 'Update Now →', '#f59e0b')}
-       <p style="margin:24px 0 0;font-family:Arial,sans-serif;font-size:14px;color:#718096;">The AI Tool List Team</p>`
-    ),
+    subject: `Update Needed: ${toolName}`,
+    html: layout(`
+      ${heading('Update Reminder', `Your listing needs a refresh`)}
+      ${p(`It's been a while since <strong style="color:${DARK};">${toolName}</strong> was last updated. Fresh listings rank higher and get more clicks.`)}
+      ${btn('https://allaitoollist.com/admin', 'Update Now &rarr;')}
+      ${sign()}
+    `),
   });
 }

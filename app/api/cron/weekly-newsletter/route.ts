@@ -10,16 +10,14 @@ const supabase = createClient(
 function buildNewsletterHTML(tools: any[], date: string): string {
     const toolCards = tools.slice(0, 5).map(t => `
     <tr>
-      <td style="padding:12px 0;border-bottom:1px solid #f0f0f0;">
-        <table width="100%" cellpadding="0" cellspacing="0">
+      <td style="padding:14px 0;border-bottom:1px solid #e8dfd7;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr>
-            <td width="44">
-              <div style="width:40px;height:40px;background:#eff6ff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;">🤖</div>
-            </td>
-            <td style="padding-left:12px;">
-              <a href="https://allaitoollist.com/tool/${t.slug}" style="color:#1d4ed8;font-weight:700;text-decoration:none;font-size:15px;">${t.name}</a>
-              <div style="color:#6b7280;font-size:13px;margin-top:2px;">${t.category} · ${t.pricing}</div>
-              <div style="color:#374151;font-size:13px;margin-top:4px;">${(t.short_description || '').slice(0, 100)}...</div>
+            <td style="padding-left:0;">
+              <a href="https://allaitoollist.com/tool/${t.slug}"
+                style="color:#1a1007;font-weight:700;text-decoration:none;font-size:15px;font-family:Arial,sans-serif;">${t.name}</a>
+              <p style="margin:3px 0 0;font-family:Arial,sans-serif;font-size:12px;color:#79716a;">${t.category} &middot; ${t.pricing}</p>
+              <p style="margin:5px 0 0;font-family:Arial,sans-serif;font-size:13px;color:#4a4540;line-height:1.5;">${(t.short_description || '').slice(0, 100)}&hellip;</p>
             </td>
           </tr>
         </table>
@@ -27,50 +25,76 @@ function buildNewsletterHTML(tools: any[], date: string): string {
     </tr>`).join('');
 
     return `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:20px 0;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;max-width:600px;">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+  <title>All AI Tool List — Weekly Digest</title>
+  <style>
+    body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
+    table,td{mso-table-lspace:0pt;mso-table-rspace:0pt}
+    body{margin:0!important;padding:0!important;width:100%!important;background:#f5f5f5}
+    @media only screen and (max-width:620px){
+      .outer{padding:0!important}
+      .card{border-radius:0!important;border-left:none!important;border-right:none!important}
+      .body-td{padding:28px 20px!important}
+      .footer-td{padding:20px!important}
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background:#f5f5f5;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f5f5f5;">
+  <tr><td class="outer" style="padding:32px 16px;">
+    <table class="card" cellpadding="0" cellspacing="0" border="0"
+      style="width:100%;max-width:600px;margin:0 auto;background:#ffffff;border-radius:12px;border:1px solid #e8dfd7;overflow:hidden;">
 
-        <!-- Header -->
-        <tr><td style="background:linear-gradient(135deg,#1d4ed8,#4f46e5);padding:32px 40px;text-align:center;">
-          <div style="color:#fff;font-size:22px;font-weight:900;">🤖 All AI Tool List</div>
-          <div style="color:#bfdbfe;font-size:13px;margin-top:4px;">Weekly AI Tools Digest · ${date}</div>
-        </td></tr>
+      <!-- Logo header -->
+      <tr><td style="padding:22px 32px;border-bottom:1px solid #e8dfd7;">
+        <table cellpadding="0" cellspacing="0" border="0"><tr>
+          <td style="width:4px;border-radius:2px;background:#f97316;font-size:1px;line-height:1px;">&nbsp;</td>
+          <td style="padding-left:10px;font-family:Arial,sans-serif;font-size:17px;font-weight:800;color:#1a1007;letter-spacing:-0.3px;">All AI Tool List</td>
+        </tr></table>
+      </td></tr>
 
-        <!-- Intro -->
-        <tr><td style="padding:32px 40px 16px;">
-          <h1 style="font-size:22px;font-weight:900;color:#111;margin:0 0 8px;">This Week in AI Tools 🔥</h1>
-          <p style="color:#6b7280;font-size:14px;margin:0;">Here are the top new AI tools added this week — reviewed by our team.</p>
-        </td></tr>
+      <!-- Intro -->
+      <tr><td class="body-td" style="padding:36px 32px 20px;">
+        <h1 style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:24px;font-weight:800;color:#1a1007;line-height:1.2;">This Week in AI Tools</h1>
+        <p style="margin:0;font-family:Arial,sans-serif;font-size:14px;color:#79716a;">${date} &mdash; Top new tools reviewed by our team</p>
+      </td></tr>
 
-        <!-- Tools -->
-        <tr><td style="padding:0 40px 24px;">
-          <table width="100%" cellpadding="0" cellspacing="0">
-            ${toolCards}
-          </table>
-        </td></tr>
+      <!-- Tools list -->
+      <tr><td style="padding:0 32px 24px;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+          ${toolCards}
+        </table>
+      </td></tr>
 
-        <!-- CTA -->
-        <tr><td style="padding:0 40px 32px;text-align:center;">
-          <a href="https://allaitoollist.com" style="display:inline-block;background:#1d4ed8;color:#fff;font-weight:700;font-size:15px;padding:14px 32px;border-radius:10px;text-decoration:none;">
-            Browse All ${tools.length}+ New Tools →
-          </a>
-        </td></tr>
+      <!-- CTA -->
+      <tr><td style="padding:0 32px 36px;text-align:center;">
+        <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
+          <tr><td style="border-radius:8px;background:#f97316;">
+            <a href="https://allaitoollist.com"
+              style="display:inline-block;padding:13px 28px;color:#ffffff;font-family:Arial,sans-serif;font-size:15px;font-weight:700;text-decoration:none;border-radius:8px;background:#f97316;">
+              Browse All New Tools &rarr;
+            </a>
+          </td></tr>
+        </table>
+      </td></tr>
 
-        <!-- Footer -->
-        <tr><td style="background:#f9fafb;padding:20px 40px;border-top:1px solid #f0f0f0;text-align:center;">
-          <p style="color:#9ca3af;font-size:12px;margin:0;">
-            You're receiving this because you subscribed at allaitoollist.com<br>
-            <a href="https://allaitoollist.com/newsletter" style="color:#6b7280;">Unsubscribe</a>
-          </p>
-        </td></tr>
+      <!-- Footer -->
+      <tr><td class="footer-td" style="padding:20px 32px;background:#f5f5f5;border-top:1px solid #e8dfd7;text-align:center;">
+        <p style="margin:0 0 4px;color:#79716a;font-size:13px;font-family:Arial,sans-serif;">All AI Tool List &mdash; Discover the Best AI Tools</p>
+        <p style="margin:0;font-size:12px;font-family:Arial,sans-serif;">
+          <a href="https://allaitoollist.com" style="color:#f97316;text-decoration:none;">allaitoollist.com</a>
+          &nbsp;&middot;&nbsp;
+          <a href="https://allaitoollist.com/newsletter" style="color:#79716a;text-decoration:underline;">Unsubscribe</a>
+        </p>
+      </td></tr>
 
-      </table>
-    </td></tr>
-  </table>
+    </table>
+  </td></tr>
+</table>
 </body>
 </html>`;
 }

@@ -286,48 +286,53 @@ export async function POST(request: NextRequest) {
             const followupHtml = `<!DOCTYPE html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>AI Tool List</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+  <title>All AI Tool List</title>
   <style>
-    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-    body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #f0f4f8; }
-    @media only screen and (max-width: 640px) {
-      .main-table { width: 100% !important; }
-      .inner-td { padding: 24px 16px !important; }
-      .header-td { padding: 32px 16px !important; }
+    body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
+    table,td{mso-table-lspace:0pt;mso-table-rspace:0pt}
+    body{margin:0!important;padding:0!important;width:100%!important;background:#f5f5f5}
+    @media only screen and (max-width:620px){
+      .outer{padding:0!important}
+      .card{border-radius:0!important;border-left:none!important;border-right:none!important}
+      .body-td{padding:28px 20px!important}
+      .footer-td{padding:20px!important}
     }
   </style>
 </head>
-<body style="margin:0;padding:0;background-color:#f0f4f8;">
-<div style="width:100%;background-color:#f0f4f8;padding:24px 0;">
-  <table class="main-table" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:640px;margin:0 auto;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.10);">
-    <!-- HEADER -->
-    <tr>
-      <td class="header-td" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:40px 32px;text-align:center;">
-        <h1 style="color:#ffffff;margin:0 0 8px;font-family:Arial,sans-serif;font-size:28px;font-weight:800;">A Message From Our Team</h1>
-        <p style="color:rgba(255,255,255,0.85);margin:0;font-family:Arial,sans-serif;font-size:15px;">Regarding your submission: ${toolName}</p>
-      </td>
-    </tr>
-    <!-- BODY -->
-    <tr>
-      <td class="inner-td" style="background:#ffffff;padding:40px 32px;">
-        <p style="margin:0 0 16px;font-family:Arial,sans-serif;font-size:16px;color:#4a5568;">Hello,</p>
-        <p style="margin:0 0 24px;font-family:Arial,sans-serif;font-size:15px;color:#4a5568;line-height:1.7;">${safeMessage}</p>
-        <p style="margin:0;font-family:Arial,sans-serif;font-size:14px;color:#718096;">Best regards,<br/><strong style="color:#1a202c;">The AI Tool List Team</strong></p>
-      </td>
-    </tr>
-    <!-- FOOTER -->
-    <tr>
-      <td style="background:#f8fafc;padding:24px 32px;text-align:center;border-top:1px solid #e2e8f0;">
-        <p style="margin:0 0 4px;color:#94a3b8;font-size:13px;font-family:Arial,sans-serif;">AI Tool List &mdash; Discover the Best AI Tools</p>
-        <p style="margin:0;font-size:12px;font-family:Arial,sans-serif;"><a href="https://allaitoollist.com" style="color:#667eea;text-decoration:none;">allaitoollist.com</a></p>
-      </td>
-    </tr>
-  </table>
-</div>
+<body style="margin:0;padding:0;background:#f5f5f5;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f5f5f5;">
+  <tr><td class="outer" style="padding:32px 16px;">
+    <table class="card" cellpadding="0" cellspacing="0" border="0"
+      style="width:100%;max-width:600px;margin:0 auto;background:#ffffff;border-radius:12px;border:1px solid #e8dfd7;overflow:hidden;">
+      <tr>
+        <td style="padding:22px 32px;border-bottom:1px solid #e8dfd7;">
+          <table cellpadding="0" cellspacing="0" border="0"><tr>
+            <td style="width:4px;border-radius:2px;background:#f97316;font-size:1px;line-height:1px;">&nbsp;</td>
+            <td style="padding-left:10px;font-family:Arial,sans-serif;font-size:17px;font-weight:800;color:#1a1007;letter-spacing:-0.3px;">All AI Tool List</td>
+          </tr></table>
+        </td>
+      </tr>
+      <tr>
+        <td class="body-td" style="padding:36px 32px;background:#ffffff;">
+          <h1 style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:26px;font-weight:800;color:#1a1007;line-height:1.2;">A Message From Our Team</h1>
+          <p style="margin:0 0 28px;font-family:Arial,sans-serif;font-size:15px;color:#79716a;">Regarding your submission: ${toolName}</p>
+          <p style="margin:0 0 20px;font-family:Arial,sans-serif;font-size:15px;color:#4a4540;line-height:1.7;">Hello,</p>
+          <p style="margin:0 0 24px;font-family:Arial,sans-serif;font-size:15px;color:#4a4540;line-height:1.7;">${safeMessage}</p>
+          <p style="margin:24px 0 0;font-family:Arial,sans-serif;font-size:14px;color:#79716a;">Best regards,<br/><strong style="color:#1a1007;">The All AI Tool List Team</strong></p>
+        </td>
+      </tr>
+      <tr>
+        <td class="footer-td" style="padding:20px 32px;background:#f5f5f5;border-top:1px solid #e8dfd7;text-align:center;">
+          <p style="margin:0 0 4px;color:#79716a;font-size:13px;font-family:Arial,sans-serif;">All AI Tool List &mdash; Discover the Best AI Tools</p>
+          <p style="margin:0;font-size:12px;font-family:Arial,sans-serif;"><a href="https://allaitoollist.com" style="color:#f97316;text-decoration:none;">allaitoollist.com</a></p>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+</table>
 </body>
 </html>`;
 
