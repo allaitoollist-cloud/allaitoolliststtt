@@ -1,10 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail, emailTemplates } from '@/lib/email';
+import { verifyAdminRequest, unauthorizedJson } from '@/lib/admin-auth';
 
-// API route for approving/rejecting/deleting/updating/following-up on submissions
-// Uses service role key to bypass RLS
 export async function POST(request: NextRequest) {
+    if (!await verifyAdminRequest(request)) return unauthorizedJson();
+
     console.log('=== Submissions API Called ===');
 
     try {

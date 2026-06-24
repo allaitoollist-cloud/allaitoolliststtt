@@ -2,9 +2,11 @@ import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { rateLimit } from '@/lib/rate-limit';
+import { verifyAdminRequest, unauthorizedJson } from '@/lib/admin-auth';
 
-// API route for tool management actions
 export async function POST(request: NextRequest) {
+    if (!await verifyAdminRequest(request)) return unauthorizedJson();
+
     try {
         const body = await request.json();
         const { action, toolId, toolIds, field, value } = body;

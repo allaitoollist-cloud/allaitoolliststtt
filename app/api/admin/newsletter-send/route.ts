@@ -1,28 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendEmail } from '@/lib/email';
+import { verifyAdminRequest } from '@/lib/admin-auth';
 
 export async function POST(req: NextRequest) {
     try {
-        // Verify admin via bearer token or ADMIN_EMAIL session check
         const authHeader = req.headers.get('authorization');
         const cronSecret = process.env.CRON_SECRET;
-        const adminEmail = process.env.ADMIN_EMAIL;
 
-        // Allow cron secret
-        const isCron = cronSecret && authHeader === `Bearer ${cronSecret}`;
-
-        // Allow admin user via Supabase session token
-        let isAdmin = isCron;
-        if (!isAdmin && authHeader?.startsWith('Bearer ')) {
-            const token = authHeader.replace('Bearer ', '');
-            const supabaseCheck = createClient(
-                process.env.NEXT_PUBLIC_SUPABASE_URL!,
-                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-            );
-            const { data: { user } } = await supabaseCheck.auth.getUser(token);
-            if (user && adminEmail && user.email === adminEmail) isAdmin = true;
-        }
+        const isCron = !!(cronSecret && authHeader === `Bearer ${cronSecret}`);
+        const isAdmin = isCron || await verifyAdminRequest(req);
 
         if (!isAdmin) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

@@ -1,9 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
+import { verifyAdminRequest, unauthorizedJson } from '@/lib/admin-auth';
 
-// Bulk delete specific tools by IDs
 export async function POST(request: NextRequest) {
+    if (!await verifyAdminRequest(request)) return unauthorizedJson();
+
     try {
         const body = await request.json();
         const { toolIds } = body;

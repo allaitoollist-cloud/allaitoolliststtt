@@ -2,13 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { load } from 'cheerio';
 import { createClient } from '@supabase/supabase-js';
 import { getOpenAIKey } from '@/lib/openai';
-
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { verifyAdminRequest, unauthorizedJson } from '@/lib/admin-auth';
 
 export async function POST(request: NextRequest) {
+    if (!await verifyAdminRequest(request)) return unauthorizedJson();
+
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
     try {
         const { urls } = await request.json();
 

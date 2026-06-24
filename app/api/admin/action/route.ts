@@ -2,20 +2,16 @@ import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendToolApprovedEmail, sendEmail, emailTemplates } from '@/lib/email';
 import { DatabaseTool } from '@/types';
-
-/**
- * Enhanced Admin Action Route
- * - Handles 'approve' | 'reject' | 'archive'
- * - Automates sitemap updates, internal linking cache clear, and email notifications
- * - Enforces security and validation
- */
-
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { verifyAdminRequest, unauthorizedJson } from '@/lib/admin-auth';
 
 export async function POST(req: NextRequest) {
+    if (!await verifyAdminRequest(req)) return unauthorizedJson();
+
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
     try {
         const body = await req.json();
         const { tool_id, action } = body;

@@ -1,6 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { verifyAdminRequest, unauthorizedJson } from '@/lib/admin-auth';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+    if (!await verifyAdminRequest(req)) return unauthorizedJson();
+
     const openaiKey = process.env.OPENAI_API_KEY;
     return NextResponse.json({
         hasOpenAI: !!openaiKey,
@@ -11,4 +14,3 @@ export async function GET() {
         hasResend: !!process.env.RESEND_API_KEY,
     });
 }
-

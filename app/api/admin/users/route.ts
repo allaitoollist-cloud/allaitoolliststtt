@@ -1,13 +1,15 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { verifyAdminRequest, unauthorizedJson } from '@/lib/admin-auth';
 
-const adminSupabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-);
+export async function GET(req: NextRequest) {
+    if (!await verifyAdminRequest(req)) return unauthorizedJson();
 
-export async function GET() {
+    const adminSupabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        { auth: { autoRefreshToken: false, persistSession: false } }
+    );
     try {
         const { data: authData, error: authError } = await adminSupabase.auth.admin.listUsers();
         if (authError) {

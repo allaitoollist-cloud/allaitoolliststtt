@@ -1,7 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail } from '@/lib/email';
+import { verifyAdminRequest, unauthorizedJson } from '@/lib/admin-auth';
 
-export async function POST() {
+export async function POST(req: NextRequest) {
+    if (!await verifyAdminRequest(req)) return unauthorizedJson();
     const adminEmail = process.env.ADMIN_EMAIL;
     if (!adminEmail) {
         return NextResponse.json({ error: 'ADMIN_EMAIL not configured' }, { status: 500 });

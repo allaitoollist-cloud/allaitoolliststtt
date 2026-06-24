@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getOpenAIKey } from '@/lib/openai';
+import { verifyAdminRequest, unauthorizedJson } from '@/lib/admin-auth';
 
 export async function POST(request: NextRequest) {
+    if (!await verifyAdminRequest(request)) return unauthorizedJson();
+
     try {
         const { keywords, category } = await request.json();
 
