@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search, Loader2 } from 'lucide-react';
-import { getBrowserClient } from '@/lib/supabase-browser';
 import { SubmissionRow } from '@/components/admin/SubmissionRow';
 
 const STATUSES = ['all', 'pending', 'approved', 'rejected', 'flagged'];
@@ -16,15 +15,14 @@ export default function AdminSubmissionsPage() {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
-    const supabase = getBrowserClient();
 
     const load = async () => {
         setLoading(true);
-        const { data } = await supabase
-            .from('tool_submissions')
-            .select('*')
-            .order('created_at', { ascending: false });
-        if (data) setSubmissions(data);
+        try {
+            const res = await fetch('/api/admin/data?table=tool_submissions');
+            const json = await res.json();
+            if (json.data) setSubmissions(json.data);
+        } catch { /* network error */ }
         setLoading(false);
     };
 

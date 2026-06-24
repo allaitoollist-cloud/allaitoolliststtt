@@ -24,7 +24,6 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { MoreHorizontal, Trash2, ExternalLink, Eye, Star, TrendingUp, BadgeCheck, Clock, ShieldCheck, Pencil, FileX } from 'lucide-react';
-import { getBrowserClient } from '@/lib/supabase-browser';
 import { useToast } from '@/components/ui/use-toast';
 import Link from 'next/link';
 
@@ -57,7 +56,6 @@ export function ToolRow({ tool, selected, onSelect, onRefresh }: ToolRowProps) {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
-    const supabase = getBrowserClient();
 
     const handleDelete = async () => {
         setLoading(true);
@@ -82,23 +80,31 @@ export function ToolRow({ tool, selected, onSelect, onRefresh }: ToolRowProps) {
     const isDraft = (t: typeof tool) => t.status === 'draft' || (!t.status && t.is_draft);
 
     const handleToggle = async (field: 'featured' | 'trending' | 'verified', currentValue: boolean) => {
-        const { error } = await supabase.from('tools').update({ [field]: !currentValue }).eq('id', tool.id);
-        if (error) {
-            toast({ title: 'Error', description: `Failed to update ${field}`, variant: 'destructive' });
-        } else {
+        const res = await fetch('/api/tools', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'toggle', toolId: tool.id, field, value: !currentValue }),
+        });
+        if (res.ok) {
             toast({ title: 'Updated', description: `${field} toggled.` });
             onRefresh();
+        } else {
+            toast({ title: 'Error', description: `Failed to update ${field}`, variant: 'destructive' });
         }
     };
 
     const handleTogglePublish = async () => {
         const newStatus = isDraft(tool) ? 'published' : 'draft';
-        const { error } = await supabase.from('tools').update({ status: newStatus }).eq('id', tool.id);
-        if (error) {
-            toast({ title: 'Error', description: 'Failed to update status', variant: 'destructive' });
-        } else {
+        const res = await fetch('/api/tools', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'toggle', toolId: tool.id, field: 'status', value: newStatus }),
+        });
+        if (res.ok) {
             toast({ title: 'Updated', description: `Tool ${newStatus}.` });
             onRefresh();
+        } else {
+            toast({ title: 'Error', description: 'Failed to update status', variant: 'destructive' });
         }
     };
 

@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Search, Loader2, Activity, Clock, User, RefreshCw } from 'lucide-react';
-import { getBrowserClient } from '@/lib/supabase-browser';
 
 const ACTION_COLORS: Record<string, string> = {
     approve: 'bg-green-500/10 text-green-500',
@@ -28,16 +27,13 @@ export default function ActivityLogsPage() {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [actionFilter, setActionFilter] = useState('all');
-    const supabase = getBrowserClient();
-
     const load = async () => {
         setLoading(true);
-        const { data } = await supabase
-            .from('activity_logs')
-            .select(`*, user_profiles:user_id (email, full_name)`)
-            .order('created_at', { ascending: false })
-            .limit(200);
-        if (data) setLogs(data);
+        try {
+            const res = await fetch('/api/admin/data?table=activity_logs&limit=200');
+            const json = await res.json();
+            if (json.data) setLogs(json.data);
+        } catch { /* network error */ }
         setLoading(false);
     };
 

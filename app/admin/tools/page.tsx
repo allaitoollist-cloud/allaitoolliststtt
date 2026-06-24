@@ -17,7 +17,6 @@ import {
 import { Search, Plus, Upload, Package, Star, TrendingUp, ShieldCheck, FileX, Eye, Loader2, ChevronDown, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { ToolRow } from '@/components/admin/ToolRow';
-import { getBrowserClient } from '@/lib/supabase-browser';
 import { useToast } from '@/components/ui/use-toast';
 
 const FILTERS = ['all', 'published', 'featured', 'trending', 'verified', 'drafts'];
@@ -30,13 +29,15 @@ export default function AdminToolsPage() {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [bulkLoading, setBulkLoading] = useState(false);
     const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
-    const supabase = getBrowserClient();
     const { toast } = useToast();
 
     const load = async () => {
         setLoading(true);
-        const { data } = await supabase.from('tools').select('*').order('created_at', { ascending: false });
-        if (data) setTools(data);
+        try {
+            const res = await fetch('/api/admin/data?table=tools');
+            const json = await res.json();
+            if (json.data) setTools(json.data);
+        } catch { /* network error */ }
         setLoading(false);
         setSelectedIds(new Set());
     };
@@ -91,12 +92,16 @@ export default function AdminToolsPage() {
     const bulkUpdate = async (field: string, value: boolean | string) => {
         setBulkLoading(true);
         const ids = Array.from(selectedIds);
-        const { error } = await supabase.from('tools').update({ [field]: value }).in('id', ids);
-        if (error) {
-            toast({ title: 'Error', description: `Failed to update tools`, variant: 'destructive' });
-        } else {
+        const res = await fetch('/api/tools', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'bulk-update', toolIds: ids, field, value }),
+        });
+        if (res.ok) {
             toast({ title: 'Updated', description: `${ids.length} tool(s) updated.` });
             await load();
+        } else {
+            toast({ title: 'Error', description: 'Failed to update tools', variant: 'destructive' });
         }
         setBulkLoading(false);
     };
@@ -104,12 +109,16 @@ export default function AdminToolsPage() {
     const bulkDelete = async () => {
         setBulkLoading(true);
         const ids = Array.from(selectedIds);
-        const { error } = await supabase.from('tools').delete().in('id', ids);
-        if (error) {
-            toast({ title: 'Error', description: 'Failed to delete tools', variant: 'destructive' });
-        } else {
+        const res = await fetch('/api/tools', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'bulk-delete', toolIds: ids }),
+        });
+        if (res.ok) {
             toast({ title: 'Deleted', description: `${ids.length} tool(s) deleted.` });
             await load();
+        } else {
+            toast({ title: 'Error', description: 'Failed to delete tools', variant: 'destructive' });
         }
         setBulkLoading(false);
         setBulkDeleteOpen(false);

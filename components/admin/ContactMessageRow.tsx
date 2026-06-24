@@ -21,7 +21,6 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { MoreHorizontal, Mail, CheckCheck, Trash2, Eye } from 'lucide-react';
-import { getBrowserClient } from '@/lib/supabase-browser';
 import { useToast } from '@/components/ui/use-toast';
 
 interface ContactMessage {
@@ -37,53 +36,37 @@ interface ContactMessage {
 export function ContactMessageRow({ message, onRefresh }: { message: ContactMessage; onRefresh?: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(false);
-    const supabase = getBrowserClient();
     const { toast } = useToast();
 
     const handleMarkAsRead = async () => {
         setLoading(true);
-        const { error } = await supabase
-            .from('contact_messages')
-            .update({ status: 'read' })
-            .eq('id', message.id);
-
-        if (error) {
-            toast({
-                title: 'Error',
-                description: 'Failed to update message status',
-                variant: 'destructive',
-            });
-        } else {
-            toast({
-                title: 'Success',
-                description: 'Message marked as read',
-            });
+        const res = await fetch('/api/admin/contact-messages', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: message.id, status: 'read' }),
+        });
+        if (res.ok) {
+            toast({ title: 'Success', description: 'Message marked as read' });
             onRefresh?.();
+        } else {
+            toast({ title: 'Error', description: 'Failed to update status', variant: 'destructive' });
         }
         setLoading(false);
     };
 
     const handleDelete = async () => {
         if (!confirm('Are you sure you want to delete this message?')) return;
-
         setLoading(true);
-        const { error } = await supabase
-            .from('contact_messages')
-            .delete()
-            .eq('id', message.id);
-
-        if (error) {
-            toast({
-                title: 'Error',
-                description: 'Failed to delete message',
-                variant: 'destructive',
-            });
-        } else {
-            toast({
-                title: 'Success',
-                description: 'Message deleted',
-            });
+        const res = await fetch('/api/admin/contact-messages', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: message.id }),
+        });
+        if (res.ok) {
+            toast({ title: 'Success', description: 'Message deleted' });
             onRefresh?.();
+        } else {
+            toast({ title: 'Error', description: 'Failed to delete message', variant: 'destructive' });
         }
         setLoading(false);
     };

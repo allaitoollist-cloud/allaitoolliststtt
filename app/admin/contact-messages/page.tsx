@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search, Loader2, MailOpen, Mail, MessageSquareReply } from 'lucide-react';
-import { getBrowserClient } from '@/lib/supabase-browser';
 import { ContactMessageRow } from '@/components/admin/ContactMessageRow';
 
 const FILTERS = ['all', 'unread', 'read', 'replied'];
@@ -16,15 +15,14 @@ export default function ContactMessagesPage() {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
-    const supabase = getBrowserClient();
 
     const load = async () => {
         setLoading(true);
-        const { data } = await supabase
-            .from('contact_messages')
-            .select('*')
-            .order('created_at', { ascending: false });
-        if (data) setMessages(data);
+        try {
+            const res = await fetch('/api/admin/data?table=contact_messages');
+            const json = await res.json();
+            if (json.data) setMessages(json.data);
+        } catch { /* network error */ }
         setLoading(false);
     };
 
