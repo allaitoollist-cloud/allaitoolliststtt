@@ -12,36 +12,36 @@ export async function sendEmail({ to, subject, html, from, replyTo }: EmailOptio
   try {
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
-      console.error('RESEND_API_KEY is not set');
+      console.error('[Email] RESEND_API_KEY is not set');
       return { success: false, error: 'Email service not configured' };
     }
 
-    const resend = new Resend(apiKey);
-    const defaultFrom = process.env.RESEND_FROM_EMAIL || 'AI Tool List <onboarding@resend.dev>';
-    const emailFrom = from || defaultFrom;
+    const fromEmail = from || process.env.RESEND_FROM_EMAIL;
+    if (!fromEmail) {
+      console.error('[Email] RESEND_FROM_EMAIL is not set');
+      return { success: false, error: 'Sender email not configured' };
+    }
 
-    const testEmail = process.env.RESEND_TEST_EMAIL;
-    const isTestMode = !!(testEmail && !process.env.RESEND_FROM_EMAIL);
-    const emailTo = isTestMode ? testEmail : to;
+    const resend = new Resend(apiKey);
 
     const { data, error } = await resend.emails.send({
-      from: emailFrom,
-      to: emailTo,
+      from: fromEmail,
+      to,
       subject,
       html,
       ...(replyTo && { reply_to: replyTo }),
     });
 
     if (error) {
-      console.error('Resend error:', error);
+      console.error('[Email] Resend API error:', JSON.stringify(error));
       return { success: false, error };
     }
 
-    console.log('Email sent:', data?.id, '→', emailTo);
+    console.log(`[Email] Sent (${data?.id}) → ${to}`);
     return { success: true, data };
-  } catch (error) {
-    console.error('Email send failed:', error);
-    return { success: false, error };
+  } catch (err: any) {
+    console.error('[Email] Exception:', err?.message || err);
+    return { success: false, error: err?.message || 'Unknown error' };
   }
 }
 
