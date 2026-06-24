@@ -18,7 +18,10 @@ export async function POST(req: NextRequest) {
             .from('newsletter_subscribers')
             .insert([{ email, active: true }]);
 
-        if (error && error.code !== '23505') {
+        if (error) {
+            if (error.code === '23505') {
+                return NextResponse.json({ message: 'Already subscribed' }, { status: 409 });
+            }
             throw error;
         }
 

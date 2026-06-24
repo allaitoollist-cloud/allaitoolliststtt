@@ -2,14 +2,12 @@
 
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { getBrowserClient } from '@/lib/supabase-browser';
 import { Mail, Loader2, ArrowRight } from 'lucide-react';
 
 export function NewsletterForm() {
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
-    const supabase = getBrowserClient();
 
     const handleSubscribe = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -17,31 +15,28 @@ export function NewsletterForm() {
 
         setLoading(true);
         try {
-            const { error } = await supabase
-                .from('newsletter_subscribers')
-                .insert([{ email }]);
+            const res = await fetch('/api/newsletter/subscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }),
+            });
 
-            if (error) {
-                if (error.code === '23505') { // Unique violation
-                    toast({
-                        title: "Already Subscribed",
-                        description: "This email is already on our list!",
-                    });
-                } else {
-                    throw error;
-                }
-            } else {
+            if (res.status === 409 || res.ok) {
                 toast({
-                    title: "Subscribed!",
-                    description: "Thank you for subscribing to our newsletter.",
+                    title: res.status === 409 ? 'Already Subscribed' : 'Subscribed!',
+                    description: res.status === 409
+                        ? 'This email is already on our list!'
+                        : 'Thank you for subscribing to our newsletter.',
                 });
-                setEmail('');
+                if (res.ok) setEmail('');
+            } else {
+                throw new Error('Subscribe failed');
             }
-        } catch (error) {
+        } catch {
             toast({
-                title: "Error",
-                description: "Failed to subscribe. Please try again.",
-                variant: "destructive",
+                title: 'Error',
+                description: 'Failed to subscribe. Please try again.',
+                variant: 'destructive',
             });
         } finally {
             setLoading(false);

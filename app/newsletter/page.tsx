@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Mail, Zap, Star, Users, CheckCircle2, ArrowRight, Loader2 } from 'lucide-react';
-import { getBrowserClient } from '@/lib/supabase-browser';
 
 const PERKS = [
     { icon: Zap, title: '5 New AI Tools', desc: 'Every week, hand-picked new tools — reviewed and rated by our team.' },
@@ -31,11 +30,12 @@ export default function NewsletterPage() {
         setLoading(true);
         setError('');
         try {
-            const supabase = getBrowserClient();
-            const { error: dbErr } = await supabase
-                .from('newsletter_subscribers')
-                .insert([{ email }]);
-            if (dbErr && dbErr.code !== '23505') throw dbErr;
+            const res = await fetch('/api/newsletter/subscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }),
+            });
+            if (!res.ok && res.status !== 409) throw new Error('Subscribe failed');
             setDone(true);
             setEmail('');
         } catch {
