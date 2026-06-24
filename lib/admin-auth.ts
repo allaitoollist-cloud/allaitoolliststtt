@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const ALLOWED_ADMIN_EMAILS = [
     'muhammadismailkpt@gmail.com',
     'allaitoolist@gmail.com',
+    'haramtaxiservice@gmail.com',
 ];
 
 export async function verifyAdminRequest(req: NextRequest): Promise<boolean> {

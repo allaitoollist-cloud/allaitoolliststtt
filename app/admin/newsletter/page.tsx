@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
-import { Mail, Send, Trash2, Download, Users, Search, Loader2 } from 'lucide-react';
+import { Mail, Send, Trash2, Download, Users, Search, Loader2, TestTube2 } from 'lucide-react';
 
 interface Subscriber {
     id: string;
@@ -21,6 +21,7 @@ export default function NewsletterPage() {
     const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
+    const [testing, setTesting] = useState(false);
     const [subject, setSubject] = useState('');
     const [message, setMessage] = useState('');
     const [search, setSearch] = useState('');
@@ -32,13 +33,32 @@ export default function NewsletterPage() {
         setLoading(true);
         try {
             const res = await fetch('/api/admin/newsletter-subscribers');
-            if (!res.ok) throw new Error('Failed to load');
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || `HTTP ${res.status}`);
+            }
             const data = await res.json();
             setSubscribers(data.subscribers ?? []);
-        } catch {
-            toast({ title: 'Error', description: 'Failed to load subscribers', variant: 'destructive' });
+        } catch (err: any) {
+            toast({ title: 'Failed to load subscribers', description: err.message, variant: 'destructive' });
         }
         setLoading(false);
+    };
+
+    const handleTestEmail = async () => {
+        setTesting(true);
+        try {
+            const res = await fetch('/api/admin/test-email', { method: 'POST' });
+            const data = await res.json();
+            if (res.ok) {
+                toast({ title: 'Test email sent!', description: 'Check your inbox.' });
+            } else {
+                toast({ title: 'Test email failed', description: data.error || 'Unknown error', variant: 'destructive' });
+            }
+        } catch (err: any) {
+            toast({ title: 'Error', description: err.message, variant: 'destructive' });
+        }
+        setTesting(false);
     };
 
     const filtered = useMemo(() =>
@@ -121,9 +141,15 @@ export default function NewsletterPage() {
                     <h1 className="text-3xl font-bold">Newsletter</h1>
                     <p className="text-muted-foreground">Manage subscribers and send campaigns</p>
                 </div>
-                <Button variant="outline" onClick={handleExport}>
-                    <Download className="mr-2 h-4 w-4" /> Export CSV
-                </Button>
+                <div className="flex gap-2">
+                    <Button variant="outline" onClick={handleTestEmail} disabled={testing}>
+                        {testing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <TestTube2 className="mr-2 h-4 w-4" />}
+                        Test Email
+                    </Button>
+                    <Button variant="outline" onClick={handleExport}>
+                        <Download className="mr-2 h-4 w-4" /> Export CSV
+                    </Button>
+                </div>
             </div>
 
             {/* Stats */}

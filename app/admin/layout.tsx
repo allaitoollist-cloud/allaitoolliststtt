@@ -9,6 +9,7 @@ import { getBrowserClient } from '@/lib/supabase-browser';
 const ALLOWED_ADMIN_EMAILS = [
     'muhammadismailkpt@gmail.com',
     'allaitoolist@gmail.com',
+    'haramtaxiservice@gmail.com',
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

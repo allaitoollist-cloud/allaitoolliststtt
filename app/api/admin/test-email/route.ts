@@ -1,31 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendEmail } from '@/lib/email';
+import { createServerClient } from '@supabase/ssr';
+import { sendEmail, emailTemplates } from '@/lib/email';
 import { verifyAdminRequest, unauthorizedJson } from '@/lib/admin-auth';
 
 export async function POST(req: NextRequest) {
     if (!await verifyAdminRequest(req)) return unauthorizedJson();
-    const adminEmail = process.env.ADMIN_EMAIL;
+
+    // Get the current admin's email from session
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        { cookies: { get(name) { return req.cookies.get(name)?.value; }, set() {}, remove() {} } }
+    );
+    const { data: { user } } = await supabase.auth.getUser();
+    const adminEmail = user?.email || process.env.ADMIN_EMAIL;
+
     if (!adminEmail) {
-        return NextResponse.json({ error: 'ADMIN_EMAIL not configured' }, { status: 500 });
+        return NextResponse.json({ error: 'Cannot determine admin email' }, { status: 500 });
     }
 
-    const html = `
-        <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px">
-            <h2 style="color:#7c3aed">✅ Test Email</h2>
-            <p>Your email system is working correctly.</p>
-            <p style="color:#888;font-size:13px">Sent from All AI Tool List admin panel — ${new Date().toLocaleString()}</p>
-        </div>
-    `;
-
+    // Send a test welcome email so we verify the template + Resend together
+    const template = emailTemplates.newsletterWelcome(adminEmail);
     const result = await sendEmail({
         to: adminEmail,
-        subject: 'All AI Tool List — Test Email',
-        html,
+        subject: `[Test] ${template.subject}`,
+        html: template.html,
     });
 
     if (!result.success) {
-        return NextResponse.json({ error: result.error }, { status: 500 });
+        console.error('[TestEmail] Failed:', result.error);
+        return NextResponse.json({ error: JSON.stringify(result.error) }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true });
+    console.log('[TestEmail] Sent to', adminEmail);
+    return NextResponse.json({ ok: true, sentTo: adminEmail });
 }
