@@ -8,28 +8,36 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
-import { getBrowserClient } from '@/lib/supabase-browser';
 import { Mail, Send, Trash2, Download, Users, Search, Loader2 } from 'lucide-react';
 
+interface Subscriber {
+    id: string;
+    email: string;
+    active: boolean;
+    created_at: string;
+}
+
 export default function NewsletterPage() {
-    const [subscribers, setSubscribers] = useState<any[]>([]);
+    const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
     const [subject, setSubject] = useState('');
     const [message, setMessage] = useState('');
     const [search, setSearch] = useState('');
     const { toast } = useToast();
-    const supabase = getBrowserClient();
 
     useEffect(() => { loadSubscribers(); }, []);
 
     const loadSubscribers = async () => {
         setLoading(true);
-        const { data } = await supabase
-            .from('newsletter_subscribers')
-            .select('*')
-            .order('created_at', { ascending: false });
-        if (data) setSubscribers(data);
+        try {
+            const res = await fetch('/api/admin/newsletter-subscribers');
+            if (!res.ok) throw new Error('Failed to load');
+            const data = await res.json();
+            setSubscribers(data.subscribers ?? []);
+        } catch {
+            toast({ title: 'Error', description: 'Failed to load subscribers', variant: 'destructive' });
+        }
         setLoading(false);
     };
 
@@ -41,16 +49,32 @@ export default function NewsletterPage() {
     const activeCount = subscribers.filter(s => s.active !== false).length;
 
     const handleDelete = async (id: string) => {
-        const { error } = await supabase.from('newsletter_subscribers').delete().eq('id', id);
-        if (!error) {
+        const res = await fetch('/api/admin/newsletter-subscribers', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id }),
+        });
+        if (res.ok) {
             toast({ title: 'Subscriber removed' });
-            loadSubscribers();
+            setSubscribers(prev => prev.filter(s => s.id !== id));
+        } else {
+            toast({ title: 'Error', description: 'Failed to delete', variant: 'destructive' });
         }
     };
 
     const handleToggleActive = async (id: string, current: boolean) => {
-        await supabase.from('newsletter_subscribers').update({ active: !current }).eq('id', id);
-        loadSubscribers();
+        const res = await fetch('/api/admin/newsletter-subscribers', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, active: !current }),
+        });
+        if (res.ok) {
+            setSubscribers(prev =>
+                prev.map(s => s.id === id ? { ...s, active: !current } : s)
+            );
+        } else {
+            toast({ title: 'Error', description: 'Failed to update', variant: 'destructive' });
+        }
     };
 
     const handleSendCampaign = async () => {
@@ -60,19 +84,15 @@ export default function NewsletterPage() {
         }
         setSending(true);
         try {
-            const { data: { session } } = await supabase.auth.getSession();
             const res = await fetch('/api/admin/newsletter-send', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ subject, message }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Failed');
             toast({
-                title: `Campaign Sent! 🚀`,
+                title: 'Campaign Sent!',
                 description: `${data.sent} emails sent${data.failed > 0 ? `, ${data.failed} failed` : ''}`,
             });
             setSubject('');
@@ -85,7 +105,9 @@ export default function NewsletterPage() {
 
     const handleExport = () => {
         const csv = 'Email,Status,Date\n' +
-            subscribers.map(s => `${s.email},${s.active !== false ? 'active' : 'inactive'},${s.created_at}`).join('\n');
+            subscribers.map(s =>
+                `${s.email},${s.active !== false ? 'active' : 'inactive'},${s.created_at}`
+            ).join('\n');
         const link = document.createElement('a');
         link.href = 'data:text/csv;charset=utf-8,' + encodeURI(csv);
         link.download = 'subscribers.csv';
@@ -176,7 +198,7 @@ export default function NewsletterPage() {
                     </CardContent>
                 </Card>
 
-                {/* Quick subscriber list */}
+                {/* Recent subscribers */}
                 <Card className="bg-card/50 border-white/10">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
@@ -186,14 +208,23 @@ export default function NewsletterPage() {
                     <CardContent>
                         <div className="max-h-[320px] overflow-y-auto space-y-2">
                             {loading ? (
-                                <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin" /></div>
+                                <div className="flex justify-center py-4">
+                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                </div>
                             ) : subscribers.slice(0, 20).map((sub) => (
                                 <div key={sub.id} className="flex items-center justify-between p-2 rounded bg-secondary/20 text-sm">
                                     <div>
                                         <p className="truncate max-w-[150px]">{sub.email}</p>
-                                        <p className="text-xs text-muted-foreground">{new Date(sub.created_at).toLocaleDateString()}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {new Date(sub.created_at).toLocaleDateString()}
+                                        </p>
                                     </div>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive shrink-0" onClick={() => handleDelete(sub.id)}>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6 text-destructive shrink-0"
+                                        onClick={() => handleDelete(sub.id)}
+                                    >
                                         <Trash2 className="h-3 w-3" />
                                     </Button>
                                 </div>
@@ -206,7 +237,7 @@ export default function NewsletterPage() {
                 </Card>
             </div>
 
-            {/* Full subscribers table with search */}
+            {/* Full subscribers table */}
             <Card className="bg-card/50 border-white/10">
                 <CardHeader>
                     <div className="flex items-center justify-between">
