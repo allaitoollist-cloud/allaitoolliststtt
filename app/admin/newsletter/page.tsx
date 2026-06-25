@@ -136,18 +136,19 @@ export default function NewsletterPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                     <h1 className="text-3xl font-bold">Newsletter</h1>
                     <p className="text-muted-foreground">Manage subscribers and send campaigns</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                     <Button variant="outline" onClick={handleTestEmail} disabled={testing}>
                         {testing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <TestTube2 className="mr-2 h-4 w-4" />}
-                        Test Email
+                        <span className="hidden sm:inline">Test Email</span>
                     </Button>
                     <Button variant="outline" onClick={handleExport}>
-                        <Download className="mr-2 h-4 w-4" /> Export CSV
+                        <Download className="mr-2 h-4 w-4" />
+                        <span className="hidden sm:inline">Export CSV</span>
                     </Button>
                 </div>
             </div>
@@ -279,13 +280,13 @@ export default function NewsletterPage() {
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent className="p-0">
+                <CardContent className="p-0 overflow-x-auto">
                     <Table>
                         <TableHeader>
                             <TableRow className="border-white/10">
                                 <TableHead>Email</TableHead>
                                 <TableHead>Status</TableHead>
-                                <TableHead>Subscribed</TableHead>
+                                <TableHead className="hidden sm:table-cell">Subscribed</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -303,7 +304,7 @@ export default function NewsletterPage() {
                                             {sub.active !== false ? 'Active' : 'Inactive'}
                                         </Badge>
                                     </TableCell>
-                                    <TableCell className="text-muted-foreground text-sm">
+                                    <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
                                         {new Date(sub.created_at).toLocaleDateString()}
                                     </TableCell>
                                     <TableCell className="text-right">

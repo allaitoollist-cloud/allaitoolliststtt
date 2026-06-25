@@ -102,10 +102,10 @@ export function UserRow({ user, onRefresh }: { user: User; onRefresh?: () => voi
                         <Badge variant="secondary">User</Badge>
                     )}
                 </TableCell>
-                <TableCell className="text-muted-foreground">
+                <TableCell className="hidden md:table-cell text-muted-foreground">
                     {user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : '—'}
                 </TableCell>
-                <TableCell className="text-muted-foreground">
+                <TableCell className="hidden md:table-cell text-muted-foreground">
                     {new Date(user.created_at).toLocaleDateString()}
                 </TableCell>
                 <TableCell className="text-right">

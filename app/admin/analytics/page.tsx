@@ -195,14 +195,14 @@ export default function AnalyticsPage() {
                 <CardHeader>
                     <CardTitle className="text-base">Top Tools by Views</CardTitle>
                 </CardHeader>
-                <CardContent className="p-0">
+                <CardContent className="p-0 overflow-x-auto">
                     <Table>
                         <TableHeader>
                             <TableRow className="border-white/10 hover:bg-white/5">
                                 <TableHead>#</TableHead>
                                 <TableHead>Tool</TableHead>
-                                <TableHead>Category</TableHead>
-                                <TableHead>Badges</TableHead>
+                                <TableHead className="hidden sm:table-cell">Category</TableHead>
+                                <TableHead className="hidden md:table-cell">Badges</TableHead>
                                 <TableHead className="text-right">Views</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -211,8 +211,8 @@ export default function AnalyticsPage() {
                                 <TableRow key={tool.id} className="border-white/10 hover:bg-white/5">
                                     <TableCell className="text-muted-foreground font-mono text-xs w-8">{i + 1}</TableCell>
                                     <TableCell className="font-medium">{tool.name}</TableCell>
-                                    <TableCell className="text-muted-foreground text-sm">{formatCategoryName(tool.category)}</TableCell>
-                                    <TableCell>
+                                    <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">{formatCategoryName(tool.category)}</TableCell>
+                                    <TableCell className="hidden md:table-cell">
                                         <div className="flex gap-1">
                                             {tool.featured && <Badge className="bg-purple-500/10 text-purple-400 border-0 text-xs">Featured</Badge>}
                                             {tool.verified && <Badge className="bg-green-500/10 text-green-400 border-0 text-xs">Verified</Badge>}

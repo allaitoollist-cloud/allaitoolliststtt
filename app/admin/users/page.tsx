@@ -118,14 +118,14 @@ export default function AdminUsersPage() {
             </div>
 
             {/* Table */}
-            <div className="rounded-md border border-white/10 bg-card/50">
+            <div className="rounded-md border border-white/10 bg-card/50 overflow-x-auto">
                 <Table>
                     <TableHeader>
                         <TableRow className="border-white/10 hover:bg-white/5">
                             <TableHead>Email</TableHead>
                             <TableHead>Role</TableHead>
-                            <TableHead>Last Sign In</TableHead>
-                            <TableHead>Joined</TableHead>
+                            <TableHead className="hidden md:table-cell">Last Sign In</TableHead>
+                            <TableHead className="hidden md:table-cell">Joined</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>

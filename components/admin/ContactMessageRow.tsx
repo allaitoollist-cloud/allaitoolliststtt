@@ -83,12 +83,12 @@ export function ContactMessageRow({ message, onRefresh }: { message: ContactMess
                 <TableCell>
                     <span className="font-medium">{message.subject}</span>
                 </TableCell>
-                <TableCell>
-                    <p className="text-sm text-muted-foreground line-clamp-2 max-w-md">
+                <TableCell className="hidden md:table-cell">
+                    <p className="text-sm text-muted-foreground line-clamp-2 max-w-xs">
                         {message.message}
                     </p>
                 </TableCell>
-                <TableCell className="text-muted-foreground">
+                <TableCell className="hidden sm:table-cell text-muted-foreground whitespace-nowrap">
                     {new Date(message.created_at).toLocaleDateString()}
                 </TableCell>
                 <TableCell>

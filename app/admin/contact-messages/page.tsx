@@ -118,14 +118,14 @@ export default function ContactMessagesPage() {
             </div>
 
             {/* Table */}
-            <div className="rounded-md border border-white/10 bg-card/50">
+            <div className="rounded-md border border-white/10 bg-card/50 overflow-x-auto">
                 <Table>
                     <TableHeader>
                         <TableRow className="border-white/10 hover:bg-white/5">
                             <TableHead>From</TableHead>
                             <TableHead>Subject</TableHead>
-                            <TableHead>Message</TableHead>
-                            <TableHead>Date</TableHead>
+                            <TableHead className="hidden md:table-cell">Message</TableHead>
+                            <TableHead className="hidden sm:table-cell">Date</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
