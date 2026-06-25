@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Send, Loader2, MessageCircle, Circle, RefreshCw } from 'lucide-react';
+import { Send, Loader2, MessageCircle, Circle, RefreshCw, RotateCcw } from 'lucide-react';
 import { getBrowserClient } from '@/lib/supabase-browser';
 
 interface Message {
@@ -25,6 +25,22 @@ interface Session {
     chat_messages: Message[];
 }
 
+function playNotificationSound() {
+    try {
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = 880;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0.25, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.4);
+    } catch {}
+}
+
 export default function LiveChatPage() {
     const [sessions, setSessions] = useState<Session[]>([]);
     const [activeId, setActiveId] = useState<string | null>(null);
@@ -33,28 +49,32 @@ export default function LiveChatPage() {
     const [sending, setSending] = useState(false);
     const [loading, setLoading] = useState(true);
     const [unreadMap, setUnreadMap] = useState<Record<string, number>>({});
+    const [visitorTyping, setVisitorTyping] = useState(false);
+
     const bottomRef = useRef<HTMLDivElement>(null);
     const activeIdRef = useRef<string | null>(null);
+    const typingChannelRef = useRef<any>(null);
+    const visitorTypingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
     const supabase = getBrowserClient();
 
     useEffect(() => { activeIdRef.current = activeId; }, [activeId]);
 
-    const load = async () => {
+    const load = useCallback(async () => {
         setLoading(true);
         const res = await fetch('/api/chat');
         const data = await res.json();
         if (data.sessions) setSessions(data.sessions);
         setLoading(false);
-    };
+    }, []);
 
-    useEffect(() => { load(); }, []);
+    useEffect(() => { load(); }, [load]);
 
-    // Scroll to bottom when messages change
+    // Scroll to bottom
     useEffect(() => {
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
-    }, [messages]);
+    }, [messages, visitorTyping]);
 
-    // Load messages for active session + mark visitor messages as read
+    // Load messages when active session changes
     useEffect(() => {
         if (!activeId) return;
         const session = sessions.find(s => s.id === activeId);
@@ -63,17 +83,42 @@ export default function LiveChatPage() {
                 new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
             ));
         }
-        // Mark visitor messages as read (enables double-tick in visitor widget)
+        setVisitorTyping(false);
+        setUnreadMap(prev => ({ ...prev, [activeId]: 0 }));
+
+        // Mark visitor messages as read → triggers double tick on visitor side
         fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'mark_read', sessionId: activeId }),
         });
-        // Clear unread badge
-        setUnreadMap(prev => ({ ...prev, [activeId]: 0 }));
     }, [activeId, sessions]);
 
-    // Realtime: listen for new messages on ALL sessions
+    // Typing indicator channel — recreate when active session changes
+    useEffect(() => {
+        if (typingChannelRef.current) {
+            supabase.removeChannel(typingChannelRef.current);
+            typingChannelRef.current = null;
+        }
+        if (!activeId) return;
+
+        const ch = supabase.channel(`typing:${activeId}`);
+        ch.on('broadcast', { event: 'visitor-typing' }, () => {
+            setVisitorTyping(true);
+            if (visitorTypingTimeout.current) clearTimeout(visitorTypingTimeout.current);
+            visitorTypingTimeout.current = setTimeout(() => setVisitorTyping(false), 2500);
+        }).subscribe();
+        typingChannelRef.current = ch;
+
+        return () => {
+            if (typingChannelRef.current) {
+                supabase.removeChannel(typingChannelRef.current);
+                typingChannelRef.current = null;
+            }
+        };
+    }, [activeId]);
+
+    // Global realtime: new messages + new sessions
     useEffect(() => {
         const channel = supabase
             .channel('admin-chat-all')
@@ -83,24 +128,44 @@ export default function LiveChatPage() {
                 table: 'chat_messages',
             }, (payload) => {
                 const msg = payload.new as Message & { session_id: string };
-                // Update sessions list
+                const sid = (msg as any).session_id;
+
                 setSessions(prev => prev.map(s => {
-                    if (s.id !== (msg as any).session_id) return s;
+                    if (s.id !== sid) return s;
                     return { ...s, chat_messages: [...s.chat_messages, msg], updated_at: msg.created_at };
                 }));
-                // If active session — add to messages (use ref to avoid stale closure)
-                if ((msg as any).session_id === activeIdRef.current) {
+
+                if (sid === activeIdRef.current) {
                     setMessages(prev => {
-                        // Remove any optimistic placeholder, then add real message if not already present
                         const without = prev.filter(m => !m.id.startsWith('opt-') && m.id !== msg.id);
                         return [...without, msg];
                     });
+                    setVisitorTyping(false);
+                    // Mark read immediately since admin is viewing
+                    if (msg.sender === 'visitor') {
+                        fetch('/api/chat', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'mark_read', sessionId: sid }),
+                        });
+                    }
                 } else if (msg.sender === 'visitor') {
-                    // Unread badge for other sessions
+                    playNotificationSound();
                     setUnreadMap(prev => ({
                         ...prev,
-                        [(msg as any).session_id]: (prev[(msg as any).session_id] || 0) + 1,
+                        [sid]: (prev[sid] || 0) + 1,
                     }));
+                }
+            })
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'chat_messages',
+            }, (payload) => {
+                const updated = payload.new as Message & { session_id: string };
+                const sid = (updated as any).session_id;
+                if (sid === activeIdRef.current) {
+                    setMessages(prev => prev.map(m => m.id === updated.id ? { ...m, read_at: updated.read_at } : m));
                 }
             })
             .on('postgres_changes', {
@@ -108,10 +173,27 @@ export default function LiveChatPage() {
                 schema: 'public',
                 table: 'chat_sessions',
             }, () => { load(); })
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'chat_sessions',
+            }, () => { load(); })
             .subscribe();
 
         return () => { supabase.removeChannel(channel); };
-    }, []);
+    }, [load]);
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setInput(e.target.value);
+        // Broadcast typing to visitor
+        try {
+            typingChannelRef.current?.send({
+                type: 'broadcast',
+                event: 'admin-typing',
+                payload: {},
+            });
+        } catch {}
+    };
 
     const sendReply = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -120,7 +202,6 @@ export default function LiveChatPage() {
         setInput('');
         setSending(true);
 
-        // Optimistic update so admin sees reply immediately
         const optimistic: Message = {
             id: `opt-${Date.now()}`,
             message: text,
@@ -135,7 +216,6 @@ export default function LiveChatPage() {
             body: JSON.stringify({ action: 'message', sessionId: activeId, message: text, sender: 'admin' }),
         });
         setSending(false);
-        // Reload to sync real IDs
         load();
     };
 
@@ -148,9 +228,19 @@ export default function LiveChatPage() {
         setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, status: 'closed' } : s));
     };
 
+    const reopenSession = async (sessionId: string) => {
+        await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'reopen', sessionId }),
+        });
+        setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, status: 'open' } : s));
+    };
+
     const activeSession = sessions.find(s => s.id === activeId);
     const openSessions = sessions.filter(s => s.status === 'open');
     const closedSessions = sessions.filter(s => s.status === 'closed');
+    const totalUnread = Object.values(unreadMap).reduce((a, b) => a + b, 0);
 
     return (
         <div className="flex h-[calc(100vh-8rem)] gap-0 rounded-xl border border-white/10 overflow-hidden bg-card/50">
@@ -158,7 +248,14 @@ export default function LiveChatPage() {
             {/* Left: Session list */}
             <div className="w-72 shrink-0 border-r border-white/10 flex flex-col">
                 <div className="flex items-center justify-between p-4 border-b border-white/10">
-                    <h2 className="font-semibold text-sm">Live Chats</h2>
+                    <div className="flex items-center gap-2">
+                        <h2 className="font-semibold text-sm">Live Chats</h2>
+                        {totalUnread > 0 && (
+                            <span className="w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                                {totalUnread}
+                            </span>
+                        )}
+                    </div>
                     <div className="flex items-center gap-2">
                         {openSessions.length > 0 && (
                             <Badge className="bg-green-500/10 text-green-500 border-0 text-xs">
@@ -181,9 +278,10 @@ export default function LiveChatPage() {
 
                     {/* Open sessions */}
                     {openSessions.map(session => {
-                        const lastMsg = [...session.chat_messages].sort((a, b) =>
+                        const sorted = [...session.chat_messages].sort((a, b) =>
                             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-                        )[0];
+                        );
+                        const lastMsg = sorted[0];
                         const unread = unreadMap[session.id] || 0;
                         return (
                             <button
@@ -194,7 +292,7 @@ export default function LiveChatPage() {
                             >
                                 <div className="flex items-center justify-between mb-1">
                                     <div className="flex items-center gap-1.5">
-                                        <Circle className="h-2 w-2 fill-green-500 text-green-500" />
+                                        <Circle className="h-2 w-2 fill-green-500 text-green-500 shrink-0" />
                                         <span className="font-medium text-sm truncate">{session.visitor_name}</span>
                                     </div>
                                     {unread > 0 && (
@@ -220,7 +318,7 @@ export default function LiveChatPage() {
 
                     {/* Closed sessions */}
                     {closedSessions.length > 0 && (
-                        <div className="px-4 py-2 text-[10px] text-muted-foreground uppercase tracking-wider">
+                        <div className="px-4 py-2 text-[10px] text-muted-foreground uppercase tracking-wider border-b border-white/5">
                             Closed
                         </div>
                     )}
@@ -232,7 +330,7 @@ export default function LiveChatPage() {
                                 ${activeId === session.id ? 'bg-white/5 opacity-100' : ''}`}
                         >
                             <div className="flex items-center gap-1.5">
-                                <Circle className="h-2 w-2 fill-gray-500 text-gray-500" />
+                                <Circle className="h-2 w-2 fill-gray-500 text-gray-500 shrink-0" />
                                 <span className="font-medium text-sm truncate">{session.visitor_name}</span>
                             </div>
                             <p className="text-[10px] text-muted-foreground/60 mt-1">
@@ -247,7 +345,7 @@ export default function LiveChatPage() {
             {activeSession ? (
                 <div className="flex-1 flex flex-col min-w-0">
                     {/* Chat header */}
-                    <div className="flex items-center justify-between px-5 py-3 border-b border-white/10">
+                    <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 shrink-0">
                         <div>
                             <p className="font-semibold">{activeSession.visitor_name}</p>
                             {activeSession.visitor_email && (
@@ -260,7 +358,7 @@ export default function LiveChatPage() {
                                 : 'bg-gray-500/10 text-gray-400 border-0'}>
                                 {activeSession.status}
                             </Badge>
-                            {activeSession.status === 'open' && (
+                            {activeSession.status === 'open' ? (
                                 <Button
                                     size="sm" variant="outline"
                                     className="text-xs h-7 border-white/10"
@@ -268,36 +366,68 @@ export default function LiveChatPage() {
                                 >
                                     Close Chat
                                 </Button>
+                            ) : (
+                                <Button
+                                    size="sm" variant="outline"
+                                    className="text-xs h-7 border-white/10 gap-1"
+                                    onClick={() => reopenSession(activeSession.id)}
+                                >
+                                    <RotateCcw className="h-3 w-3" />
+                                    Reopen
+                                </Button>
                             )}
                         </div>
                     </div>
 
                     {/* Messages */}
-                    <div className="flex-1 overflow-y-auto p-5 space-y-3">
+                    <div className="flex-1 overflow-y-auto p-5 space-y-3 min-h-0">
                         {messages.map(msg => (
                             <div key={msg.id} className={`flex ${msg.sender === 'admin' ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`max-w-[70%] px-4 py-2.5 rounded-2xl text-sm
                                     ${msg.sender === 'admin'
                                         ? 'bg-primary text-white rounded-br-none'
                                         : 'bg-secondary border border-white/10 text-foreground rounded-bl-none'
-                                    }`}>
+                                    } ${msg.id.startsWith('opt-') ? 'opacity-60' : ''}`}>
                                     <p>{msg.message}</p>
-                                    <p className="text-[10px] opacity-60 mt-0.5 text-right">
-                                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    </p>
+                                    <div className="flex items-center justify-end gap-1 mt-0.5">
+                                        <p className="text-[10px] opacity-60">
+                                            {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </p>
+                                        {msg.sender === 'admin' && !msg.id.startsWith('opt-') && (
+                                            <span className="text-[10px]" title={msg.read_at ? 'Seen' : 'Sent'}>
+                                                {msg.read_at
+                                                    ? <span className="text-blue-200 font-bold">✓✓</span>
+                                                    : <span className="opacity-50">✓</span>
+                                                }
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         ))}
+
+                        {/* Visitor typing indicator */}
+                        {visitorTyping && activeSession.status === 'open' && (
+                            <div className="flex justify-start">
+                                <div className="bg-secondary border border-white/10 rounded-2xl rounded-bl-none px-4 py-3">
+                                    <div className="flex gap-1 items-center">
+                                        <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                        <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                        <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                         <div ref={bottomRef} />
                     </div>
 
                     {/* Reply input */}
                     {activeSession.status === 'open' ? (
-                        <form onSubmit={sendReply} className="flex gap-3 p-4 border-t border-white/10">
+                        <form onSubmit={sendReply} className="flex gap-3 p-4 border-t border-white/10 shrink-0">
                             <Input
                                 placeholder="Type your reply..."
                                 value={input}
-                                onChange={e => setInput(e.target.value)}
+                                onChange={handleInputChange}
                                 className="flex-1"
                                 autoFocus
                             />
@@ -306,8 +436,8 @@ export default function LiveChatPage() {
                             </Button>
                         </form>
                     ) : (
-                        <div className="p-4 border-t border-white/10 text-center text-sm text-muted-foreground">
-                            This chat is closed
+                        <div className="p-4 border-t border-white/10 text-center text-sm text-muted-foreground shrink-0">
+                            Chat closed — click <strong>Reopen</strong> to reply again
                         </div>
                     )}
                 </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Loader2, Headphones } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, Headphones, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getBrowserClient } from '@/lib/supabase-browser';
@@ -41,7 +41,12 @@ function LiveChatWidgetInner() {
     const [email, setEmail] = useState('');
     const [unread, setUnread] = useState(0);
     const [setupRequired, setSetupRequired] = useState(false);
+    const [sessionClosed, setSessionClosed] = useState(false);
+    const [adminTyping, setAdminTyping] = useState(false);
+
     const bottomRef = useRef<HTMLDivElement>(null);
+    const adminTypingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const typingChannelRef = useRef<ReturnType<typeof getBrowserClient>['channel'] extends (...args: any[]) => infer R ? R : any>(null as any);
     const supabase = getBrowserClient();
 
     useEffect(() => { setMounted(true); }, []);
@@ -50,7 +55,7 @@ function LiveChatWidgetInner() {
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
     };
 
-    // Load messages via API (uses service role — no RLS issues)
+    // Load messages via API (service role — no RLS issues)
     const loadMessages = async (sid: string) => {
         try {
             const res = await fetch(`/api/chat?sessionId=${sid}`);
@@ -64,7 +69,7 @@ function LiveChatWidgetInner() {
     useEffect(() => {
         if (!mounted) return;
         const savedSession = localStorage.getItem('_chat_session');
-        const savedName = localStorage.getItem('_chat_name');
+        const savedName = localStorage.getItem('_chat_name') || '';
         const savedEmail = localStorage.getItem('_chat_email') || '';
         if (savedSession && savedName) {
             setSessionId(savedSession);
@@ -76,11 +81,12 @@ function LiveChatWidgetInner() {
         }
     }, [mounted]);
 
-    // Realtime: listen for new messages on this session
+    // Realtime: new messages + session status changes
     useEffect(() => {
         if (!sessionId) return;
+
         const channel = supabase
-            .channel(`chat:${sessionId}`)
+            .channel(`session:${sessionId}`)
             .on('postgres_changes', {
                 event: 'INSERT',
                 schema: 'public',
@@ -89,30 +95,81 @@ function LiveChatWidgetInner() {
             }, (payload) => {
                 const msg = payload.new as Message;
                 setMessages(prev => {
-                    // Replace optimistic or skip duplicate
                     const without = prev.filter(m => !m.id.startsWith('opt-') && m.id !== msg.id);
                     return [...without, msg];
                 });
-                if (msg.sender === 'admin' && !open) setUnread(u => u + 1);
+                if (msg.sender === 'admin') {
+                    setAdminTyping(false);
+                    if (!open) setUnread(u => u + 1);
+                }
                 scrollBottom();
             })
+            // When admin updates read_at → trigger double tick
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'chat_messages',
+                filter: `session_id=eq.${sessionId}`,
+            }, (payload) => {
+                const updated = payload.new as Message;
+                setMessages(prev => prev.map(m => m.id === updated.id ? { ...m, read_at: updated.read_at } : m));
+            })
+            // Session closed by admin → show "Chat ended"
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'chat_sessions',
+                filter: `id=eq.${sessionId}`,
+            }, (payload) => {
+                if ((payload.new as any).status === 'closed') {
+                    setSessionClosed(true);
+                } else if ((payload.new as any).status === 'open') {
+                    setSessionClosed(false);
+                }
+            })
             .subscribe();
+
         return () => { supabase.removeChannel(channel); };
+    }, [sessionId]);
+
+    // Typing indicator channel
+    useEffect(() => {
+        if (!sessionId) return;
+        const ch = supabase.channel(`typing:${sessionId}`);
+        ch.on('broadcast', { event: 'admin-typing' }, () => {
+            setAdminTyping(true);
+            if (adminTypingTimeout.current) clearTimeout(adminTypingTimeout.current);
+            adminTypingTimeout.current = setTimeout(() => setAdminTyping(false), 2500);
+        }).subscribe();
+        typingChannelRef.current = ch;
+        return () => { supabase.removeChannel(ch); };
     }, [sessionId]);
 
     useEffect(() => {
         if (open) { setUnread(0); scrollBottom(); }
     }, [open]);
 
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setInput(e.target.value);
+        // Broadcast typing to admin
+        try {
+            typingChannelRef.current?.send({
+                type: 'broadcast',
+                event: 'visitor-typing',
+                payload: {},
+            });
+        } catch {}
+    };
+
     const startChat = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!name.trim()) return;
+        if (!name.trim() || !email.trim()) return;
         setSending(true);
         const visitorId = getVisitorId();
         const res = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'start', visitorId, name: name.trim(), email }),
+            body: JSON.stringify({ action: 'start', visitorId, name: name.trim(), email: email.trim() }),
         });
         const data = await res.json();
         if (data.setup_required || res.status === 503) {
@@ -122,11 +179,32 @@ function LiveChatWidgetInner() {
         }
         if (data.sessionId) {
             setSessionId(data.sessionId);
-            // Save to localStorage for history restore
             localStorage.setItem('_chat_session', data.sessionId);
             localStorage.setItem('_chat_name', name.trim());
-            localStorage.setItem('_chat_email', email);
+            localStorage.setItem('_chat_email', email.trim());
             setStarted(true);
+            setSessionClosed(false);
+            setMessages(data.messages || []);
+            scrollBottom();
+        }
+        setSending(false);
+    };
+
+    // Start a fresh new session (used after session close)
+    const startNewSession = async () => {
+        setSending(true);
+        localStorage.removeItem('_chat_session');
+        const visitorId = getVisitorId();
+        const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'start', visitorId, name, email }),
+        });
+        const data = await res.json();
+        if (data.sessionId) {
+            setSessionId(data.sessionId);
+            localStorage.setItem('_chat_session', data.sessionId);
+            setSessionClosed(false);
             setMessages(data.messages || []);
             scrollBottom();
         }
@@ -140,7 +218,7 @@ function LiveChatWidgetInner() {
         setInput('');
         setSending(true);
 
-        // Optimistic update — user sees message instantly
+        // Optimistic update
         const optimistic: Message = {
             id: `opt-${Date.now()}`,
             message: text,
@@ -150,11 +228,19 @@ function LiveChatWidgetInner() {
         setMessages(prev => [...prev, optimistic]);
         scrollBottom();
 
-        await fetch('/api/chat', {
+        const res = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'message', sessionId, message: text, sender: 'visitor' }),
         });
+        const data = await res.json();
+
+        if (data.session_closed) {
+            // Remove optimistic, show closed state
+            setMessages(prev => prev.filter(m => !m.id.startsWith('opt-')));
+            setSessionClosed(true);
+        }
+
         setSending(false);
     };
 
@@ -162,12 +248,13 @@ function LiveChatWidgetInner() {
 
     return (
         <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
-            {/* Chat window */}
             {open && (
-                <div className="w-80 sm:w-96 bg-background border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
-                    style={{ height: '480px' }}>
+                <div
+                    className="w-80 sm:w-96 bg-background border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+                    style={{ height: '480px' }}
+                >
                     {/* Header */}
-                    <div className="flex items-center justify-between px-4 py-3 bg-primary/10 border-b border-white/10">
+                    <div className="flex items-center justify-between px-4 py-3 bg-primary/10 border-b border-white/10 shrink-0">
                         <div className="flex items-center gap-2">
                             <div className="relative">
                                 <Headphones className="h-5 w-5 text-primary" />
@@ -183,17 +270,18 @@ function LiveChatWidgetInner() {
                         </Button>
                     </div>
 
+                    {/* Body */}
                     {setupRequired ? (
                         <div className="flex-1 flex flex-col items-center justify-center p-5 text-center space-y-2">
                             <p className="text-sm font-medium">Chat is coming soon!</p>
-                            <p className="text-xs text-muted-foreground">Please email us at <span className="text-primary">hello@allaitoollist.com</span></p>
+                            <p className="text-xs text-muted-foreground">Email us at <span className="text-primary">hello@allaitoollist.com</span></p>
                         </div>
+
                     ) : !started ? (
-                        /* Pre-chat form */
                         <form onSubmit={startChat} className="flex-1 flex flex-col justify-center p-5 space-y-4">
                             <div className="text-center space-y-1">
                                 <p className="font-semibold text-sm">👋 Hi there!</p>
-                                <p className="text-xs text-muted-foreground">Tell us your name to start chatting.</p>
+                                <p className="text-xs text-muted-foreground">Fill in your details to start chatting.</p>
                             </div>
                             <Input placeholder="Your name *" value={name} onChange={e => setName(e.target.value)} required className="text-sm" />
                             <Input type="email" placeholder="Email address *" value={email} onChange={e => setEmail(e.target.value)} required className="text-sm" />
@@ -202,10 +290,27 @@ function LiveChatWidgetInner() {
                                 Start Chat
                             </Button>
                         </form>
+
+                    ) : sessionClosed ? (
+                        /* Chat was closed by admin */
+                        <div className="flex-1 flex flex-col items-center justify-center p-5 text-center space-y-4">
+                            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                                <X className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-sm font-semibold">Chat Ended</p>
+                                <p className="text-xs text-muted-foreground">This conversation was closed. Start a new chat anytime.</p>
+                            </div>
+                            <Button size="sm" onClick={startNewSession} disabled={sending} className="gap-2">
+                                {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                                Start New Chat
+                            </Button>
+                        </div>
+
                     ) : (
                         <>
                             {/* Messages */}
-                            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                            <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
                                 {loading && (
                                     <div className="flex justify-center pt-4">
                                         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -222,7 +327,7 @@ function LiveChatWidgetInner() {
                                             ${msg.sender === 'visitor'
                                                 ? 'bg-primary text-white rounded-br-none'
                                                 : 'bg-card border border-white/10 text-foreground rounded-bl-none'
-                                            } ${msg.id.startsWith('opt-') ? 'opacity-70' : ''}`}>
+                                            } ${msg.id.startsWith('opt-') ? 'opacity-60' : ''}`}>
                                             {msg.sender === 'admin' && (
                                                 <p className="text-[10px] font-semibold text-primary mb-0.5">Support</p>
                                             )}
@@ -233,26 +338,38 @@ function LiveChatWidgetInner() {
                                                 </span>
                                                 {msg.sender === 'visitor' && !msg.id.startsWith('opt-') && (
                                                     <span className="text-[10px]" title={msg.read_at ? 'Seen' : 'Sent'}>
-                                                        {msg.read_at ? (
-                                                            <span className="opacity-90">✓✓</span>
-                                                        ) : (
-                                                            <span className="opacity-50">✓</span>
-                                                        )}
+                                                        {msg.read_at
+                                                            ? <span className="text-blue-300 font-bold">✓✓</span>
+                                                            : <span className="opacity-50">✓</span>
+                                                        }
                                                     </span>
                                                 )}
                                             </div>
                                         </div>
                                     </div>
                                 ))}
+
+                                {/* Admin typing indicator */}
+                                {adminTyping && (
+                                    <div className="flex justify-start">
+                                        <div className="bg-card border border-white/10 rounded-xl rounded-bl-none px-4 py-2.5">
+                                            <div className="flex gap-1 items-center">
+                                                <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                                <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                                <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                                 <div ref={bottomRef} />
                             </div>
 
                             {/* Input */}
-                            <form onSubmit={sendMessage} className="flex gap-2 p-3 border-t border-white/10">
+                            <form onSubmit={sendMessage} className="flex gap-2 p-3 border-t border-white/10 shrink-0">
                                 <Input
                                     placeholder="Type a message..."
                                     value={input}
-                                    onChange={e => setInput(e.target.value)}
+                                    onChange={handleInputChange}
                                     className="text-sm h-9"
                                     autoFocus
                                 />

@@ -45,12 +45,13 @@ function chatTranscriptHtml(visitorName: string, messages: { sender: string; mes
 export async function POST(req: NextRequest) {
     const supabase = getSupabase();
     if (!supabase) {
-        return NextResponse.json({ error: 'Chat not configured. Supabase env vars missing.', setup_required: true }, { status: 503 });
+        return NextResponse.json({ error: 'Chat not configured.', setup_required: true }, { status: 503 });
     }
     try {
         const body = await req.json();
         const { action } = body;
 
+        // ── Start / resume session ─────────────────────────────────────────
         if (action === 'start') {
             const { visitorId, name, email } = body;
             if (!visitorId || !name) {
@@ -82,7 +83,6 @@ export async function POST(req: NextRequest) {
                     .select('id')
                     .single();
                 if (error || !session) {
-                    console.error('[Chat] insert session error:', error?.message);
                     return NextResponse.json({ error: error?.message || 'Failed to create session' }, { status: 500 });
                 }
                 sessionId = session.id;
@@ -103,10 +103,22 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ sessionId, messages: messages || [] });
         }
 
+        // ── Send message ───────────────────────────────────────────────────
         if (action === 'message') {
             const { sessionId, message, sender } = body;
             if (!sessionId || !message || !sender) {
                 return NextResponse.json({ error: 'sessionId, message, sender required' }, { status: 400 });
+            }
+
+            // Check session is still open
+            const { data: sess } = await supabase
+                .from('chat_sessions')
+                .select('status')
+                .eq('id', sessionId)
+                .single();
+
+            if (sess?.status === 'closed') {
+                return NextResponse.json({ session_closed: true });
             }
 
             const { error } = await supabase.from('chat_messages').insert({
@@ -124,7 +136,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: true });
         }
 
-        // Admin marks visitor messages as read when opening a session
+        // ── Mark visitor messages read ─────────────────────────────────────
         if (action === 'mark_read') {
             const { sessionId } = body;
             if (!sessionId) return NextResponse.json({ error: 'sessionId required' }, { status: 400 });
@@ -136,11 +148,11 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: true });
         }
 
+        // ── Close session + send transcript ───────────────────────────────
         if (action === 'close') {
             const { sessionId } = body;
             if (!sessionId) return NextResponse.json({ error: 'sessionId required' }, { status: 400 });
 
-            // Get session + all messages
             const { data: session } = await supabase
                 .from('chat_sessions')
                 .select('visitor_name, visitor_email')
@@ -153,37 +165,36 @@ export async function POST(req: NextRequest) {
                 .eq('session_id', sessionId)
                 .order('created_at', { ascending: true });
 
-            // Close the session
             await supabase.from('chat_sessions')
                 .update({ status: 'closed', updated_at: new Date().toISOString() })
                 .eq('id', sessionId);
 
-            // Send transcript emails
             if (session && messages && messages.length > 0) {
                 const html = chatTranscriptHtml(session.visitor_name, messages);
                 const adminEmail = process.env.ADMIN_EMAIL || 'allaitoollist@gmail.com';
-
-                const emailJobs = [
-                    sendEmail({
-                        to: adminEmail,
-                        subject: `Chat ended — ${session.visitor_name}`,
-                        html,
-                    }),
+                const emailJobs: Promise<any>[] = [
+                    sendEmail({ to: adminEmail, subject: `Chat ended — ${session.visitor_name}`, html }),
                 ];
-
                 if (session.visitor_email) {
-                    emailJobs.push(
-                        sendEmail({
-                            to: session.visitor_email,
-                            subject: 'Your chat transcript — All AI Tool List',
-                            html,
-                        })
-                    );
+                    emailJobs.push(sendEmail({
+                        to: session.visitor_email,
+                        subject: 'Your chat transcript — All AI Tool List',
+                        html,
+                    }));
                 }
-
                 await Promise.allSettled(emailJobs);
             }
 
+            return NextResponse.json({ success: true });
+        }
+
+        // ── Reopen session ─────────────────────────────────────────────────
+        if (action === 'reopen') {
+            const { sessionId } = body;
+            if (!sessionId) return NextResponse.json({ error: 'sessionId required' }, { status: 400 });
+            await supabase.from('chat_sessions')
+                .update({ status: 'open', updated_at: new Date().toISOString() })
+                .eq('id', sessionId);
             return NextResponse.json({ success: true });
         }
 
@@ -194,19 +205,17 @@ export async function POST(req: NextRequest) {
     }
 }
 
-// GET /api/chat?sessionId=xxx — visitor fetches own messages
-// GET /api/chat — admin fetches all sessions
+// GET /api/chat?sessionId=xxx  → visitor fetches own messages
+// GET /api/chat               → admin fetches all sessions
 export async function GET(req: NextRequest) {
     const supabase = getSupabase();
-    if (!supabase) {
-        return NextResponse.json({ sessions: [], setup_required: true });
-    }
+    if (!supabase) return NextResponse.json({ sessions: [], setup_required: true });
 
     const sessionId = req.nextUrl.searchParams.get('sessionId');
     if (sessionId) {
         const { data: messages, error } = await supabase
             .from('chat_messages')
-            .select('id, message, sender, created_at')
+            .select('id, message, sender, created_at, read_at')
             .eq('session_id', sessionId)
             .order('created_at', { ascending: true });
         if (error) return NextResponse.json({ messages: [], setup_required: true });
@@ -217,7 +226,7 @@ export async function GET(req: NextRequest) {
         .from('chat_sessions')
         .select(`
             id, visitor_name, visitor_email, status, created_at, updated_at,
-            chat_messages(id, message, sender, created_at)
+            chat_messages(id, message, sender, created_at, read_at)
         `)
         .order('updated_at', { ascending: false });
 
