@@ -198,6 +198,28 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: true });
         }
 
+        // ── Edit message ───────────────────────────────────────────────────
+        if (action === 'edit_msg') {
+            const { messageId, message } = body;
+            if (!messageId || !message?.trim()) return NextResponse.json({ error: 'messageId and message required' }, { status: 400 });
+            const { error } = await supabase.from('chat_messages')
+                .update({ message: message.trim(), edited_at: new Date().toISOString() })
+                .eq('id', messageId);
+            if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+            return NextResponse.json({ success: true });
+        }
+
+        // ── Delete message (soft) ──────────────────────────────────────────
+        if (action === 'delete_msg') {
+            const { messageId } = body;
+            if (!messageId) return NextResponse.json({ error: 'messageId required' }, { status: 400 });
+            const { error } = await supabase.from('chat_messages')
+                .update({ deleted: true, edited_at: new Date().toISOString() })
+                .eq('id', messageId);
+            if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+            return NextResponse.json({ success: true });
+        }
+
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     } catch (e: any) {
         console.error('[Chat API] Unexpected error:', e.message);
@@ -215,7 +237,7 @@ export async function GET(req: NextRequest) {
     if (sessionId) {
         const { data: messages, error } = await supabase
             .from('chat_messages')
-            .select('id, message, sender, created_at, read_at')
+            .select('id, message, sender, created_at, read_at, edited_at, deleted')
             .eq('session_id', sessionId)
             .order('created_at', { ascending: true });
         if (error) return NextResponse.json({ messages: [], setup_required: true });
@@ -226,7 +248,7 @@ export async function GET(req: NextRequest) {
         .from('chat_sessions')
         .select(`
             id, visitor_name, visitor_email, status, created_at, updated_at,
-            chat_messages(id, message, sender, created_at, read_at)
+            chat_messages(id, message, sender, created_at, read_at, edited_at, deleted)
         `)
         .order('updated_at', { ascending: false });
 

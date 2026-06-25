@@ -12,6 +12,8 @@ interface Message {
     sender: 'visitor' | 'admin';
     created_at: string;
     read_at?: string | null;
+    edited_at?: string | null;
+    deleted?: boolean;
 }
 
 function getVisitorId() {
@@ -328,23 +330,31 @@ function LiveChatWidgetInner() {
                                                 ? 'bg-primary text-white rounded-br-none'
                                                 : 'bg-card border border-white/10 text-foreground rounded-bl-none'
                                             } ${msg.id.startsWith('opt-') ? 'opacity-60' : ''}`}>
-                                            {msg.sender === 'admin' && (
+                                            {msg.sender === 'admin' && !msg.deleted && (
                                                 <p className="text-[10px] font-semibold text-primary mb-0.5">Support</p>
                                             )}
-                                            {msg.message}
-                                            <div className="flex items-center justify-end gap-1 mt-0.5">
-                                                <span className="text-[10px] opacity-60">
-                                                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                </span>
-                                                {msg.sender === 'visitor' && !msg.id.startsWith('opt-') && (
-                                                    <span className="text-[10px]" title={msg.read_at ? 'Seen' : 'Sent'}>
-                                                        {msg.read_at
-                                                            ? <span className="text-blue-300 font-bold">✓✓</span>
-                                                            : <span className="opacity-50">✓</span>
-                                                        }
+                                            {msg.deleted
+                                                ? <p className="italic text-xs opacity-50">🗑 This message was deleted</p>
+                                                : <p>{msg.message}</p>
+                                            }
+                                            {!msg.deleted && (
+                                                <div className="flex items-center justify-end gap-1 mt-0.5">
+                                                    <span className="text-[10px] opacity-60">
+                                                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                     </span>
-                                                )}
-                                            </div>
+                                                    {msg.edited_at && (
+                                                        <span className="text-[10px] opacity-40 italic">edited</span>
+                                                    )}
+                                                    {msg.sender === 'visitor' && !msg.id.startsWith('opt-') && (
+                                                        <span className="text-[10px]" title={msg.read_at ? 'Seen' : 'Sent'}>
+                                                            {msg.read_at
+                                                                ? <span className="text-blue-300 font-bold">✓✓</span>
+                                                                : <span className="opacity-50">✓</span>
+                                                            }
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 ))}

@@ -4,7 +4,10 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Send, Loader2, MessageCircle, Circle, RefreshCw, RotateCcw } from 'lucide-react';
+import {
+    Send, Loader2, MessageCircle, Circle, RefreshCw, RotateCcw,
+    Pencil, Trash2, Check, X, Search, Zap,
+} from 'lucide-react';
 import { getBrowserClient } from '@/lib/supabase-browser';
 
 interface Message {
@@ -13,6 +16,8 @@ interface Message {
     sender: 'visitor' | 'admin';
     created_at: string;
     read_at?: string | null;
+    edited_at?: string | null;
+    deleted?: boolean;
 }
 
 interface Session {
@@ -24,6 +29,15 @@ interface Session {
     updated_at: string;
     chat_messages: Message[];
 }
+
+const QUICK_REPLIES = [
+    'Thanks for reaching out! How can I help you?',
+    'Please give me a moment, I\'ll check that for you.',
+    'Could you provide more details about your issue?',
+    'I\'ll get back to you shortly.',
+    'Your request has been noted. We\'ll follow up via email.',
+    'Is there anything else I can help you with?',
+];
 
 function playNotificationSound() {
     try {
@@ -50,11 +64,19 @@ export default function LiveChatPage() {
     const [loading, setLoading] = useState(true);
     const [unreadMap, setUnreadMap] = useState<Record<string, number>>({});
     const [visitorTyping, setVisitorTyping] = useState(false);
+    const [search, setSearch] = useState('');
+    const [showQuick, setShowQuick] = useState(false);
+
+    // Edit state
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editText, setEditText] = useState('');
+    const [hoveredId, setHoveredId] = useState<string | null>(null);
 
     const bottomRef = useRef<HTMLDivElement>(null);
     const activeIdRef = useRef<string | null>(null);
     const typingChannelRef = useRef<any>(null);
     const visitorTypingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const editInputRef = useRef<HTMLInputElement>(null);
     const supabase = getBrowserClient();
 
     useEffect(() => { activeIdRef.current = activeId; }, [activeId]);
@@ -69,12 +91,10 @@ export default function LiveChatPage() {
 
     useEffect(() => { load(); }, [load]);
 
-    // Scroll to bottom
     useEffect(() => {
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
     }, [messages, visitorTyping]);
 
-    // Load messages when active session changes
     useEffect(() => {
         if (!activeId) return;
         const session = sessions.find(s => s.id === activeId);
@@ -84,9 +104,8 @@ export default function LiveChatPage() {
             ));
         }
         setVisitorTyping(false);
+        setEditingId(null);
         setUnreadMap(prev => ({ ...prev, [activeId]: 0 }));
-
-        // Mark visitor messages as read → triggers double tick on visitor side
         fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -94,14 +113,18 @@ export default function LiveChatPage() {
         });
     }, [activeId, sessions]);
 
-    // Typing indicator channel — recreate when active session changes
+    // Focus edit input when editing starts
+    useEffect(() => {
+        if (editingId) setTimeout(() => editInputRef.current?.focus(), 50);
+    }, [editingId]);
+
+    // Typing indicator channel
     useEffect(() => {
         if (typingChannelRef.current) {
             supabase.removeChannel(typingChannelRef.current);
             typingChannelRef.current = null;
         }
         if (!activeId) return;
-
         const ch = supabase.channel(`typing:${activeId}`);
         ch.on('broadcast', { event: 'visitor-typing' }, () => {
             setVisitorTyping(true);
@@ -109,7 +132,6 @@ export default function LiveChatPage() {
             visitorTypingTimeout.current = setTimeout(() => setVisitorTyping(false), 2500);
         }).subscribe();
         typingChannelRef.current = ch;
-
         return () => {
             if (typingChannelRef.current) {
                 supabase.removeChannel(typingChannelRef.current);
@@ -118,30 +140,22 @@ export default function LiveChatPage() {
         };
     }, [activeId]);
 
-    // Global realtime: new messages + new sessions
+    // Global realtime
     useEffect(() => {
         const channel = supabase
             .channel('admin-chat-all')
-            .on('postgres_changes', {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'chat_messages',
-            }, (payload) => {
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
                 const msg = payload.new as Message & { session_id: string };
                 const sid = (msg as any).session_id;
-
-                setSessions(prev => prev.map(s => {
-                    if (s.id !== sid) return s;
-                    return { ...s, chat_messages: [...s.chat_messages, msg], updated_at: msg.created_at };
-                }));
-
+                setSessions(prev => prev.map(s =>
+                    s.id !== sid ? s : { ...s, chat_messages: [...s.chat_messages, msg], updated_at: msg.created_at }
+                ));
                 if (sid === activeIdRef.current) {
                     setMessages(prev => {
                         const without = prev.filter(m => !m.id.startsWith('opt-') && m.id !== msg.id);
                         return [...without, msg];
                     });
                     setVisitorTyping(false);
-                    // Mark read immediately since admin is viewing
                     if (msg.sender === 'visitor') {
                         fetch('/api/chat', {
                             method: 'POST',
@@ -151,47 +165,31 @@ export default function LiveChatPage() {
                     }
                 } else if (msg.sender === 'visitor') {
                     playNotificationSound();
-                    setUnreadMap(prev => ({
-                        ...prev,
-                        [sid]: (prev[sid] || 0) + 1,
-                    }));
+                    setUnreadMap(prev => ({ ...prev, [sid]: (prev[sid] || 0) + 1 }));
                 }
             })
-            .on('postgres_changes', {
-                event: 'UPDATE',
-                schema: 'public',
-                table: 'chat_messages',
-            }, (payload) => {
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_messages' }, (payload) => {
                 const updated = payload.new as Message & { session_id: string };
                 const sid = (updated as any).session_id;
-                if (sid === activeIdRef.current) {
-                    setMessages(prev => prev.map(m => m.id === updated.id ? { ...m, read_at: updated.read_at } : m));
-                }
+                const patch = (prev: Message[]) => prev.map(m => m.id === updated.id
+                    ? { ...m, message: updated.message, read_at: updated.read_at, edited_at: updated.edited_at, deleted: updated.deleted }
+                    : m
+                );
+                if (sid === activeIdRef.current) setMessages(patch);
+                setSessions(prev => prev.map(s =>
+                    s.id !== sid ? s : { ...s, chat_messages: patch(s.chat_messages) }
+                ));
             })
-            .on('postgres_changes', {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'chat_sessions',
-            }, () => { load(); })
-            .on('postgres_changes', {
-                event: 'UPDATE',
-                schema: 'public',
-                table: 'chat_sessions',
-            }, () => { load(); })
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_sessions' }, () => load())
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_sessions' }, () => load())
             .subscribe();
-
         return () => { supabase.removeChannel(channel); };
     }, [load]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setInput(e.target.value);
-        // Broadcast typing to visitor
         try {
-            typingChannelRef.current?.send({
-                type: 'broadcast',
-                event: 'admin-typing',
-                payload: {},
-            });
+            typingChannelRef.current?.send({ type: 'broadcast', event: 'admin-typing', payload: {} });
         } catch {}
     };
 
@@ -200,8 +198,8 @@ export default function LiveChatPage() {
         if (!input.trim() || !activeId || sending) return;
         const text = input.trim();
         setInput('');
+        setShowQuick(false);
         setSending(true);
-
         const optimistic: Message = {
             id: `opt-${Date.now()}`,
             message: text,
@@ -209,7 +207,6 @@ export default function LiveChatPage() {
             created_at: new Date().toISOString(),
         };
         setMessages(prev => [...prev, optimistic]);
-
         await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -217,6 +214,31 @@ export default function LiveChatPage() {
         });
         setSending(false);
         load();
+    };
+
+    const startEdit = (msg: Message) => {
+        setEditingId(msg.id);
+        setEditText(msg.message);
+    };
+
+    const saveEdit = async () => {
+        if (!editingId || !editText.trim()) return;
+        setMessages(prev => prev.map(m => m.id === editingId ? { ...m, message: editText.trim(), edited_at: new Date().toISOString() } : m));
+        setEditingId(null);
+        await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'edit_msg', messageId: editingId, message: editText.trim() }),
+        });
+    };
+
+    const deleteMessage = async (messageId: string) => {
+        setMessages(prev => prev.map(m => m.id === messageId ? { ...m, deleted: true } : m));
+        await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete_msg', messageId }),
+        });
     };
 
     const closeSession = async (sessionId: string) => {
@@ -237,17 +259,31 @@ export default function LiveChatPage() {
         setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, status: 'open' } : s));
     };
 
+    const useQuickReply = (text: string) => {
+        setInput(text);
+        setShowQuick(false);
+    };
+
     const activeSession = sessions.find(s => s.id === activeId);
     const openSessions = sessions.filter(s => s.status === 'open');
     const closedSessions = sessions.filter(s => s.status === 'closed');
     const totalUnread = Object.values(unreadMap).reduce((a, b) => a + b, 0);
 
+    const filterSessions = (list: Session[]) =>
+        search.trim()
+            ? list.filter(s =>
+                s.visitor_name.toLowerCase().includes(search.toLowerCase()) ||
+                s.visitor_email?.toLowerCase().includes(search.toLowerCase())
+            )
+            : list;
+
     return (
         <div className="flex h-[calc(100vh-8rem)] gap-0 rounded-xl border border-white/10 overflow-hidden bg-card/50">
 
-            {/* Left: Session list */}
+            {/* ── Left: Session list ─────────────────────────────────────── */}
             <div className="w-72 shrink-0 border-r border-white/10 flex flex-col">
-                <div className="flex items-center justify-between p-4 border-b border-white/10">
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b border-white/10 shrink-0">
                     <div className="flex items-center gap-2">
                         <h2 className="font-semibold text-sm">Live Chats</h2>
                         {totalUnread > 0 && (
@@ -268,6 +304,20 @@ export default function LiveChatPage() {
                     </div>
                 </div>
 
+                {/* Search */}
+                <div className="p-2 border-b border-white/5">
+                    <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                        <Input
+                            placeholder="Search name or email..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            className="pl-8 h-8 text-xs"
+                        />
+                    </div>
+                </div>
+
+                {/* Session list */}
                 <div className="flex-1 overflow-y-auto">
                     {sessions.length === 0 && !loading && (
                         <div className="text-center text-muted-foreground text-sm p-8">
@@ -276,8 +326,7 @@ export default function LiveChatPage() {
                         </div>
                     )}
 
-                    {/* Open sessions */}
-                    {openSessions.map(session => {
+                    {filterSessions(openSessions).map(session => {
                         const sorted = [...session.chat_messages].sort((a, b) =>
                             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
                         );
@@ -291,12 +340,12 @@ export default function LiveChatPage() {
                                     ${activeId === session.id ? 'bg-primary/10 border-l-2 border-l-primary' : ''}`}
                             >
                                 <div className="flex items-center justify-between mb-1">
-                                    <div className="flex items-center gap-1.5">
+                                    <div className="flex items-center gap-1.5 min-w-0">
                                         <Circle className="h-2 w-2 fill-green-500 text-green-500 shrink-0" />
                                         <span className="font-medium text-sm truncate">{session.visitor_name}</span>
                                     </div>
                                     {unread > 0 && (
-                                        <span className="w-5 h-5 bg-primary text-white text-xs font-bold rounded-full flex items-center justify-center shrink-0">
+                                        <span className="w-5 h-5 bg-primary text-white text-xs font-bold rounded-full flex items-center justify-center shrink-0 ml-1">
                                             {unread}
                                         </span>
                                     )}
@@ -306,7 +355,7 @@ export default function LiveChatPage() {
                                 )}
                                 {lastMsg && (
                                     <p className="text-xs text-muted-foreground truncate mt-1">
-                                        {lastMsg.sender === 'admin' ? '🟠 You: ' : ''}{lastMsg.message}
+                                        {lastMsg.deleted ? '🗑 Message deleted' : lastMsg.sender === 'admin' ? `🟠 You: ${lastMsg.message}` : lastMsg.message}
                                     </p>
                                 )}
                                 <p className="text-[10px] text-muted-foreground/60 mt-1">
@@ -316,13 +365,12 @@ export default function LiveChatPage() {
                         );
                     })}
 
-                    {/* Closed sessions */}
                     {closedSessions.length > 0 && (
                         <div className="px-4 py-2 text-[10px] text-muted-foreground uppercase tracking-wider border-b border-white/5">
                             Closed
                         </div>
                     )}
-                    {closedSessions.map(session => (
+                    {filterSessions(closedSessions).map(session => (
                         <button
                             key={session.id}
                             onClick={() => setActiveId(session.id)}
@@ -338,10 +386,14 @@ export default function LiveChatPage() {
                             </p>
                         </button>
                     ))}
+
+                    {search && filterSessions([...openSessions, ...closedSessions]).length === 0 && (
+                        <div className="text-center text-muted-foreground text-xs p-6">No results for "{search}"</div>
+                    )}
                 </div>
             </div>
 
-            {/* Right: Chat window */}
+            {/* ── Right: Chat window ─────────────────────────────────────── */}
             {activeSession ? (
                 <div className="flex-1 flex flex-col min-w-0">
                     {/* Chat header */}
@@ -359,19 +411,13 @@ export default function LiveChatPage() {
                                 {activeSession.status}
                             </Badge>
                             {activeSession.status === 'open' ? (
-                                <Button
-                                    size="sm" variant="outline"
-                                    className="text-xs h-7 border-white/10"
-                                    onClick={() => closeSession(activeSession.id)}
-                                >
+                                <Button size="sm" variant="outline" className="text-xs h-7 border-white/10"
+                                    onClick={() => closeSession(activeSession.id)}>
                                     Close Chat
                                 </Button>
                             ) : (
-                                <Button
-                                    size="sm" variant="outline"
-                                    className="text-xs h-7 border-white/10 gap-1"
-                                    onClick={() => reopenSession(activeSession.id)}
-                                >
+                                <Button size="sm" variant="outline" className="text-xs h-7 border-white/10 gap-1"
+                                    onClick={() => reopenSession(activeSession.id)}>
                                     <RotateCcw className="h-3 w-3" />
                                     Reopen
                                 </Button>
@@ -380,28 +426,86 @@ export default function LiveChatPage() {
                     </div>
 
                     {/* Messages */}
-                    <div className="flex-1 overflow-y-auto p-5 space-y-3 min-h-0">
+                    <div className="flex-1 overflow-y-auto p-5 space-y-2 min-h-0">
                         {messages.map(msg => (
-                            <div key={msg.id} className={`flex ${msg.sender === 'admin' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[70%] px-4 py-2.5 rounded-2xl text-sm
+                            <div
+                                key={msg.id}
+                                className={`flex ${msg.sender === 'admin' ? 'justify-end' : 'justify-start'} group`}
+                                onMouseEnter={() => setHoveredId(msg.id)}
+                                onMouseLeave={() => setHoveredId(null)}
+                            >
+                                {/* Action buttons — show on hover for non-deleted, non-optimistic messages */}
+                                {!msg.deleted && !msg.id.startsWith('opt-') && hoveredId === msg.id && editingId !== msg.id && (
+                                    <div className={`flex items-center gap-1 self-center mx-2 ${msg.sender === 'admin' ? 'order-first' : 'order-last'}`}>
+                                        {msg.sender === 'admin' && (
+                                            <button
+                                                onClick={() => startEdit(msg)}
+                                                className="w-6 h-6 rounded-full bg-secondary border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors"
+                                                title="Edit"
+                                            >
+                                                <Pencil className="h-3 w-3 text-muted-foreground" />
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={() => deleteMessage(msg.id)}
+                                            className="w-6 h-6 rounded-full bg-secondary border border-white/10 flex items-center justify-center hover:bg-red-500/20 transition-colors"
+                                            title="Delete"
+                                        >
+                                            <Trash2 className="h-3 w-3 text-muted-foreground hover:text-red-400" />
+                                        </button>
+                                    </div>
+                                )}
+
+                                <div className={`max-w-[65%] px-4 py-2.5 rounded-2xl text-sm
                                     ${msg.sender === 'admin'
                                         ? 'bg-primary text-white rounded-br-none'
                                         : 'bg-secondary border border-white/10 text-foreground rounded-bl-none'
                                     } ${msg.id.startsWith('opt-') ? 'opacity-60' : ''}`}>
-                                    <p>{msg.message}</p>
-                                    <div className="flex items-center justify-end gap-1 mt-0.5">
-                                        <p className="text-[10px] opacity-60">
-                                            {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        </p>
-                                        {msg.sender === 'admin' && !msg.id.startsWith('opt-') && (
-                                            <span className="text-[10px]" title={msg.read_at ? 'Seen' : 'Sent'}>
-                                                {msg.read_at
-                                                    ? <span className="text-blue-200 font-bold">✓✓</span>
-                                                    : <span className="opacity-50">✓</span>
-                                                }
+
+                                    {/* Deleted message */}
+                                    {msg.deleted ? (
+                                        <p className="italic text-xs opacity-60">🗑 This message was deleted</p>
+                                    ) : editingId === msg.id ? (
+                                        /* Inline edit */
+                                        <div className="space-y-2">
+                                            <Input
+                                                ref={editInputRef}
+                                                value={editText}
+                                                onChange={e => setEditText(e.target.value)}
+                                                onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') setEditingId(null); }}
+                                                className="h-7 text-sm bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                                            />
+                                            <div className="flex gap-1">
+                                                <button onClick={saveEdit} className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded bg-white/20 hover:bg-white/30 transition-colors">
+                                                    <Check className="h-3 w-3" /> Save
+                                                </button>
+                                                <button onClick={() => setEditingId(null)} className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 transition-colors">
+                                                    <X className="h-3 w-3" /> Cancel
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <p>{msg.message}</p>
+                                    )}
+
+                                    {!msg.deleted && (
+                                        <div className="flex items-center justify-end gap-1 mt-0.5">
+                                            <span className="text-[10px] opacity-60">
+                                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </span>
-                                        )}
-                                    </div>
+                                            {msg.edited_at && !msg.deleted && (
+                                                <span className="text-[10px] opacity-50 italic">edited</span>
+                                            )}
+                                            {msg.sender === 'admin' && !msg.id.startsWith('opt-') && (
+                                                <span className="text-[10px]">
+                                                    {msg.read_at
+                                                        ? <span className="text-blue-200 font-bold">✓✓</span>
+                                                        : <span className="opacity-50">✓</span>
+                                                    }
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))}
@@ -421,20 +525,47 @@ export default function LiveChatPage() {
                         <div ref={bottomRef} />
                     </div>
 
-                    {/* Reply input */}
+                    {/* Input area */}
                     {activeSession.status === 'open' ? (
-                        <form onSubmit={sendReply} className="flex gap-3 p-4 border-t border-white/10 shrink-0">
-                            <Input
-                                placeholder="Type your reply..."
-                                value={input}
-                                onChange={handleInputChange}
-                                className="flex-1"
-                                autoFocus
-                            />
-                            <Button type="submit" disabled={!input.trim() || sending} className="shrink-0">
-                                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                            </Button>
-                        </form>
+                        <div className="border-t border-white/10 shrink-0">
+                            {/* Quick replies panel */}
+                            {showQuick && (
+                                <div className="p-3 border-b border-white/10 space-y-1">
+                                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Quick Replies</p>
+                                    {QUICK_REPLIES.map((r, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={() => useQuickReply(r)}
+                                            className="w-full text-left text-xs px-3 py-2 rounded-lg hover:bg-white/5 transition-colors text-muted-foreground hover:text-foreground"
+                                        >
+                                            {r}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                            <form onSubmit={sendReply} className="flex gap-2 p-4">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className={`h-9 w-9 shrink-0 ${showQuick ? 'text-primary' : ''}`}
+                                    onClick={() => setShowQuick(s => !s)}
+                                    title="Quick replies"
+                                >
+                                    <Zap className="h-4 w-4" />
+                                </Button>
+                                <Input
+                                    placeholder="Type your reply..."
+                                    value={input}
+                                    onChange={handleInputChange}
+                                    className="flex-1"
+                                    autoFocus
+                                />
+                                <Button type="submit" disabled={!input.trim() || sending} className="shrink-0">
+                                    {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                                </Button>
+                            </form>
+                        </div>
                     ) : (
                         <div className="p-4 border-t border-white/10 text-center text-sm text-muted-foreground shrink-0">
                             Chat closed — click <strong>Reopen</strong> to reply again
