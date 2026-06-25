@@ -154,8 +154,10 @@ export function SubmissionRow({ submission, onRefresh }: { submission: Submissio
                         tool_name: payload.tool_name,
                         tool_url: payload.tool_url,
                         description: payload.description,
+                        full_description: payload.full_description,
                         category: payload.category,
                         pricing: payload.pricing,
+                        plan: payload.plan,
                         submitter_email: payload.submitter_email,
                     },
                 }),
@@ -222,6 +224,15 @@ export function SubmissionRow({ submission, onRefresh }: { submission: Submissio
     };
 
     const handleSaveAndApprove = async () => {
+        // Save edits to submission record first, then approve
+        setLoading(true);
+        try {
+            await fetch('/api/submissions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'update', submissionId: submission.id, submissionData: editData }),
+            });
+        } catch { /* ignore — approve will still proceed */ }
         await handleApprove(editData);
     };
 

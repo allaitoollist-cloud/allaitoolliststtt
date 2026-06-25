@@ -76,26 +76,25 @@ export async function POST(request: NextRequest) {
             });
 
             // First, create the tool in tools table
-            // Note: is_draft column may not exist in database, so we don't include it
             const { data: createdTool, error: toolError } = await supabase
                 .from('tools')
                 .insert({
                     name: submissionData.tool_name,
                     slug: slug,
                     short_description: submissionData.description || 'No description provided',
-                    full_description: submissionData.description || 'No description provided',
+                    full_description: submissionData.full_description || submissionData.description || 'No description provided',
                     url: submissionData.tool_url,
                     category: submissionData.category,
                     pricing: submissionData.pricing,
+                    status: 'published',
                     tags: [],
                     platform: ['Web'],
                     views: 0,
                     trending: false,
-                    featured: false,
+                    featured: submissionData.plan === 'featured' || submissionData.plan === 'sponsored',
                     verified: false,
                     rating: 0,
                     review_count: 0,
-                    // is_draft column removed - not present in database schema
                 })
                 .select()
                 .single();
@@ -175,7 +174,7 @@ export async function POST(request: NextRequest) {
 
             // Send approval email to submitter
             if (submissionData.submitter_email) {
-                const toolUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://aitoollist.com'}/tool/${createdTool.slug}`;
+                const toolUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://allaitoollist.com'}/tool/${createdTool.slug}`;
                 const emailTemplate = emailTemplates.toolApproved(
                     submissionData.tool_name,
                     toolUrl
@@ -244,7 +243,7 @@ export async function POST(request: NextRequest) {
             const updateFields: Record<string, string> = {};
 
             const allowed = [
-                'tool_name', 'tool_url', 'description', 'category',
+                'tool_name', 'tool_url', 'description', 'full_description', 'category',
                 'pricing', 'submitter_name', 'submitter_email', 'plan', 'status',
             ] as const;
 
