@@ -24,6 +24,10 @@ function getVisitorId() {
 }
 
 export function LiveChatWidget() {
+    return process.env.NEXT_PUBLIC_LIVE_CHAT_ENABLED === 'true' ? <LiveChatWidgetInner /> : null;
+}
+
+function LiveChatWidgetInner() {
     const [open, setOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
