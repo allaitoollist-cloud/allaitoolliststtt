@@ -1,5 +1,6 @@
 'use client';
 
+import { formatCategoryName } from '@/lib/category-utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -161,7 +162,7 @@ export function CategoryGrid({ categories = [] }: CategoryGridProps) {
 
                                             {/* Category Name */}
                                             <h3 className="text-lg font-bold text-white mb-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-gray-300 transition-all">
-                                                {category.name}
+                                                {formatCategoryName(category.name)}
                                             </h3>
 
                                             {/* Description */}

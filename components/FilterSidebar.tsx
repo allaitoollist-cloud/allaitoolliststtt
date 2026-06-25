@@ -1,3 +1,4 @@
+import { formatCategoryName } from '@/lib/category-utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -131,7 +132,7 @@ export function FilterSidebar({
                                     htmlFor={`category-${category}`}
                                     className="text-sm font-normal cursor-pointer"
                                 >
-                                    {category}
+                                    {formatCategoryName(category)}
                                 </Label>
                             </div>
                         ))}

@@ -14,11 +14,7 @@ interface PageProps {
     };
 }
 
-// Helper to format category name for display
-const formatCategoryName = (name: string) => {
-    if (name === 'AIxploria Selection') return 'All AI Tool Selection';
-    return name;
-}
+import { formatCategoryName } from '@/lib/category-utils';
 
 // Generate dynamic metadata for each category page
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
