@@ -18,8 +18,12 @@ CREATE TABLE IF NOT EXISTS chat_messages (
     session_id UUID NOT NULL REFERENCES chat_sessions(id) ON DELETE CASCADE,
     sender TEXT NOT NULL CHECK (sender IN ('visitor', 'admin')),
     message TEXT NOT NULL,
+    read_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Add read_at if upgrading existing table
+ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS read_at TIMESTAMP WITH TIME ZONE DEFAULT NULL;
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS chat_sessions_visitor_id_idx ON chat_sessions(visitor_id);

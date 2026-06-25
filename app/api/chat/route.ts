@@ -124,6 +124,18 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: true });
         }
 
+        // Admin marks visitor messages as read when opening a session
+        if (action === 'mark_read') {
+            const { sessionId } = body;
+            if (!sessionId) return NextResponse.json({ error: 'sessionId required' }, { status: 400 });
+            await supabase.from('chat_messages')
+                .update({ read_at: new Date().toISOString() })
+                .eq('session_id', sessionId)
+                .eq('sender', 'visitor')
+                .is('read_at', null);
+            return NextResponse.json({ success: true });
+        }
+
         if (action === 'close') {
             const { sessionId } = body;
             if (!sessionId) return NextResponse.json({ error: 'sessionId required' }, { status: 400 });

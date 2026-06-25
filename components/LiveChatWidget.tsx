@@ -11,6 +11,7 @@ interface Message {
     message: string;
     sender: 'visitor' | 'admin';
     created_at: string;
+    read_at?: string | null;
 }
 
 function getVisitorId() {
@@ -226,9 +227,20 @@ function LiveChatWidgetInner() {
                                                 <p className="text-[10px] font-semibold text-primary mb-0.5">Support</p>
                                             )}
                                             {msg.message}
-                                            <p className="text-[10px] opacity-60 mt-0.5 text-right">
-                                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </p>
+                                            <div className="flex items-center justify-end gap-1 mt-0.5">
+                                                <span className="text-[10px] opacity-60">
+                                                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                                {msg.sender === 'visitor' && !msg.id.startsWith('opt-') && (
+                                                    <span className="text-[10px]" title={msg.read_at ? 'Seen' : 'Sent'}>
+                                                        {msg.read_at ? (
+                                                            <span className="opacity-90">✓✓</span>
+                                                        ) : (
+                                                            <span className="opacity-50">✓</span>
+                                                        )}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 ))}

@@ -12,6 +12,7 @@ interface Message {
     message: string;
     sender: 'visitor' | 'admin';
     created_at: string;
+    read_at?: string | null;
 }
 
 interface Session {
@@ -53,7 +54,7 @@ export default function LiveChatPage() {
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
     }, [messages]);
 
-    // Load messages for active session
+    // Load messages for active session + mark visitor messages as read
     useEffect(() => {
         if (!activeId) return;
         const session = sessions.find(s => s.id === activeId);
@@ -62,7 +63,13 @@ export default function LiveChatPage() {
                 new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
             ));
         }
-        // Clear unread
+        // Mark visitor messages as read (enables double-tick in visitor widget)
+        fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'mark_read', sessionId: activeId }),
+        });
+        // Clear unread badge
         setUnreadMap(prev => ({ ...prev, [activeId]: 0 }));
     }, [activeId, sessions]);
 
