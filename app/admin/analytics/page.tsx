@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, TrendingUp, Eye, Package, Star, Users, MessageSquare } from 'lucide-react';
 import { getBrowserClient } from '@/lib/supabase-browser';
+import { formatCategoryName } from '@/lib/category-utils';
 
 export default function AnalyticsPage() {
     const [loading, setLoading] = useState(true);
@@ -51,9 +52,10 @@ export default function AnalyticsPage() {
             const catMap: Record<string, { count: number; views: number }> = {};
             (allTools || []).forEach(t => {
                 if (t.category) {
-                    if (!catMap[t.category]) catMap[t.category] = { count: 0, views: 0 };
-                    catMap[t.category].count++;
-                    catMap[t.category].views += t.views || 0;
+                    const cat = formatCategoryName(t.category);
+                    if (!catMap[cat]) catMap[cat] = { count: 0, views: 0 };
+                    catMap[cat].count++;
+                    catMap[cat].views += t.views || 0;
                 }
             });
             const cats = Object.entries(catMap)
@@ -209,7 +211,7 @@ export default function AnalyticsPage() {
                                 <TableRow key={tool.id} className="border-white/10 hover:bg-white/5">
                                     <TableCell className="text-muted-foreground font-mono text-xs w-8">{i + 1}</TableCell>
                                     <TableCell className="font-medium">{tool.name}</TableCell>
-                                    <TableCell className="text-muted-foreground text-sm">{tool.category}</TableCell>
+                                    <TableCell className="text-muted-foreground text-sm">{formatCategoryName(tool.category)}</TableCell>
                                     <TableCell>
                                         <div className="flex gap-1">
                                             {tool.featured && <Badge className="bg-purple-500/10 text-purple-400 border-0 text-xs">Featured</Badge>}
