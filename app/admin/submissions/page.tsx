@@ -15,13 +15,30 @@ export default function AdminSubmissionsPage() {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    // Map of "tool_name::submitter_email" → sent_at date
+    const [paypalSentMap, setPaypalSentMap] = useState<Record<string, string>>({});
 
     const load = async () => {
         setLoading(true);
         try {
-            const res = await fetch('/api/admin/data?table=tool_submissions');
-            const json = await res.json();
-            if (json.data) setSubmissions(json.data);
+            const [subsRes, logsRes] = await Promise.all([
+                fetch('/api/admin/data?table=tool_submissions'),
+                fetch('/api/admin/data?table=activity_logs&limit=500'),
+            ]);
+            const subsJson = await subsRes.json();
+            const logsJson = await logsRes.json();
+            if (subsJson.data) setSubmissions(subsJson.data);
+            if (logsJson.data) {
+                const map: Record<string, string> = {};
+                logsJson.data
+                    .filter((l: any) => l.action === 'send_paypal_link')
+                    .forEach((l: any) => {
+                        const key = `${l.details?.tool}::${l.details?.to}`;
+                        // Keep earliest send date
+                        if (!map[key]) map[key] = l.created_at;
+                    });
+                setPaypalSentMap(map);
+            }
         } catch { /* network error */ }
         setLoading(false);
     };
@@ -106,7 +123,12 @@ export default function AdminSubmissionsPage() {
                             </TableRow>
                         ) : filtered.length > 0 ? (
                             filtered.map((submission) => (
-                                <SubmissionRow key={submission.id} submission={submission} onRefresh={load} />
+                                <SubmissionRow
+                                    key={submission.id}
+                                    submission={submission}
+                                    onRefresh={load}
+                                    paypalSentAt={paypalSentMap[`${submission.tool_name}::${submission.submitter_email}`]}
+                                />
                             ))
                         ) : (
                             <TableRow>

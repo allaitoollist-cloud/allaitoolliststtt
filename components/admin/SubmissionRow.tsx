@@ -86,7 +86,7 @@ function getStatusBadgeClass(status: string) {
     }
 }
 
-export function SubmissionRow({ submission, onRefresh }: { submission: Submission; onRefresh?: () => void }) {
+export function SubmissionRow({ submission, onRefresh, paypalSentAt }: { submission: Submission; onRefresh?: () => void; paypalSentAt?: string }) {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [viewDialogOpen, setViewDialogOpen] = useState(false);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -374,6 +374,11 @@ export function SubmissionRow({ submission, onRefresh }: { submission: Submissio
                         <Badge variant="outline" className={getStatusBadgeClass(submission.status)}>
                             {submission.status}
                         </Badge>
+                        {paypalSentAt && (
+                            <Badge variant="outline" className="bg-orange-500/10 text-orange-400 border-orange-500/20 text-[10px]">
+                                💳 PayPal Sent
+                            </Badge>
+                        )}
                         {submission.status === 'approved' && toolInfo?.exists && toolInfo.slug && (
                             <Link
                                 href={`/tool/${toolInfo.slug}`}
@@ -704,6 +709,11 @@ export function SubmissionRow({ submission, onRefresh }: { submission: Submissio
                         <DialogTitle>Send PayPal Payment Link</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-3 py-2">
+                        {paypalSentAt && (
+                            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-sm flex items-center gap-2">
+                                <span className="text-yellow-400 font-medium">⚠️ Already sent on {new Date(paypalSentAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                            </div>
+                        )}
                         <p className="text-sm text-muted-foreground">
                             Sending to: <span className="font-medium text-foreground">{submission.submitter_email}</span>
                         </p>
