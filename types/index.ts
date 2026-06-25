@@ -23,6 +23,9 @@ export interface DatabaseTool {
     is_draft: boolean;
     affiliate_url: string | null;
     upvotes_count?: number;
+    submitter_email?: string | null;
+    last_freshness_email_at?: string | null;
+    approval_email_sent?: boolean;
 }
 
 export interface UserProfile {

@@ -16,9 +16,10 @@ const BORDER = '#e8dfd7';
 function reminderEmail(toolName: string, plan: string, submitterEmail: string) {
     const price     = plan === 'sponsored' ? '$149' : '$49';
     const planLabel = plan === 'sponsored' ? 'Sponsored Placement' : 'Featured Listing';
+    const paypalUsername = process.env.PAYPAL_ME_USERNAME || 'malikmazhar';
     const paypalLink = plan === 'sponsored'
-        ? 'https://paypal.me/malikmazhar/149'
-        : 'https://paypal.me/malikmazhar/49';
+        ? `https://paypal.me/${paypalUsername}/149`
+        : `https://paypal.me/${paypalUsername}/49`;
 
     return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>

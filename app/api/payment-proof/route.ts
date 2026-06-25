@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { logActivity } from '@/lib/log-activity';
+import { sendPaymentProofNotification } from '@/lib/email';
 
 export async function POST(req: NextRequest) {
     try {
@@ -67,6 +68,15 @@ export async function POST(req: NextRequest) {
             email,
             proof_url: publicUrl,
         });
+
+        // Notify admin via email
+        const adminEmail = process.env.ADMIN_EMAIL || 'allaitoollist@gmail.com';
+        await sendPaymentProofNotification(
+            submission.tool_name,
+            email,
+            publicUrl,
+            adminEmail,
+        ).catch((err) => console.error('[PaymentProof] Admin notification failed:', err));
 
         return NextResponse.json({ success: true, tool: submission.tool_name });
     } catch (e: any) {

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, TrendingUp, Eye, Package, Star, Users, MessageSquare } from 'lucide-react';
+import { Loader2, TrendingUp, Eye, Package, Star, Users, MessageSquare, Mail } from 'lucide-react';
 import { getBrowserClient } from '@/lib/supabase-browser';
 import { formatCategoryName } from '@/lib/category-utils';
 
@@ -35,6 +35,7 @@ export default function AnalyticsPage() {
                 { count: subCount },
                 { data: subs },
                 { count: subscriberCount },
+                { count: userCount },
             ] = await Promise.all([
                 supabase.from('tools').select('*', { count: 'exact', head: true }),
                 supabase.from('tools').select('id, name, slug, category, views, featured, verified').order('views', { ascending: false }).limit(10),
@@ -42,6 +43,7 @@ export default function AnalyticsPage() {
                 supabase.from('tool_submissions').select('*', { count: 'exact', head: true }),
                 supabase.from('tool_submissions').select('created_at, status').order('created_at', { ascending: false }).limit(60),
                 supabase.from('newsletter_subscribers').select('*', { count: 'exact', head: true }),
+                supabase.from('user_profiles').select('*', { count: 'exact', head: true }),
             ]);
 
             // Top tools by views
@@ -81,13 +83,13 @@ export default function AnalyticsPage() {
 
             setRecentSubmissions((subs || []).slice(0, 7));
 
-            const totalViews = (tools || []).reduce((sum, t) => sum + (t.views || 0), 0);
+            const totalViews = (allTools || []).reduce((sum, t) => sum + (t.views || 0), 0);
             setStats({
                 totalTools: toolCount || 0,
                 totalViews,
                 totalReviews: reviewCount || 0,
                 totalSubmissions: subCount || 0,
-                totalUsers: 0,
+                totalUsers: userCount || 0,
                 totalSubscribers: subscriberCount || 0,
             });
 
@@ -102,7 +104,8 @@ export default function AnalyticsPage() {
         { label: 'Total Views', value: stats.totalViews.toLocaleString(), icon: Eye, color: 'bg-purple-500/10 text-purple-500' },
         { label: 'Reviews', value: stats.totalReviews, icon: Star, color: 'bg-yellow-500/10 text-yellow-500' },
         { label: 'Submissions', value: stats.totalSubmissions, icon: TrendingUp, color: 'bg-orange-500/10 text-orange-500' },
-        { label: 'Subscribers', value: stats.totalSubscribers, icon: Users, color: 'bg-green-500/10 text-green-500' },
+        { label: 'Total Users', value: stats.totalUsers, icon: Users, color: 'bg-indigo-500/10 text-indigo-500' },
+        { label: 'Subscribers', value: stats.totalSubscribers, icon: Mail, color: 'bg-green-500/10 text-green-500' },
     ];
 
     if (loading) {
@@ -121,7 +124,7 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Stat Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 {statCards.map(({ label, value, icon: Icon, color }) => (
                     <Card key={label} className="bg-card/50 border-white/10">
                         <CardContent className="pt-4 pb-3">

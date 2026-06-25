@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Search, Loader2 } from 'lucide-react';
 import { SubmissionRow } from '@/components/admin/SubmissionRow';
 
-const STATUSES = ['all', 'pending', 'approved', 'rejected', 'flagged'];
+const STATUSES = ['all', 'pending', 'paid', 'approved', 'rejected', 'flagged'];
 
 export default function AdminSubmissionsPage() {
     const [submissions, setSubmissions] = useState<any[]>([]);
@@ -47,7 +47,10 @@ export default function AdminSubmissionsPage() {
 
     const filtered = useMemo(() => {
         return submissions.filter(s => {
-            const matchStatus = statusFilter === 'all' || s.status === statusFilter;
+            const matchStatus =
+                statusFilter === 'all' ? true :
+                statusFilter === 'paid' ? (s.status === 'pending' && s.payment_proof_url) :
+                s.status === statusFilter;
             const q = search.toLowerCase();
             const matchSearch = !q ||
                 s.tool_name?.toLowerCase().includes(q) ||
@@ -59,6 +62,7 @@ export default function AdminSubmissionsPage() {
     }, [submissions, search, statusFilter]);
 
     const pendingCount = submissions.filter(s => s.status === 'pending').length;
+    const paidPendingCount = submissions.filter(s => s.status === 'pending' && s.payment_proof_url).length;
 
     return (
         <div className="space-y-6">
@@ -66,7 +70,14 @@ export default function AdminSubmissionsPage() {
                 <h1 className="text-3xl font-bold">Tool Submissions</h1>
                 <p className="text-muted-foreground">Review and manage tool submissions.</p>
                 {pendingCount > 0 && (
-                    <p className="text-sm text-yellow-500 mt-1">⚠️ {pendingCount} pending submission{pendingCount > 1 ? 's' : ''}</p>
+                    <p className="text-sm text-yellow-500 mt-1">
+                        ⚠️ {pendingCount} pending submission{pendingCount > 1 ? 's' : ''}
+                        {paidPendingCount > 0 && (
+                            <span className="text-green-400 ml-1.5 font-medium">
+                                ({paidPendingCount} with payment proof uploaded)
+                            </span>
+                        )}
+                    </p>
                 )}
             </div>
 
@@ -90,10 +101,13 @@ export default function AdminSubmissionsPage() {
                             onClick={() => setStatusFilter(s)}
                             className="capitalize"
                         >
-                            {s}
+                            {s === 'paid' ? 'Paid (Pending Review)' : s}
                             {s !== 'all' && (
                                 <Badge className="ml-1.5 bg-white/10 text-xs" variant="secondary">
-                                    {submissions.filter(sub => sub.status === s).length}
+                                    {s === 'paid'
+                                        ? paidPendingCount
+                                        : submissions.filter(sub => sub.status === s).length
+                                    }
                                 </Badge>
                             )}
                         </Button>

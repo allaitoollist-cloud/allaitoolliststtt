@@ -96,6 +96,8 @@ export async function POST(request: NextRequest) {
                     verified: false,
                     rating: 0,
                     review_count: 0,
+                    submitter_email: submissionData.submitter_email || null,
+                    approval_email_sent: !!submissionData.submitter_email,
                 })
                 .select()
                 .single();

@@ -52,7 +52,12 @@ export default async function AdminDashboard() {
         .order('created_at', { ascending: false })
         .limit(5);
 
-    const totalRevenue = (approvedSponsorships || 0) * 49;
+    // Real revenue from verified PayPal orders (all plans)
+    const { data: verifiedOrders } = await supabase
+        .from('paypal_orders')
+        .select('amount')
+        .eq('status', 'verified');
+    const totalRevenue = (verifiedOrders || []).reduce((sum, o) => sum + (o.amount || 0), 0);
 
     const { count: newsletterCount } = await supabase
         .from('newsletter_subscribers')
@@ -80,9 +85,9 @@ export default async function AdminDashboard() {
             icon: Eye,
         },
         {
-            title: "Revenue (Est.)",
-            value: `$${totalRevenue}`,
-            change: `${approvedSponsorships || 0} approved · ${pendingSponsorships || 0} pending`,
+            title: "Revenue (Verified)",
+            value: `$${totalRevenue.toLocaleString()}`,
+            change: `${approvedSponsorships || 0} sponsored · ${pendingSponsorships || 0} pending`,
             icon: DollarSign,
             alert: (pendingSponsorships || 0) > 0
         },

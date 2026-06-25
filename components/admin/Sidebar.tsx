@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import {
     LayoutDashboard, Users, FileText, Settings, LogOut, PlusCircle,
     Mail, FolderOpen, Activity, MessageSquare, Bot, DollarSign,
-    BarChart2, Star, X, Menu, Receipt,
+    BarChart2, Star, X, Menu, Receipt, Globe, Inbox,
 } from 'lucide-react';
 import { getBrowserClient } from '@/lib/supabase-browser';
 import { useState, useEffect } from 'react';
@@ -26,6 +26,8 @@ const navItems = [
     { href: '/admin/reviews', icon: Star, label: 'Reviews' },
     { href: '/admin/contact-messages', icon: Mail, label: 'Contact Messages' },
     { href: '/admin/activity', icon: Activity, label: 'Activity Logs' },
+    { href: '/admin/seo', icon: Globe, label: 'SEO Control' },
+    { href: '/admin/email', icon: Inbox, label: 'Email Logs' },
     { href: '/admin/settings', icon: Settings, label: 'Settings' },
 ];
 

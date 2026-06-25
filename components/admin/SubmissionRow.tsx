@@ -92,7 +92,7 @@ export function SubmissionRow({ submission, onRefresh, paypalSentAt }: { submiss
     const [viewDialogOpen, setViewDialogOpen] = useState(false);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [followupDialogOpen, setFollowupDialogOpen] = useState(false);
-    const PAYPAL_BASE = 'https://paypal.me/malikmazhar';
+    const PAYPAL_BASE = `https://paypal.me/${process.env.NEXT_PUBLIC_PAYPAL_ME_USERNAME || 'malikmazhar'}`;
     const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
     const [paypalLink, setPaypalLink] = useState('');
     const [loading, setLoading] = useState(false);

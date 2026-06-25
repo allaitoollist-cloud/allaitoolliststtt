@@ -1,4 +1,5 @@
-const PAYPAL_ME = 'https://paypal.me/malikmazhar';
+const PAYPAL_ME_USERNAME = process.env.PAYPAL_ME_USERNAME || 'malikmazhar';
+const PAYPAL_ME = `https://paypal.me/${PAYPAL_ME_USERNAME}`;
 
 export type PriceKey =
     | 'verified_basic'
