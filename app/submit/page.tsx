@@ -59,7 +59,7 @@ const PLANS = [
 const FAQS = [
     { q: 'How long does the review process take?', a: 'All paid listings get priority review within 24 hours.' },
     { q: 'Can I update my listing after submission?', a: 'Yes! Once your tool is published, you can email us with updates anytime.' },
-    { q: 'What payment methods do you accept?', a: 'We accept Binance Pay (USDT/USDC), Payoneer, and Bank Transfer. We will send an invoice to your email after submission.' },
+    { q: 'What payment methods do you accept?', a: 'We accept PayPal, Binance Pay (USDT/USDC), Payoneer, and Bank Transfer. We will send a PayPal invoice or payment link to your email after submission.' },
     { q: 'Will my tool be guaranteed to be listed?', a: 'We review every submission. Tools must be genuine AI-powered products. Paid listings have a near-100% acceptance rate.' },
     { q: 'How long does the Featured homepage placement last?', a: 'Featured plan gets 30 days on the homepage top section. Sponsored plan gets 90 days of premium placement.' },
     { q: 'Do you offer refunds?', a: 'If your tool is not approved, we offer a full refund. If approved but you are unsatisfied, contact us within 7 days.' },
@@ -140,10 +140,11 @@ export default function SubmitPage() {
                         </div>
                         <h2 className="text-3xl font-bold">You're Submitted! 🎉</h2>
                         <p className="text-muted-foreground leading-relaxed">
-                            Great choice! We will send a payment invoice for {plan?.price} to your email within 24 hours. Once paid, your tool goes live with priority placement!
+                            Great choice! We will send a PayPal payment link for <strong className="text-white">{plan?.price}</strong> to your email within 24 hours. Once paid, your tool goes live with priority placement!
                         </p>
-                        <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 text-sm text-orange-300">
-                            💳 Watch your inbox for the invoice. We accept Binance, Payoneer & Bank Transfer.
+                        <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 text-sm text-orange-300 space-y-2">
+                            <p>💳 Watch your inbox for the payment link.</p>
+                            <p className="text-xs opacity-80">We accept: <strong>PayPal</strong> · Binance (USDT) · Payoneer · Bank Transfer</p>
                         </div>
                         <Button onClick={() => { setSubmitted(false); setFormVisible(false); setSelectedPlan('featured'); }} variant="outline" className="mt-4">
                             Submit Another Tool
@@ -255,7 +256,7 @@ export default function SubmitPage() {
                         </div>
 
                         <p className="text-center text-xs text-muted-foreground mt-6">
-                            💳 Accepts Binance (USDT), Payoneer & Bank Transfer · No hidden fees · Invoice sent via email
+                            💳 Accepts PayPal · Binance (USDT) · Payoneer · Bank Transfer · No hidden fees · Invoice sent via email
                         </p>
                     </div>
                 </section>
@@ -386,7 +387,7 @@ export default function SubmitPage() {
                                     </Button>
 
                                     <p className="text-xs text-muted-foreground text-center">
-                                        By submitting you agree to our listing guidelines. Paid plans are invoiced manually via Binance/Payoneer.
+                                        By submitting you agree to our listing guidelines. Payment via PayPal, Binance, Payoneer or Bank Transfer.
                                     </p>
                                 </form>
                             </div>
