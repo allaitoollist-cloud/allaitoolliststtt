@@ -328,36 +328,24 @@ export function SubmissionRow({ submission, onRefresh }: { submission: Submissio
                 className="border-white/10 hover:bg-white/5 cursor-pointer"
                 onClick={() => setViewDialogOpen(true)}
             >
-                <TableCell onClick={(e) => e.stopPropagation()}>
-                    <div className="font-medium">{submission.tool_name}</div>
-                    <div className="text-xs text-muted-foreground line-clamp-1">{submission.description}</div>
-                </TableCell>
-                <TableCell onClick={(e) => e.stopPropagation()}>
+                {/* Tool Name + URL */}
+                <TableCell onClick={(e) => e.stopPropagation()} className="max-w-[200px]">
+                    <div className="font-medium truncate">{submission.tool_name}</div>
                     <a
                         href={submission.tool_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-500 hover:underline text-sm"
+                        className="text-blue-500 hover:underline text-xs truncate block max-w-[180px]"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {submission.tool_url}
                     </a>
                 </TableCell>
-                <TableCell>
-                    <div className="flex flex-col gap-1">
-                        <Badge variant="outline">{submission.category}</Badge>
-                        <Badge
-                            variant="outline"
-                            className={
-                                submission.pricing === 'Free'
-                                    ? 'bg-green-500/10 text-green-500 border-green-500/20'
-                                    : 'bg-orange-500/10 text-orange-500 border-orange-500/20'
-                            }
-                        >
-                            {submission.pricing || 'Not specified'}
-                        </Badge>
-                    </div>
+                {/* Category */}
+                <TableCell className="hidden md:table-cell">
+                    <Badge variant="outline">{submission.category}</Badge>
                 </TableCell>
+                {/* Plan */}
                 <TableCell>
                     <Badge
                         variant="outline"
@@ -369,16 +357,15 @@ export function SubmissionRow({ submission, onRefresh }: { submission: Submissio
                                 : 'bg-white/5 text-muted-foreground border-white/10'
                         }
                     >
-                        {submission.plan === 'sponsored' ? 'Sponsored' : submission.plan === 'featured' ? 'Featured' : 'Free'}
+                        {submission.plan === 'sponsored' ? '$149' : submission.plan === 'featured' ? '$49' : 'Free'}
                     </Badge>
                 </TableCell>
-                <TableCell>
-                    <div className="text-sm">
-                        <div className="font-medium">{submission.submitter_name}</div>
-                        <div className="text-xs text-muted-foreground">{submission.submitter_email}</div>
-                    </div>
+                {/* Submitted By */}
+                <TableCell className="hidden lg:table-cell">
+                    <div className="text-xs text-muted-foreground">{submission.submitter_email}</div>
                 </TableCell>
-                <TableCell className="text-muted-foreground text-sm">
+                {/* Date */}
+                <TableCell className="hidden sm:table-cell text-muted-foreground text-sm whitespace-nowrap">
                     {new Date(submission.created_at).toLocaleDateString()}
                 </TableCell>
                 <TableCell>

@@ -89,11 +89,10 @@ export default function AdminSubmissionsPage() {
                     <TableHeader>
                         <TableRow className="border-white/10 hover:bg-white/5">
                             <TableHead>Tool Name</TableHead>
-                            <TableHead>URL</TableHead>
-                            <TableHead>Category</TableHead>
+                            <TableHead className="hidden md:table-cell">Category</TableHead>
                             <TableHead>Plan</TableHead>
-                            <TableHead>Submitted By</TableHead>
-                            <TableHead>Date</TableHead>
+                            <TableHead className="hidden lg:table-cell">Submitted By</TableHead>
+                            <TableHead className="hidden sm:table-cell">Date</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
@@ -101,7 +100,7 @@ export default function AdminSubmissionsPage() {
                     <TableBody>
                         {loading ? (
                             <TableRow>
-                                <TableCell colSpan={8} className="text-center py-8">
+                                <TableCell colSpan={7} className="text-center py-8">
                                     <Loader2 className="h-5 w-5 animate-spin mx-auto" />
                                 </TableCell>
                             </TableRow>
@@ -111,7 +110,7 @@ export default function AdminSubmissionsPage() {
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                                     {search || statusFilter !== 'all' ? 'No matching submissions' : 'No submissions found'}
                                 </TableCell>
                             </TableRow>
