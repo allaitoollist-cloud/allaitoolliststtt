@@ -43,12 +43,6 @@ CREATE POLICY "Service role manages chat_messages"
     USING (true)
     WITH CHECK (true);
 
--- Allow realtime subscriptions (visitors read messages on their own session)
-CREATE POLICY "Visitors can read own session messages"
-    ON chat_messages FOR SELECT
-    USING (
-        session_id IN (
-            SELECT id FROM chat_sessions
-            WHERE visitor_id = (current_setting('request.headers', true)::json->>'x-visitor-id')
-        )
-    );
+-- Enable realtime for live chat (required for Supabase Realtime subscriptions)
+ALTER PUBLICATION supabase_realtime ADD TABLE chat_sessions;
+ALTER PUBLICATION supabase_realtime ADD TABLE chat_messages;

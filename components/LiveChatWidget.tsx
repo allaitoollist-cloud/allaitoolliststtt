@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Loader2, Headphones } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +35,7 @@ function LiveChatWidgetInner() {
     const [sessionId, setSessionId] = useState<string | null>(null);
     const [sending, setSending] = useState(false);
     const [started, setStarted] = useState(false);
+    const [loading, setLoading] = useState(false);
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [unread, setUnread] = useState(0);
@@ -48,30 +49,33 @@ function LiveChatWidgetInner() {
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
     };
 
-    // Load existing session
-    useEffect(() => {
-        if (!mounted) return;
-        const savedSession = localStorage.getItem('_chat_session');
-        if (savedSession) {
-            setSessionId(savedSession);
-            setStarted(true);
-            loadMessages(savedSession);
-        }
-    }, [mounted]);
-
+    // Load messages via API (uses service role — no RLS issues)
     const loadMessages = async (sid: string) => {
         try {
-            const { data, error } = await supabase
-                .from('chat_messages')
-                .select('*')
-                .eq('session_id', sid)
-                .order('created_at', { ascending: true });
-            if (error) { setSetupRequired(true); return; }
-            if (data) { setMessages(data); scrollBottom(); }
+            const res = await fetch(`/api/chat?sessionId=${sid}`);
+            const data = await res.json();
+            if (data.setup_required) { setSetupRequired(true); return; }
+            if (data.messages) { setMessages(data.messages); scrollBottom(); }
         } catch { setSetupRequired(true); }
     };
 
-    // Realtime subscription
+    // Restore session from localStorage on mount
+    useEffect(() => {
+        if (!mounted) return;
+        const savedSession = localStorage.getItem('_chat_session');
+        const savedName = localStorage.getItem('_chat_name');
+        const savedEmail = localStorage.getItem('_chat_email') || '';
+        if (savedSession && savedName) {
+            setSessionId(savedSession);
+            setName(savedName);
+            setEmail(savedEmail);
+            setStarted(true);
+            setLoading(true);
+            loadMessages(savedSession).finally(() => setLoading(false));
+        }
+    }, [mounted]);
+
+    // Realtime: listen for new messages on this session
     useEffect(() => {
         if (!sessionId) return;
         const channel = supabase
@@ -84,15 +88,16 @@ function LiveChatWidgetInner() {
             }, (payload) => {
                 const msg = payload.new as Message;
                 setMessages(prev => {
-                    if (prev.find(m => m.id === msg.id)) return prev;
-                    return [...prev, msg];
+                    // Replace optimistic or skip duplicate
+                    const without = prev.filter(m => !m.id.startsWith('opt-') && m.id !== msg.id);
+                    return [...without, msg];
                 });
                 if (msg.sender === 'admin' && !open) setUnread(u => u + 1);
                 scrollBottom();
             })
             .subscribe();
         return () => { supabase.removeChannel(channel); };
-    }, [sessionId, open]);
+    }, [sessionId]);
 
     useEffect(() => {
         if (open) { setUnread(0); scrollBottom(); }
@@ -106,7 +111,7 @@ function LiveChatWidgetInner() {
         const res = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'start', visitorId, name, email }),
+            body: JSON.stringify({ action: 'start', visitorId, name: name.trim(), email }),
         });
         const data = await res.json();
         if (data.setup_required || res.status === 503) {
@@ -116,9 +121,13 @@ function LiveChatWidgetInner() {
         }
         if (data.sessionId) {
             setSessionId(data.sessionId);
+            // Save to localStorage for history restore
             localStorage.setItem('_chat_session', data.sessionId);
+            localStorage.setItem('_chat_name', name.trim());
+            localStorage.setItem('_chat_email', email);
             setStarted(true);
             setMessages(data.messages || []);
+            scrollBottom();
         }
         setSending(false);
     };
@@ -129,6 +138,17 @@ function LiveChatWidgetInner() {
         const text = input.trim();
         setInput('');
         setSending(true);
+
+        // Optimistic update — user sees message instantly
+        const optimistic: Message = {
+            id: `opt-${Date.now()}`,
+            message: text,
+            sender: 'visitor',
+            created_at: new Date().toISOString(),
+        };
+        setMessages(prev => [...prev, optimistic]);
+        scrollBottom();
+
         await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -181,11 +201,16 @@ function LiveChatWidgetInner() {
                                 Start Chat
                             </Button>
                         </form>
-                    ) : started ? (
+                    ) : (
                         <>
                             {/* Messages */}
                             <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                                {messages.length === 0 && (
+                                {loading && (
+                                    <div className="flex justify-center pt-4">
+                                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                    </div>
+                                )}
+                                {!loading && messages.length === 0 && (
                                     <div className="text-center text-xs text-muted-foreground pt-4">
                                         Send a message — we&apos;ll reply shortly!
                                     </div>
@@ -196,7 +221,7 @@ function LiveChatWidgetInner() {
                                             ${msg.sender === 'visitor'
                                                 ? 'bg-primary text-white rounded-br-none'
                                                 : 'bg-card border border-white/10 text-foreground rounded-bl-none'
-                                            }`}>
+                                            } ${msg.id.startsWith('opt-') ? 'opacity-70' : ''}`}>
                                             {msg.sender === 'admin' && (
                                                 <p className="text-[10px] font-semibold text-primary mb-0.5">Support</p>
                                             )}
@@ -224,7 +249,7 @@ function LiveChatWidgetInner() {
                                 </Button>
                             </form>
                         </>
-                    ) : null}
+                    )}
                 </div>
             )}
 

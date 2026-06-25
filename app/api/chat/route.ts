@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-);
+function getSupabase() {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key) return null;
+    return createClient(url, key);
+}
 
 export async function POST(req: NextRequest) {
+    const supabase = getSupabase();
+    if (!supabase) {
+        return NextResponse.json({ error: 'Chat not configured. Supabase env vars missing.', setup_required: true }, { status: 503 });
+    }
     try {
         const body = await req.json();
         const { action } = body;
@@ -94,8 +100,25 @@ export async function POST(req: NextRequest) {
     }
 }
 
-// Admin: get all sessions
-export async function GET() {
+// GET /api/chat?sessionId=xxx — visitor fetches own messages
+// GET /api/chat — admin fetches all sessions
+export async function GET(req: NextRequest) {
+    const supabase = getSupabase();
+    if (!supabase) {
+        return NextResponse.json({ sessions: [], setup_required: true });
+    }
+
+    const sessionId = req.nextUrl.searchParams.get('sessionId');
+    if (sessionId) {
+        const { data: messages, error } = await supabase
+            .from('chat_messages')
+            .select('id, message, sender, created_at')
+            .eq('session_id', sessionId)
+            .order('created_at', { ascending: true });
+        if (error) return NextResponse.json({ messages: [], setup_required: true });
+        return NextResponse.json({ messages: messages || [] });
+    }
+
     const { data: sessions, error } = await supabase
         .from('chat_sessions')
         .select(`
