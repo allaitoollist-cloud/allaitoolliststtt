@@ -89,8 +89,11 @@ export async function POST(req: NextRequest) {
             <tr><td style="padding:16px 20px;">
               <p style="margin:0 0 6px;font-family:Arial,sans-serif;font-size:13px;font-weight:700;color:#166534;">📸 After Payment — Upload Your Screenshot</p>
               <p style="margin:0 0 10px;font-family:Arial,sans-serif;font-size:13px;color:#15803d;">Upload your payment screenshot so we can verify instantly:</p>
-              <a href="https://allaitoollist.com/payment-proof" style="display:inline-block;padding:8px 20px;background:#16a34a;color:#ffffff;font-family:Arial,sans-serif;font-size:13px;font-weight:700;text-decoration:none;border-radius:6px;">
+              <a href="https://allaitoollist.com/payment-proof" style="display:inline-block;padding:8px 20px;background:#16a34a;color:#ffffff;font-family:Arial,sans-serif;font-size:13px;font-weight:700;text-decoration:none;border-radius:6px;margin-right:8px;">
                 Upload Screenshot →
+              </a>
+              <a href="https://allaitoollist.com/my-submission" style="display:inline-block;padding:8px 16px;background:transparent;color:#15803d;font-family:Arial,sans-serif;font-size:13px;font-weight:600;text-decoration:none;border-radius:6px;border:1px solid #16a34a;">
+                Check Status →
               </a>
             </td></tr>
           </table>

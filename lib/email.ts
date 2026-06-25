@@ -361,3 +361,28 @@ export async function sendFreshnessReminder(toolName: string, toolOwnerEmail: st
     `),
   });
 }
+
+export async function sendPaymentProofNotification(
+  toolName: string,
+  submitterEmail: string,
+  proofUrl: string,
+  adminEmail: string,
+) {
+  const adminLink = `https://allaitoollist.com/admin/submissions?search=${encodeURIComponent(submitterEmail)}`;
+  return sendEmail({
+    to: adminEmail,
+    replyTo: submitterEmail,
+    subject: `💰 Payment Proof Uploaded: "${toolName}" — Approve Now`,
+    html: layout(`
+      ${heading('Payment Proof Received 💰', 'A user has uploaded their payment screenshot')}
+      ${infoBox([
+        { label: 'Tool',    value: toolName },
+        { label: 'Email',   value: submitterEmail },
+        { label: 'Status',  value: '📸 Screenshot uploaded — ready to approve' },
+      ])}
+      ${btn(proofUrl, 'View Payment Screenshot &rarr;')}
+      ${btn(adminLink, 'Open in Admin → Approve &rarr;')}
+      ${sign()}
+    `),
+  });
+}
