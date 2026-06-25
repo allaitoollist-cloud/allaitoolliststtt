@@ -58,6 +58,7 @@ interface Submission {
     status: string;
     created_at: string;
     reviewed_at?: string;
+    payment_proof_url?: string;
 }
 
 const CATEGORIES = [
@@ -378,6 +379,18 @@ export function SubmissionRow({ submission, onRefresh, paypalSentAt }: { submiss
                             <Badge variant="outline" className="bg-orange-500/10 text-orange-400 border-orange-500/20 text-[10px]">
                                 💳 PayPal Sent
                             </Badge>
+                        )}
+                        {submission.payment_proof_url && (
+                            <a
+                                href={submission.payment_proof_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 text-[10px] hover:bg-green-500/20 cursor-pointer">
+                                    💰 Payment SS
+                                </Badge>
+                            </a>
                         )}
                         {submission.status === 'approved' && toolInfo?.exists && toolInfo.slug && (
                             <Link

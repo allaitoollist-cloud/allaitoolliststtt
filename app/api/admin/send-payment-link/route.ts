@@ -81,11 +81,20 @@ export async function POST(req: NextRequest) {
             </tr>
           </table>
 
-          <p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:14px;color:${MUTED};">
+          <p style="margin:0 0 16px;font-family:Arial,sans-serif;font-size:14px;color:${MUTED};">
             Once payment is confirmed, your listing goes live within 24 hours.<br/>
             We also accept: Binance (USDT) &bull; Payoneer &bull; Bank Transfer
           </p>
-          <p style="margin:24px 0 0;font-family:Arial,sans-serif;font-size:14px;color:${MUTED};">
+          <table cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;width:100%;">
+            <tr><td style="padding:16px 20px;">
+              <p style="margin:0 0 6px;font-family:Arial,sans-serif;font-size:13px;font-weight:700;color:#166534;">📸 After Payment — Upload Your Screenshot</p>
+              <p style="margin:0 0 10px;font-family:Arial,sans-serif;font-size:13px;color:#15803d;">Upload your payment screenshot so we can verify instantly:</p>
+              <a href="https://allaitoollist.com/payment-proof" style="display:inline-block;padding:8px 20px;background:#16a34a;color:#ffffff;font-family:Arial,sans-serif;font-size:13px;font-weight:700;text-decoration:none;border-radius:6px;">
+                Upload Screenshot →
+              </a>
+            </td></tr>
+          </table>
+          <p style="margin:0 0 0;font-family:Arial,sans-serif;font-size:14px;color:${MUTED};">
             Questions? Simply reply to this email.<br/>
             <strong style="color:${DARK};">— All AI Tool List Team</strong>
           </p>
