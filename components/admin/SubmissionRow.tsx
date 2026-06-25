@@ -39,7 +39,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { MoreHorizontal, Check, X, Trash2, ExternalLink, Edit, Mail, Eye, Loader2 } from 'lucide-react';
+import { MoreHorizontal, Check, X, Trash2, ExternalLink, Edit, Mail, Eye, Loader2, CreditCard } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -91,6 +91,8 @@ export function SubmissionRow({ submission, onRefresh }: { submission: Submissio
     const [viewDialogOpen, setViewDialogOpen] = useState(false);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [followupDialogOpen, setFollowupDialogOpen] = useState(false);
+    const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+    const [paypalLink, setPaypalLink] = useState('');
     const [loading, setLoading] = useState(false);
     const [toolInfo, setToolInfo] = useState<{ exists: boolean; slug?: string } | null>(null);
     const [followupMessage, setFollowupMessage] = useState('');
@@ -268,6 +270,34 @@ export function SubmissionRow({ submission, onRefresh }: { submission: Submissio
         setLoading(false);
     };
 
+    const handleSendPaymentLink = async () => {
+        if (!paypalLink.trim()) {
+            toast({ title: 'Error', description: 'Enter your PayPal payment link', variant: 'destructive' });
+            return;
+        }
+        setLoading(true);
+        try {
+            const res = await fetch('/api/admin/send-payment-link', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    submitterEmail: submission.submitter_email,
+                    toolName: submission.tool_name,
+                    plan: submission.plan,
+                    paypalLink: paypalLink.trim(),
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed');
+            toast({ title: '✅ Payment link sent!', description: `Sent to ${submission.submitter_email}` });
+            setPaypalLink('');
+            setPaymentDialogOpen(false);
+        } catch (err: any) {
+            toast({ title: 'Error', description: err.message, variant: 'destructive' });
+        }
+        setLoading(false);
+    };
+
     const handleDelete = async () => {
         setLoading(true);
         try {
@@ -413,6 +443,10 @@ export function SubmissionRow({ submission, onRefresh }: { submission: Submissio
                                 <DropdownMenuItem onClick={() => setEditDialogOpen(true)}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setPaymentDialogOpen(true)}>
+                                    <CreditCard className="mr-2 h-4 w-4 text-orange-500" />
+                                    Send PayPal Link
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => setFollowupDialogOpen(true)}>
                                     <Mail className="mr-2 h-4 w-4" />
@@ -666,6 +700,41 @@ export function SubmissionRow({ submission, onRefresh }: { submission: Submissio
                         <Button onClick={handleSendFollowup} disabled={loading || !followupMessage.trim()}>
                             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Mail className="h-4 w-4 mr-2" />}
                             Send Email
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* ── Send PayPal Payment Link Dialog ── */}
+            <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Send PayPal Payment Link</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-3 py-2">
+                        <p className="text-sm text-muted-foreground">
+                            Sending to: <span className="font-medium text-foreground">{submission.submitter_email}</span>
+                        </p>
+                        <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-3 text-sm">
+                            <p className="font-medium text-orange-400">Plan: {submission.plan === 'sponsored' ? 'Sponsored — $149' : 'Featured — $49'}</p>
+                        </div>
+                        <div className="space-y-1">
+                            <Label htmlFor="paypal-link">Your PayPal Payment Link</Label>
+                            <Input
+                                id="paypal-link"
+                                placeholder="https://paypal.me/yourname/49"
+                                value={paypalLink}
+                                onChange={(e) => setPaypalLink(e.target.value)}
+                            />
+                            <p className="text-xs text-muted-foreground">e.g. https://paypal.me/yourname/49 or a PayPal invoice link</p>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setPaymentDialogOpen(false)} disabled={loading}>Cancel</Button>
+                        <Button onClick={handleSendPaymentLink} disabled={loading || !paypalLink.trim()}
+                            className="bg-orange-500 hover:bg-orange-600 text-white">
+                            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CreditCard className="h-4 w-4 mr-2" />}
+                            Send Payment Link
                         </Button>
                     </DialogFooter>
                 </DialogContent>
