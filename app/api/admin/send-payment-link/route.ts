@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminRequest, unauthorizedJson } from '@/lib/admin-auth';
 import { sendEmail } from '@/lib/email';
+import { logActivity } from '@/lib/log-activity';
 
 const ORANGE  = '#f97316';
 const DARK    = '#1a1007';
@@ -113,6 +114,14 @@ export async function POST(req: NextRequest) {
         console.error('[PaymentLink] Failed:', result.error);
         return NextResponse.json({ error: JSON.stringify(result.error) }, { status: 500 });
     }
+
+    await logActivity('send_paypal_link', {
+        tool: toolName || '—',
+        to: submitterEmail,
+        plan: plan || 'featured',
+        amount: price,
+        link: paypalLink,
+    });
 
     return NextResponse.json({ success: true, sentTo: submitterEmail });
 }

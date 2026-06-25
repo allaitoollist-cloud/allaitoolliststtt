@@ -15,6 +15,15 @@ const ACTION_COLORS: Record<string, string> = {
     create: 'bg-purple-500/10 text-purple-500',
     login: 'bg-gray-500/10 text-gray-400',
     publish: 'bg-emerald-500/10 text-emerald-500',
+    paypal: 'bg-orange-500/10 text-orange-400',
+    send: 'bg-orange-500/10 text-orange-400',
+};
+
+const ACTION_LABELS: Record<string, string> = {
+    approve_submission: '✅ Approved',
+    reject_submission: '❌ Rejected',
+    send_paypal_link: '💳 PayPal Link Sent',
+    send_newsletter: '📧 Newsletter Sent',
 };
 
 function actionColor(action: string) {
@@ -122,19 +131,26 @@ export default function ActivityLogsPage() {
                                 <TableRow key={log.id} className="border-white/10 hover:bg-white/5">
                                     <TableCell>
                                         <Badge className={`border-0 ${actionColor(log.action)}`}>
-                                            {log.action}
+                                            {ACTION_LABELS[log.action] || log.action}
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                             <User className="h-3 w-3 shrink-0" />
-                                            <span>{log.user_profiles?.email || log.user_profiles?.full_name || 'System'}</span>
+                                            <span>{log.user_profiles?.email || log.user_profiles?.full_name || 'Admin'}</span>
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <code className="text-xs bg-secondary/30 px-1.5 py-0.5 rounded max-w-xs truncate block">
-                                            {typeof log.details === 'object' ? JSON.stringify(log.details) : String(log.details ?? '—')}
-                                        </code>
+                                        {typeof log.details === 'object' && log.details ? (
+                                            <div className="text-xs text-muted-foreground space-y-0.5">
+                                                {log.details.tool && <div><span className="text-foreground font-medium">{log.details.tool}</span></div>}
+                                                {log.details.to && <div>To: {log.details.to}</div>}
+                                                {log.details.email && !log.details.to && <div>{log.details.email}</div>}
+                                                {log.details.plan && <div>Plan: {log.details.plan} {log.details.amount ? `· ${log.details.amount}` : ''}</div>}
+                                            </div>
+                                        ) : (
+                                            <span className="text-xs text-muted-foreground">{String(log.details ?? '—')}</span>
+                                        )}
                                     </TableCell>
                                     <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
                                         <div className="flex items-center gap-1.5">

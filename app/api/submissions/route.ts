@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import { verifyAdminRequest, unauthorizedJson } from '@/lib/admin-auth';
+import { logActivity } from '@/lib/log-activity';
 
 export async function POST(request: NextRequest) {
     if (!await verifyAdminRequest(request)) return unauthorizedJson();
@@ -188,6 +189,13 @@ export async function POST(request: NextRequest) {
                 console.log('✅ Approval email sent to:', submissionData.submitter_email);
             }
 
+            await logActivity('approve_submission', {
+                tool: submissionData.tool_name,
+                email: submissionData.submitter_email,
+                plan: submissionData.plan || 'featured',
+                slug: createdTool.slug,
+            });
+
             return NextResponse.json({
                 success: true,
                 message: 'Submission approved and tool created!',
@@ -223,6 +231,11 @@ export async function POST(request: NextRequest) {
                 });
                 console.log('✅ Rejection email sent to:', submission.submitter_email);
             }
+
+            await logActivity('reject_submission', {
+                tool: submission?.tool_name || submissionId,
+                email: submission?.submitter_email || '—',
+            });
 
             return NextResponse.json({ success: true, message: 'Submission rejected' });
 
