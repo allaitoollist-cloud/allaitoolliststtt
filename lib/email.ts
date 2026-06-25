@@ -16,7 +16,9 @@ export async function sendEmail({ to, subject, html, from, replyTo }: EmailOptio
       return { success: false, error: 'Email service not configured' };
     }
 
-    const fromEmail = from || process.env.RESEND_FROM_EMAIL || 'All AI Tool List <hello@allaitoollist.com>';
+    // Always use verified domain — ignore env var if it has wrong domain
+    const envFrom = process.env.RESEND_FROM_EMAIL || '';
+    const fromEmail = from || (envFrom.includes('allaitoollist.com') ? envFrom : 'All AI Tool List <hello@allaitoollist.com>');
 
     const resend = new Resend(apiKey);
 
