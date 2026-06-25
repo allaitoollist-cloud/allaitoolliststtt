@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import { verifyAdminRequest, unauthorizedJson } from '@/lib/admin-auth';
 import { logActivity } from '@/lib/log-activity';
+import { revalidatePath } from 'next/cache';
 
 export async function POST(request: NextRequest) {
     if (!await verifyAdminRequest(request)) return unauthorizedJson();
@@ -197,6 +198,10 @@ export async function POST(request: NextRequest) {
                 plan: submissionData.plan || 'featured',
                 slug: createdTool.slug,
             });
+
+            // Revalidate sitemap so new tool appears immediately
+            revalidatePath('/sitemap.xml');
+            revalidatePath('/');
 
             return NextResponse.json({
                 success: true,

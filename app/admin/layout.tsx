@@ -2,6 +2,7 @@
 
 import { Sidebar } from '@/components/admin/Sidebar';
 import { AdminHeader } from '@/components/admin/AdminHeader';
+import { AdminChatNotify } from '@/components/admin/AdminChatNotify';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { getBrowserClient } from '@/lib/supabase-browser';
@@ -68,6 +69,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     {children}
                 </main>
             </div>
+            <AdminChatNotify />
         </div>
     );
 }

@@ -39,7 +39,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { MoreHorizontal, Check, X, Trash2, ExternalLink, Edit, Mail, Eye, Loader2, CreditCard } from 'lucide-react';
+import { MoreHorizontal, Check, X, Trash2, ExternalLink, Edit, Mail, Eye, Loader2, CreditCard, Sparkles } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/components/ui/use-toast';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -87,7 +88,13 @@ function getStatusBadgeClass(status: string) {
     }
 }
 
-export function SubmissionRow({ submission, onRefresh, paypalSentAt }: { submission: Submission; onRefresh?: () => void; paypalSentAt?: string }) {
+export function SubmissionRow({ submission, onRefresh, paypalSentAt, selected, onToggleSelect }: {
+    submission: Submission;
+    onRefresh?: () => void;
+    paypalSentAt?: string;
+    selected?: boolean;
+    onToggleSelect?: () => void;
+}) {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [viewDialogOpen, setViewDialogOpen] = useState(false);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -96,6 +103,7 @@ export function SubmissionRow({ submission, onRefresh, paypalSentAt }: { submiss
     const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
     const [paypalLink, setPaypalLink] = useState('');
     const [loading, setLoading] = useState(false);
+    const [aiLoading, setAiLoading] = useState(false);
     const [toolInfo, setToolInfo] = useState<{ exists: boolean; slug?: string } | null>(null);
     const [followupMessage, setFollowupMessage] = useState('');
 
@@ -300,6 +308,33 @@ export function SubmissionRow({ submission, onRefresh, paypalSentAt }: { submiss
         setLoading(false);
     };
 
+    const handleAiEnhance = async () => {
+        setAiLoading(true);
+        try {
+            const res = await fetch('/api/ai-enhance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    toolName: editData.tool_name,
+                    url: editData.tool_url,
+                    description: editData.description,
+                    category: editData.category,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'AI enhance failed');
+            setEditData(p => ({
+                ...p,
+                description: data.short_description || p.description,
+                full_description: data.full_description || p.full_description,
+            }));
+            toast({ title: '✨ AI Enhanced', description: 'Descriptions updated — review before saving' });
+        } catch (e: any) {
+            toast({ title: 'Error', description: e.message, variant: 'destructive' });
+        }
+        setAiLoading(false);
+    };
+
     const handleDelete = async () => {
         setLoading(true);
         try {
@@ -327,9 +362,13 @@ export function SubmissionRow({ submission, onRefresh, paypalSentAt }: { submiss
     return (
         <>
             <TableRow
-                className="border-white/10 hover:bg-white/5 cursor-pointer"
+                className={`border-white/10 hover:bg-white/5 cursor-pointer ${selected ? 'bg-primary/5' : ''}`}
                 onClick={() => setViewDialogOpen(true)}
             >
+                {/* Checkbox */}
+                <TableCell className="pl-4 w-10" onClick={(e) => { e.stopPropagation(); onToggleSelect?.(); }}>
+                    <Checkbox checked={selected} onCheckedChange={onToggleSelect} aria-label="Select row" />
+                </TableCell>
                 {/* Tool Name + URL */}
                 <TableCell onClick={(e) => e.stopPropagation()} className="max-w-[200px]">
                     <div className="font-medium truncate">{submission.tool_name}</div>
@@ -667,6 +706,16 @@ export function SubmissionRow({ submission, onRefresh, paypalSentAt }: { submiss
                         </div>
                     </div>
                     <DialogFooter className="gap-2 flex-wrap">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleAiEnhance}
+                            disabled={loading || aiLoading}
+                            className="border-violet-500/30 text-violet-400 hover:bg-violet-500/10 mr-auto"
+                        >
+                            {aiLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                            AI Enhance
+                        </Button>
                         <Button variant="outline" onClick={() => setEditDialogOpen(false)} disabled={loading}>
                             Cancel
                         </Button>
