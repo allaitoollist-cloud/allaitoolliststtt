@@ -16,11 +16,7 @@ export async function sendEmail({ to, subject, html, from, replyTo }: EmailOptio
       return { success: false, error: 'Email service not configured' };
     }
 
-    const fromEmail = from || process.env.RESEND_FROM_EMAIL;
-    if (!fromEmail) {
-      console.error('[Email] RESEND_FROM_EMAIL is not set');
-      return { success: false, error: 'Sender email not configured' };
-    }
+    const fromEmail = from || process.env.RESEND_FROM_EMAIL || 'All AI Tool List <hello@allaitoollist.com>';
 
     const resend = new Resend(apiKey);
 
@@ -202,21 +198,24 @@ function sign(): string {
 /* ── Templates ─────────────────────────────────────────────────────────────── */
 export const emailTemplates = {
 
-  toolSubmitted: (toolName: string) => ({
-    subject: `Submission Received: "${toolName}"`,
+  toolSubmitted: (toolName: string, plan: string = 'featured', price: string = '$49') => ({
+    subject: `Submission Received: "${toolName}" — Payment Invoice Coming`,
     html: layout(`
-      ${heading('Submission Received', 'Your tool is now under review')}
-      ${p(`Thank you for submitting <strong style="color:${DARK};">${toolName}</strong>. Our team will review it and get back to you shortly.`)}
+      ${heading('Submission Received! 🎉', 'We have your tool — payment step is next')}
+      ${p(`Thank you for submitting <strong style="color:${DARK};">${toolName}</strong>. Your submission is saved and under review.`)}
       ${infoBox([
         { label: 'Tool Name', value: toolName },
-        { label: 'Status',    value: 'Under Review' },
+        { label: 'Plan',      value: plan === 'sponsored' ? 'Sponsored Placement' : 'Featured Listing' },
+        { label: 'Amount',    value: price },
+        { label: 'Status',    value: 'Pending Payment' },
       ])}
       ${noteBox(`
-        <strong>What happens next?</strong><br/>
-        1. Our team reviews your tool for quality and relevance.<br/>
-        2. If approved, it goes live to thousands of AI enthusiasts.<br/>
-        3. You'll receive an email confirmation once it's published.
+        <strong>💳 Payment — What happens next:</strong><br/>
+        1. We will send you a <strong>PayPal payment link</strong> for ${price} within a few hours.<br/>
+        2. Complete the payment via PayPal (we also accept Binance USDT &amp; Payoneer).<br/>
+        3. Once paid, your tool goes live with priority placement within 24 hours.
       `)}
+      ${p('If you have any questions, simply reply to this email.', '0')}
       ${sign()}
     `),
   }),
@@ -319,22 +318,25 @@ export const emailTemplates = {
 };
 
 /* ── Helper exports ────────────────────────────────────────────────────────── */
-export async function sendSubmissionConfirmation(toolName: string, submitterEmail: string) {
-  const t = emailTemplates.toolSubmitted(toolName);
+export async function sendSubmissionConfirmation(toolName: string, submitterEmail: string, plan = 'featured', price = '$49') {
+  const t = emailTemplates.toolSubmitted(toolName, plan, price);
   return sendEmail({ to: submitterEmail, subject: t.subject, html: t.html });
 }
 
-export async function sendAdminNewSubmissionEmail(toolName: string, submitterEmail: string, adminEmail: string) {
+export async function sendAdminNewSubmissionEmail(toolName: string, submitterEmail: string, adminEmail: string, plan = 'featured', price = '$49') {
   return sendEmail({
     to: adminEmail,
     replyTo: submitterEmail,
-    subject: `New Submission: ${toolName}`,
+    subject: `💰 New ${plan === 'sponsored' ? 'Sponsored ($149)' : 'Featured ($49)'} Submission: ${toolName}`,
     html: layout(`
-      ${heading('New Tool Submission', 'Action required in admin panel')}
+      ${heading('New Paid Submission', 'Action required — send PayPal payment link')}
       ${infoBox([
         { label: 'Tool Name',  value: toolName },
         { label: 'Submitter', value: submitterEmail },
+        { label: 'Plan',      value: plan === 'sponsored' ? 'Sponsored Placement' : 'Featured Listing' },
+        { label: 'Amount',    value: price },
       ])}
+      ${noteBox(`<strong>Next step:</strong> Send a PayPal payment link of <strong>${price}</strong> to <strong>${submitterEmail}</strong>`)}
       ${btn('https://allaitoollist.com/admin/submissions', 'Review in Admin Panel &rarr;')}
     `),
   });

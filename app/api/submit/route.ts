@@ -220,35 +220,33 @@ export async function POST(req: NextRequest) {
             }, { status: 500 });
         }
 
-        // Send Emails (Only if NOT flagged) e.g.
+        // Determine price for email
+        const planPrice = plan === 'sponsored' ? '$149' : '$49';
+        const adminEmail = process.env.ADMIN_EMAIL || 'haramtaxiservice@gmail.com';
+
+        // Send emails (only if NOT flagged)
         if (status !== 'flagged') {
             try {
                 if (submitter_email) {
-                    console.log(`[EMAIL] Attempting to send confirmation to ${submitter_email} for tool: ${tool_name}`);
-                    const confirmationResult = await sendSubmissionConfirmation(tool_name, submitter_email);
+                    const confirmationResult = await sendSubmissionConfirmation(tool_name, submitter_email, plan || 'featured', planPrice);
                     if (confirmationResult.success) {
-                        console.log(`[EMAIL] ✅ Confirmation email sent successfully to ${submitter_email}`);
+                        console.log(`[EMAIL] ✅ Confirmation sent to ${submitter_email}`);
                     } else {
-                        console.error(`[EMAIL] ❌ Failed to send confirmation email:`, confirmationResult.error);
+                        console.error(`[EMAIL] ❌ Confirmation failed:`, confirmationResult.error);
                     }
-                } else {
-                    console.warn(`[EMAIL] ⚠️ No submitter_email provided, skipping confirmation email`);
                 }
 
-                // Send admin notification
-                console.log(`[EMAIL] Attempting to send admin notification for tool: ${tool_name}`);
-                const adminResult = await sendAdminNewSubmissionEmail(tool_name, submitter_email || 'No email', process.env.ADMIN_EMAIL || 'admin@allaitoollist.com');
+                const adminResult = await sendAdminNewSubmissionEmail(tool_name, submitter_email || 'No email', adminEmail, plan || 'featured', planPrice);
                 if (adminResult.success) {
-                    console.log(`[EMAIL] ✅ Admin notification sent successfully`);
+                    console.log(`[EMAIL] ✅ Admin notification sent`);
                 } else {
-                    console.error(`[EMAIL] ❌ Failed to send admin notification:`, adminResult.error);
+                    console.error(`[EMAIL] ❌ Admin notification failed:`, adminResult.error);
                 }
             } catch (emailErr) {
                 console.error('[EMAIL] ❌ Email trigger failed:', emailErr);
-                // Do not block response
             }
         } else {
-            console.warn(`[FLAGGED] Submission ${submission.id} flagged: ${flagReason} - Skipping emails`);
+            console.warn(`[FLAGGED] Submission ${submission.id} flagged: ${flagReason} - skipping emails`);
         }
 
         return NextResponse.json({ success: true, message: 'Submission received' });
