@@ -34,6 +34,7 @@ export function LiveChatWidget() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [unread, setUnread] = useState(0);
+    const [setupRequired, setSetupRequired] = useState(false);
     const bottomRef = useRef<HTMLDivElement>(null);
     const supabase = getBrowserClient();
 
@@ -55,12 +56,15 @@ export function LiveChatWidget() {
     }, [mounted]);
 
     const loadMessages = async (sid: string) => {
-        const { data } = await supabase
-            .from('chat_messages')
-            .select('*')
-            .eq('session_id', sid)
-            .order('created_at', { ascending: true });
-        if (data) { setMessages(data); scrollBottom(); }
+        try {
+            const { data, error } = await supabase
+                .from('chat_messages')
+                .select('*')
+                .eq('session_id', sid)
+                .order('created_at', { ascending: true });
+            if (error) { setSetupRequired(true); return; }
+            if (data) { setMessages(data); scrollBottom(); }
+        } catch { setSetupRequired(true); }
     };
 
     // Realtime subscription
@@ -101,6 +105,11 @@ export function LiveChatWidget() {
             body: JSON.stringify({ action: 'start', visitorId, name, email }),
         });
         const data = await res.json();
+        if (data.setup_required || res.status === 503) {
+            setSetupRequired(true);
+            setSending(false);
+            return;
+        }
         if (data.sessionId) {
             setSessionId(data.sessionId);
             localStorage.setItem('_chat_session', data.sessionId);
@@ -149,7 +158,12 @@ export function LiveChatWidget() {
                         </Button>
                     </div>
 
-                    {!started ? (
+                    {setupRequired ? (
+                        <div className="flex-1 flex flex-col items-center justify-center p-5 text-center space-y-2">
+                            <p className="text-sm font-medium">Chat is coming soon!</p>
+                            <p className="text-xs text-muted-foreground">Please email us at <span className="text-primary">hello@allaitoollist.com</span></p>
+                        </div>
+                    ) : !started ? (
                         /* Pre-chat form */
                         <form onSubmit={startChat} className="flex-1 flex flex-col justify-center p-5 space-y-4">
                             <div className="text-center space-y-1">
@@ -163,7 +177,7 @@ export function LiveChatWidget() {
                                 Start Chat
                             </Button>
                         </form>
-                    ) : (
+                    ) : started ? (
                         <>
                             {/* Messages */}
                             <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -206,7 +220,7 @@ export function LiveChatWidget() {
                                 </Button>
                             </form>
                         </>
-                    )}
+                    ) : null}
                 </div>
             )}
 

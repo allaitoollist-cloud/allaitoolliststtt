@@ -18,14 +18,20 @@ export async function POST(req: NextRequest) {
             }
 
             // Check if existing open session for this visitor
-            const { data: existing } = await supabase
+            const { data: existing, error: findError } = await supabase
                 .from('chat_sessions')
                 .select('id')
                 .eq('visitor_id', visitorId)
                 .eq('status', 'open')
                 .order('created_at', { ascending: false })
                 .limit(1)
-                .single();
+                .maybeSingle();
+
+            if (findError) {
+                // Table likely doesn't exist yet
+                console.error('[Chat] chat_sessions table error:', findError.message);
+                return NextResponse.json({ error: 'Chat not configured. Run Supabase SQL setup.', setup_required: true }, { status: 503 });
+            }
 
             let sessionId: string;
 
@@ -38,7 +44,8 @@ export async function POST(req: NextRequest) {
                     .select('id')
                     .single();
                 if (error || !session) {
-                    return NextResponse.json({ error: 'Failed to create session' }, { status: 500 });
+                    console.error('[Chat] insert session error:', error?.message);
+                    return NextResponse.json({ error: error?.message || 'Failed to create session' }, { status: 500 });
                 }
                 sessionId = session.id;
 
@@ -73,7 +80,6 @@ export async function POST(req: NextRequest) {
 
             if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-            // Update session updated_at
             await supabase.from('chat_sessions')
                 .update({ updated_at: new Date().toISOString() })
                 .eq('id', sessionId);
@@ -83,19 +89,25 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     } catch (e: any) {
+        console.error('[Chat API] Unexpected error:', e.message);
         return NextResponse.json({ error: e.message }, { status: 500 });
     }
 }
 
 // Admin: get all sessions
-export async function GET(req: NextRequest) {
-    const { data: sessions } = await supabase
+export async function GET() {
+    const { data: sessions, error } = await supabase
         .from('chat_sessions')
         .select(`
             id, visitor_name, visitor_email, status, created_at, updated_at,
             chat_messages(id, message, sender, created_at)
         `)
         .order('updated_at', { ascending: false });
+
+    if (error) {
+        console.error('[Chat] GET error:', error.message);
+        return NextResponse.json({ sessions: [], setup_required: true });
+    }
 
     return NextResponse.json({ sessions: sessions || [] });
 }
