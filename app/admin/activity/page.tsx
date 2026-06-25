@@ -24,6 +24,8 @@ const ACTION_LABELS: Record<string, string> = {
     reject_submission: '❌ Rejected',
     send_paypal_link: '💳 PayPal Link Sent',
     send_newsletter: '📧 Newsletter Sent',
+    payment_proof_uploaded: '💰 Payment Proof',
+    payment_reminder_sent: '⏳ Reminder Sent',
 };
 
 function actionColor(action: string) {
