@@ -91,6 +91,7 @@ export function SubmissionRow({ submission, onRefresh }: { submission: Submissio
     const [viewDialogOpen, setViewDialogOpen] = useState(false);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [followupDialogOpen, setFollowupDialogOpen] = useState(false);
+    const PAYPAL_BASE = 'https://paypal.me/malikmazhar';
     const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
     const [paypalLink, setPaypalLink] = useState('');
     const [loading, setLoading] = useState(false);
@@ -431,7 +432,11 @@ export function SubmissionRow({ submission, onRefresh }: { submission: Submissio
                                     <Edit className="mr-2 h-4 w-4" />
                                     Edit
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setPaymentDialogOpen(true)}>
+                                <DropdownMenuItem onClick={() => {
+                                    const amount = submission.plan === 'sponsored' ? '149' : '49';
+                                    setPaypalLink(`${PAYPAL_BASE}/${amount}`);
+                                    setPaymentDialogOpen(true);
+                                }}>
                                     <CreditCard className="mr-2 h-4 w-4 text-orange-500" />
                                     Send PayPal Link
                                 </DropdownMenuItem>
@@ -709,11 +714,11 @@ export function SubmissionRow({ submission, onRefresh }: { submission: Submissio
                             <Label htmlFor="paypal-link">Your PayPal Payment Link</Label>
                             <Input
                                 id="paypal-link"
-                                placeholder="https://paypal.me/yourname/49"
+                                placeholder="https://paypal.me/malikmazhar/49"
                                 value={paypalLink}
                                 onChange={(e) => setPaypalLink(e.target.value)}
                             />
-                            <p className="text-xs text-muted-foreground">e.g. https://paypal.me/yourname/49 or a PayPal invoice link</p>
+                            <p className="text-xs text-muted-foreground">Auto-filled based on plan — edit if needed</p>
                         </div>
                     </div>
                     <DialogFooter>
