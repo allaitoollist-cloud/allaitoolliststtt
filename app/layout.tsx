@@ -5,7 +5,6 @@ import { Toaster } from '@/components/ui/toaster';
 import { Analytics } from '@/components/Analytics';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ComparisonProvider } from '@/contexts/ComparisonContext';
-import { ChatbotWidget } from '@/components/ChatbotWidget';
 import { LiveChatWidget } from '@/components/LiveChatWidget';
 import { WebMCP } from '@/components/WebMCP';
 
@@ -87,7 +86,6 @@ export default function RootLayout({
               {children}
               <Analytics />
               <Toaster />
-              <ChatbotWidget />
               <LiveChatWidget />
               <WebMCP />
             </ComparisonProvider>

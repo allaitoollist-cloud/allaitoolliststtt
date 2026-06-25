@@ -24,7 +24,7 @@ function getVisitorId() {
 }
 
 export function LiveChatWidget() {
-    return process.env.NEXT_PUBLIC_LIVE_CHAT_ENABLED === 'true' ? <LiveChatWidgetInner /> : null;
+    return <LiveChatWidgetInner />;
 }
 
 function LiveChatWidgetInner() {

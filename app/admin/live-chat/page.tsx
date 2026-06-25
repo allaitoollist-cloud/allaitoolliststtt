@@ -33,7 +33,10 @@ export default function LiveChatPage() {
     const [loading, setLoading] = useState(true);
     const [unreadMap, setUnreadMap] = useState<Record<string, number>>({});
     const bottomRef = useRef<HTMLDivElement>(null);
+    const activeIdRef = useRef<string | null>(null);
     const supabase = getBrowserClient();
+
+    useEffect(() => { activeIdRef.current = activeId; }, [activeId]);
 
     const load = async () => {
         setLoading(true);
@@ -78,9 +81,13 @@ export default function LiveChatPage() {
                     if (s.id !== (msg as any).session_id) return s;
                     return { ...s, chat_messages: [...s.chat_messages, msg], updated_at: msg.created_at };
                 }));
-                // If active session — add to messages
-                if ((msg as any).session_id === activeId) {
-                    setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg]);
+                // If active session — add to messages (use ref to avoid stale closure)
+                if ((msg as any).session_id === activeIdRef.current) {
+                    setMessages(prev => {
+                        // Remove any optimistic placeholder, then add real message if not already present
+                        const without = prev.filter(m => !m.id.startsWith('opt-') && m.id !== msg.id);
+                        return [...without, msg];
+                    });
                 } else if (msg.sender === 'visitor') {
                     // Unread badge for other sessions
                     setUnreadMap(prev => ({
@@ -97,7 +104,7 @@ export default function LiveChatPage() {
             .subscribe();
 
         return () => { supabase.removeChannel(channel); };
-    }, [activeId]);
+    }, []);
 
     const sendReply = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -105,12 +112,24 @@ export default function LiveChatPage() {
         const text = input.trim();
         setInput('');
         setSending(true);
+
+        // Optimistic update so admin sees reply immediately
+        const optimistic: Message = {
+            id: `opt-${Date.now()}`,
+            message: text,
+            sender: 'admin',
+            created_at: new Date().toISOString(),
+        };
+        setMessages(prev => [...prev, optimistic]);
+
         await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'message', sessionId: activeId, message: text, sender: 'admin' }),
         });
         setSending(false);
+        // Reload to sync real IDs
+        load();
     };
 
     const closeSession = async (sessionId: string) => {
