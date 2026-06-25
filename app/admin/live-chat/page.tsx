@@ -133,7 +133,11 @@ export default function LiveChatPage() {
     };
 
     const closeSession = async (sessionId: string) => {
-        await supabase.from('chat_sessions').update({ status: 'closed' }).eq('id', sessionId);
+        await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'close', sessionId }),
+        });
         setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, status: 'closed' } : s));
     };
 

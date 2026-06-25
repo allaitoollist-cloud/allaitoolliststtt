@@ -1,11 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { sendEmail } from '@/lib/email';
 
 function getSupabase() {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!url || !key) return null;
     return createClient(url, key);
+}
+
+function chatTranscriptHtml(visitorName: string, messages: { sender: string; message: string; created_at: string }[]) {
+    const rows = messages.map(m => {
+        const who = m.sender === 'admin' ? 'Support' : visitorName;
+        const color = m.sender === 'admin' ? '#f97316' : '#1a1007';
+        const time = new Date(m.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+        return `
+            <tr>
+                <td style="padding:10px 0;border-bottom:1px solid #e8dfd7;vertical-align:top;width:90px">
+                    <span style="font-size:12px;font-weight:700;color:${color}">${who}</span><br>
+                    <span style="font-size:11px;color:#79716a">${time}</span>
+                </td>
+                <td style="padding:10px 0 10px 16px;border-bottom:1px solid #e8dfd7;font-size:14px;color:#4a4540;line-height:1.5">
+                    ${m.message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+                </td>
+            </tr>`;
+    }).join('');
+
+    return `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f5f5f5;font-family:sans-serif">
+    <div style="max-width:600px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e8dfd7">
+        <div style="background:#f97316;padding:24px 32px">
+            <h1 style="margin:0;color:#fff;font-size:20px">Chat Transcript</h1>
+            <p style="margin:4px 0 0;color:#fff;opacity:.85;font-size:13px">Conversation with ${visitorName}</p>
+        </div>
+        <div style="padding:24px 32px">
+            <table style="width:100%;border-collapse:collapse">${rows}</table>
+        </div>
+        <div style="padding:16px 32px;background:#fef8f4;border-top:1px solid #e8dfd7;font-size:12px;color:#79716a;text-align:center">
+            All AI Tool List &mdash; <a href="https://allaitoollist.com" style="color:#f97316">allaitoollist.com</a>
+        </div>
+    </div>
+    </body></html>`;
 }
 
 export async function POST(req: NextRequest) {
@@ -23,7 +57,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ error: 'visitorId and name required' }, { status: 400 });
             }
 
-            // Check if existing open session for this visitor
             const { data: existing, error: findError } = await supabase
                 .from('chat_sessions')
                 .select('id')
@@ -34,7 +67,6 @@ export async function POST(req: NextRequest) {
                 .maybeSingle();
 
             if (findError) {
-                // Table likely doesn't exist yet
                 console.error('[Chat] chat_sessions table error:', findError.message);
                 return NextResponse.json({ error: 'Chat not configured. Run Supabase SQL setup.', setup_required: true }, { status: 503 });
             }
@@ -55,7 +87,6 @@ export async function POST(req: NextRequest) {
                 }
                 sessionId = session.id;
 
-                // Welcome message from admin
                 await supabase.from('chat_messages').insert({
                     session_id: sessionId,
                     sender: 'admin',
@@ -89,6 +120,57 @@ export async function POST(req: NextRequest) {
             await supabase.from('chat_sessions')
                 .update({ updated_at: new Date().toISOString() })
                 .eq('id', sessionId);
+
+            return NextResponse.json({ success: true });
+        }
+
+        if (action === 'close') {
+            const { sessionId } = body;
+            if (!sessionId) return NextResponse.json({ error: 'sessionId required' }, { status: 400 });
+
+            // Get session + all messages
+            const { data: session } = await supabase
+                .from('chat_sessions')
+                .select('visitor_name, visitor_email')
+                .eq('id', sessionId)
+                .single();
+
+            const { data: messages } = await supabase
+                .from('chat_messages')
+                .select('sender, message, created_at')
+                .eq('session_id', sessionId)
+                .order('created_at', { ascending: true });
+
+            // Close the session
+            await supabase.from('chat_sessions')
+                .update({ status: 'closed', updated_at: new Date().toISOString() })
+                .eq('id', sessionId);
+
+            // Send transcript emails
+            if (session && messages && messages.length > 0) {
+                const html = chatTranscriptHtml(session.visitor_name, messages);
+                const adminEmail = process.env.ADMIN_EMAIL || 'allaitoollist@gmail.com';
+
+                const emailJobs = [
+                    sendEmail({
+                        to: adminEmail,
+                        subject: `Chat ended — ${session.visitor_name}`,
+                        html,
+                    }),
+                ];
+
+                if (session.visitor_email) {
+                    emailJobs.push(
+                        sendEmail({
+                            to: session.visitor_email,
+                            subject: 'Your chat transcript — All AI Tool List',
+                            html,
+                        })
+                    );
+                }
+
+                await Promise.allSettled(emailJobs);
+            }
 
             return NextResponse.json({ success: true });
         }

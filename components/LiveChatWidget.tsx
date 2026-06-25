@@ -195,8 +195,8 @@ function LiveChatWidgetInner() {
                                 <p className="text-xs text-muted-foreground">Tell us your name to start chatting.</p>
                             </div>
                             <Input placeholder="Your name *" value={name} onChange={e => setName(e.target.value)} required className="text-sm" />
-                            <Input type="email" placeholder="Email (optional)" value={email} onChange={e => setEmail(e.target.value)} className="text-sm" />
-                            <Button type="submit" size="sm" disabled={sending || !name.trim()} className="w-full">
+                            <Input type="email" placeholder="Email address *" value={email} onChange={e => setEmail(e.target.value)} required className="text-sm" />
+                            <Button type="submit" size="sm" disabled={sending || !name.trim() || !email.trim()} className="w-full">
                                 {sending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                                 Start Chat
                             </Button>
