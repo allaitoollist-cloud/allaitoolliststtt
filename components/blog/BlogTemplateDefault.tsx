@@ -221,36 +221,18 @@ export function BlogTemplateDefault({ blog }: BlogTemplateDefaultProps) {
                             <div className="sticky top-8 space-y-5">
                                 <TableOfContents headings={headings} />
 
-                                {/* AEO Score card */}
-                                <div className="bg-card border border-white/10 rounded-2xl p-5 space-y-4">
-                                    <h3 className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2">
-                                        <Sparkles className="h-3 w-3 text-emerald-400" />
-                                        SEO Signals
-                                    </h3>
-                                    {[
-                                        { label: 'AEO Ready', desc: 'Answers direct questions', ok: faqs.length > 0 },
-                                        { label: 'GEO Optimized', desc: 'Facts for AI synthesis', ok: true },
-                                        { label: 'Entity SEO', desc: 'Named entities tagged', ok: (blog.entity_mentions?.length || 0) > 0 },
-                                        { label: 'FAQ Schema', desc: 'JSON-LD structured data', ok: !!blog.schema_markup },
-                                        { label: 'Semantic Depth', desc: 'Topical authority signals', ok: headings.length >= 5 },
-                                    ].map((item, i) => (
-                                        <div key={i} className="flex items-start gap-2.5">
-                                            <span className={`mt-0.5 text-xs font-bold ${item.ok ? 'text-green-400' : 'text-red-400'}`}>{item.ok ? '✓' : '✗'}</span>
-                                            <div>
-                                                <p className="text-xs font-semibold text-foreground">{item.label}</p>
-                                                <p className="text-[10px] text-muted-foreground">{item.desc}</p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-
                                 {/* CTA mini */}
                                 <div className="bg-card border border-white/10 rounded-2xl p-5 text-center space-y-3">
-                                    <p className="text-xs font-bold text-white">Discover AI Tools</p>
-                                    <p className="text-[11px] text-muted-foreground leading-relaxed">1000+ tools reviewed and curated for you.</p>
+                                    <p className="text-sm font-bold text-white">🚀 Discover AI Tools</p>
+                                    <p className="text-[11px] text-muted-foreground leading-relaxed">Browse 1000+ curated AI tools across 50+ categories — free.</p>
                                     <Link href="/" className="block">
                                         <Button size="sm" className="w-full gap-2 text-xs">
                                             <Sparkles className="h-3 w-3" />Browse Directory
+                                        </Button>
+                                    </Link>
+                                    <Link href="/submit" className="block">
+                                        <Button size="sm" variant="outline" className="w-full gap-2 text-xs border-white/10">
+                                            <ExternalLink className="h-3 w-3" />Submit Your Tool
                                         </Button>
                                     </Link>
                                 </div>
