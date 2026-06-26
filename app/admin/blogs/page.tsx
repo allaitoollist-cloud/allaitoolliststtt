@@ -155,9 +155,16 @@ export default function AdminBlogsPage() {
                     <h1 className="text-2xl sm:text-3xl font-bold">Manage Blogs</h1>
                     <p className="text-muted-foreground text-sm">Create and manage your blog posts.</p>
                 </div>
-                <Button asChild size="sm">
-                    <Link href="/admin/blogs/create"><Plus className="mr-2 h-4 w-4" />New Post</Link>
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button asChild size="sm" variant="outline">
+                        <Link href="/admin/blogs/auto-generate">
+                            <Sparkles className="mr-2 h-4 w-4 text-primary" />Auto Generate
+                        </Link>
+                    </Button>
+                    <Button asChild size="sm">
+                        <Link href="/admin/blogs/create"><Plus className="mr-2 h-4 w-4" />New Post</Link>
+                    </Button>
+                </div>
             </div>
 
             {/* Stats */}
