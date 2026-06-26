@@ -121,6 +121,7 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
         is_published: initialData?.is_published || false,
         template: initialData?.template || 'default',
         focus_keyword: initialData?.focus_keyword || '',
+        related_tool_slug: (initialData as any)?.related_tool_slug || '',
     });
 
     const generateSlug = (title: string) =>
@@ -300,9 +301,15 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
                                 <Input value={formData.category} onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))} placeholder="AI Tools, Reviews, Tutorials..." />
                             </div>
                         </div>
-                        <div className="grid gap-2">
-                            <Label>Focus Keyword <span className="text-xs text-muted-foreground ml-1">(primary SEO keyword)</span></Label>
-                            <Input value={formData.focus_keyword} onChange={(e) => setFormData(prev => ({ ...prev, focus_keyword: e.target.value }))} placeholder="e.g. ChatGPT review" />
+                        <div className="grid sm:grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label>Focus Keyword <span className="text-xs text-muted-foreground ml-1">(primary SEO keyword)</span></Label>
+                                <Input value={formData.focus_keyword} onChange={(e) => setFormData(prev => ({ ...prev, focus_keyword: e.target.value }))} placeholder="e.g. ChatGPT review" />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Related Tool Slug <span className="text-xs text-muted-foreground ml-1">(shows tool card on blog)</span></Label>
+                                <Input value={formData.related_tool_slug} onChange={(e) => setFormData(prev => ({ ...prev, related_tool_slug: e.target.value }))} placeholder="e.g. chatgpt, midjourney" />
+                            </div>
                         </div>
                         <div className="grid gap-2">
                             <Label>Excerpt <span className="text-xs text-muted-foreground ml-1">(used in cards + meta)</span></Label>

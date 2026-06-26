@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
             schema_markup: blog.schema_markup || null,
             entity_mentions: blog.entity_mentions || [],
             reading_time: blog.reading_time || Math.max(1, Math.ceil(wordCount / 200)),
+            related_tool_slug: blog.related_tool_slug || null,
         };
 
         if (id) {

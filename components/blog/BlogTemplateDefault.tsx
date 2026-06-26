@@ -9,6 +9,16 @@ import { markdownToHtml, extractHeadings } from '@/lib/markdown';
 
 interface FAQ { question: string; answer: string; }
 
+interface RelatedTool {
+    name: string;
+    slug: string;
+    icon?: string;
+    url?: string;
+    pricing?: string;
+    short_description?: string;
+    category?: string;
+}
+
 interface BlogTemplateDefaultProps {
     blog: {
         title: string;
@@ -24,6 +34,7 @@ interface BlogTemplateDefaultProps {
         focus_keyword?: string;
         schema_markup?: string;
         entity_mentions?: string[];
+        relatedTool?: RelatedTool | null;
     };
 }
 
@@ -80,6 +91,7 @@ export function BlogTemplateDefault({ blog }: BlogTemplateDefaultProps) {
     const headings = extractHeadings(blog.content || '');
     const faqs: FAQ[] = blog.faq && Array.isArray(blog.faq) && blog.faq.length > 0 ? blog.faq : [];
     const htmlContent = markdownToHtml(blog.content || '');
+    const tool = blog.relatedTool || null;
 
     const handleShare = () => {
         if (navigator.share) {
@@ -192,28 +204,56 @@ export function BlogTemplateDefault({ blog }: BlogTemplateDefaultProps) {
                                 </section>
                             )}
 
-                            {/* CTA Box */}
-                            <div className="mt-12 p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 text-center space-y-4">
-                                <p className="text-lg font-bold">🚀 Find 1000+ AI Tools — Free</p>
-                                <p className="text-sm text-muted-foreground">
-                                    Browse our curated directory of the best AI tools across 50+ categories.
-                                    Filter by pricing, category, and use case.
-                                </p>
-                                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                                    <Link href="/">
-                                        <Button className="gap-2">
-                                            <Sparkles className="h-4 w-4" />
-                                            Explore AI Tools
-                                        </Button>
-                                    </Link>
-                                    <Link href="/submit">
-                                        <Button variant="outline" className="gap-2 border-white/20">
-                                            <ExternalLink className="h-4 w-4" />
-                                            Submit Your Tool
-                                        </Button>
-                                    </Link>
+                            {/* Tool CTA or generic CTA */}
+                            {tool ? (
+                                <div className="mt-12 p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 space-y-4">
+                                    <p className="text-xs font-bold uppercase tracking-wider text-primary">Featured Tool</p>
+                                    <div className="flex items-start gap-4">
+                                        {tool.icon ? (
+                                            <img src={tool.icon} alt={tool.name} className="w-14 h-14 rounded-xl object-contain bg-white/5 p-1 shrink-0" />
+                                        ) : (
+                                            <div className="w-14 h-14 rounded-xl bg-primary/20 flex items-center justify-center text-2xl shrink-0">🤖</div>
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <p className="font-bold text-lg">{tool.name}</p>
+                                                {tool.pricing && <Badge variant="secondary" className="text-xs">{tool.pricing}</Badge>}
+                                                {tool.category && <Badge variant="outline" className="text-xs border-white/10">{tool.category}</Badge>}
+                                            </div>
+                                            {tool.short_description && (
+                                                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{tool.short_description}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col sm:flex-row gap-3">
+                                        {tool.url && (
+                                            <a href={tool.url} target="_blank" rel="noopener noreferrer" className="flex-1">
+                                                <Button className="w-full gap-2">
+                                                    <ExternalLink className="h-4 w-4" />
+                                                    Visit {tool.name}
+                                                </Button>
+                                            </a>
+                                        )}
+                                        <Link href={`/tool/${tool.slug}`} className="flex-1">
+                                            <Button variant="outline" className="w-full gap-2 border-white/20">
+                                                <Sparkles className="h-4 w-4" />
+                                                Full Review
+                                            </Button>
+                                        </Link>
+                                    </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="mt-12 p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 text-center space-y-4">
+                                    <p className="text-lg font-bold">🚀 Find 1000+ AI Tools — Free</p>
+                                    <p className="text-sm text-muted-foreground">
+                                        Browse our curated directory of the best AI tools across 50+ categories.
+                                    </p>
+                                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                                        <Link href="/"><Button className="gap-2"><Sparkles className="h-4 w-4" />Explore AI Tools</Button></Link>
+                                        <Link href="/submit"><Button variant="outline" className="gap-2 border-white/20"><ExternalLink className="h-4 w-4" />Submit Your Tool</Button></Link>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Sticky Sidebar */}
@@ -221,21 +261,55 @@ export function BlogTemplateDefault({ blog }: BlogTemplateDefaultProps) {
                             <div className="sticky top-8 space-y-5">
                                 <TableOfContents headings={headings} />
 
-                                {/* CTA mini */}
-                                <div className="bg-card border border-white/10 rounded-2xl p-5 text-center space-y-3">
-                                    <p className="text-sm font-bold text-white">🚀 Discover AI Tools</p>
-                                    <p className="text-[11px] text-muted-foreground leading-relaxed">Browse 1000+ curated AI tools across 50+ categories — free.</p>
-                                    <Link href="/" className="block">
-                                        <Button size="sm" className="w-full gap-2 text-xs">
-                                            <Sparkles className="h-3 w-3" />Browse Directory
-                                        </Button>
-                                    </Link>
-                                    <Link href="/submit" className="block">
-                                        <Button size="sm" variant="outline" className="w-full gap-2 text-xs border-white/10">
-                                            <ExternalLink className="h-3 w-3" />Submit Your Tool
-                                        </Button>
-                                    </Link>
-                                </div>
+                                {/* Tool card in sidebar */}
+                                {tool ? (
+                                    <div className="bg-card border border-primary/20 rounded-2xl p-5 space-y-4">
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Featured Tool</p>
+                                        <div className="flex items-center gap-3">
+                                            {tool.icon ? (
+                                                <img src={tool.icon} alt={tool.name} className="w-10 h-10 rounded-lg object-contain bg-white/5 p-0.5 shrink-0" />
+                                            ) : (
+                                                <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center text-xl shrink-0">🤖</div>
+                                            )}
+                                            <div className="min-w-0">
+                                                <p className="font-semibold text-sm truncate">{tool.name}</p>
+                                                {tool.pricing && <p className="text-[11px] text-muted-foreground">{tool.pricing}</p>}
+                                            </div>
+                                        </div>
+                                        {tool.short_description && (
+                                            <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-3">{tool.short_description}</p>
+                                        )}
+                                        <div className="space-y-2">
+                                            {tool.url && (
+                                                <a href={tool.url} target="_blank" rel="noopener noreferrer" className="block">
+                                                    <Button size="sm" className="w-full gap-2 text-xs">
+                                                        <ExternalLink className="h-3 w-3" />Visit {tool.name}
+                                                    </Button>
+                                                </a>
+                                            )}
+                                            <Link href={`/tool/${tool.slug}`} className="block">
+                                                <Button size="sm" variant="outline" className="w-full gap-2 text-xs border-white/10">
+                                                    <Sparkles className="h-3 w-3" />Full Review
+                                                </Button>
+                                            </Link>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="bg-card border border-white/10 rounded-2xl p-5 text-center space-y-3">
+                                        <p className="text-sm font-bold text-white">🚀 Discover AI Tools</p>
+                                        <p className="text-[11px] text-muted-foreground leading-relaxed">Browse 1000+ curated AI tools across 50+ categories — free.</p>
+                                        <Link href="/" className="block">
+                                            <Button size="sm" className="w-full gap-2 text-xs">
+                                                <Sparkles className="h-3 w-3" />Browse Directory
+                                            </Button>
+                                        </Link>
+                                        <Link href="/submit" className="block">
+                                            <Button size="sm" variant="outline" className="w-full gap-2 text-xs border-white/10">
+                                                <ExternalLink className="h-3 w-3" />Submit Your Tool
+                                            </Button>
+                                        </Link>
+                                    </div>
+                                )}
                             </div>
                         </aside>
                     </div>

@@ -85,7 +85,7 @@ export default function AutoGenerateBlogsPage() {
             const saveRes = await fetch('/api/save-blog', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
-                body: JSON.stringify({ blog: { ...genData.blog, is_published: false } }),
+                body: JSON.stringify({ blog: { ...genData.blog, is_published: false, related_tool_slug: tool.slug } }),
             });
             const saveData = await saveRes.json();
             if (!saveRes.ok) throw new Error(saveData.error || 'Save failed');
