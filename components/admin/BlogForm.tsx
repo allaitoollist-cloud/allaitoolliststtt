@@ -41,6 +41,11 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
     const [generating, setGenerating] = useState(false);
     const [keywords, setKeywords] = useState('');
 
+    const getToken = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        return session?.access_token || '';
+    };
+
     const [formData, setFormData] = useState({
         title: initialData?.title || '',
         slug: initialData?.slug || '',
@@ -83,17 +88,11 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
 
         setGenerating(true);
         try {
-            console.log('Sending request to generate blog with keywords:', keywords);
-            
+            const token = await getToken();
             const response = await fetch('/api/generate-blog', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    keywords: keywords.trim(),
-                    category: formData.category || ''
-                }),
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+                body: JSON.stringify({ keywords: keywords.trim(), category: formData.category || '' }),
             });
 
             console.log('Response status:', response.status);
@@ -163,60 +162,25 @@ export function BlogForm({ initialData, isEditing = false }: BlogFormProps) {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-
         try {
-            // TEMP: Auth check disabled for testing
-            // const { data: { user } } = await supabase.auth.getUser();
-            // if (!user) throw new Error('Not authenticated');
-
-            const blogData = {
+            const token = await getToken();
+            const blog = {
                 ...formData,
-                template: formData.template || 'default', // Ensure template is always set
-                author_id: null, // TEMP: Set to null since auth is disabled
-                updated_at: new Date().toISOString(),
+                template: ['default', 'modern', 'minimal', 'magazine', 'story'].includes(formData.template)
+                    ? formData.template : 'default',
             };
-            
-            // Ensure template is always a valid value
-            if (!blogData.template || !['default', 'modern', 'minimal', 'magazine', 'story'].includes(blogData.template)) {
-                blogData.template = 'default';
-            }
-            
-            // Debug log
-            if (process.env.NODE_ENV === 'development') {
-                console.log('Saving blog with template:', blogData.template, 'Full data:', blogData);
-            }
-
-            let error;
-
-            if (isEditing && initialData?.id) {
-                const { error: updateError } = await supabase
-                    .from('blogs')
-                    .update(blogData)
-                    .eq('id', initialData.id);
-                error = updateError;
-            } else {
-                const { error: insertError } = await supabase
-                    .from('blogs')
-                    .insert([blogData]);
-                error = insertError;
-            }
-
-            if (error) throw error;
-
-            toast({
-                title: 'Success',
-                description: `Blog post ${isEditing ? 'updated' : 'created'} successfully.`,
+            const res = await fetch('/api/save-blog', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+                body: JSON.stringify({ blog, id: isEditing ? initialData?.id : undefined }),
             });
-
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to save');
+            toast({ title: 'Success', description: `Blog post ${isEditing ? 'updated' : 'created'} successfully.` });
             router.push('/admin/blogs');
             router.refresh();
         } catch (error: any) {
-            console.error('Error saving blog:', error);
-            toast({
-                title: 'Error',
-                description: error.message || 'Failed to save blog post',
-                variant: 'destructive',
-            });
+            toast({ title: 'Error', description: error.message || 'Failed to save blog post', variant: 'destructive' });
         } finally {
             setLoading(false);
         }

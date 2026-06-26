@@ -39,6 +39,11 @@ export default function AutoGenerateBlogsPage() {
     const [selected, setSelected] = useState<Set<string>>(new Set());
     const [bulkGenerating, setBulkGenerating] = useState(false);
 
+    const getToken = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        return session?.access_token || '';
+    };
+
     const load = useCallback(async () => {
         setLoading(true);
         const [{ data: toolsData }, { data: blogsData }] = await Promise.all([
@@ -63,9 +68,10 @@ export default function AutoGenerateBlogsPage() {
     const generateForTool = async (tool: Tool): Promise<boolean> => {
         setGenState(s => ({ ...s, [tool.id]: 'generating' }));
         try {
+            const token = await getToken();
             const genRes = await fetch('/api/generate-blog', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
                 body: JSON.stringify({
                     toolName: tool.name,
                     toolDescription: tool.short_description || '',
@@ -76,22 +82,13 @@ export default function AutoGenerateBlogsPage() {
             const genData = await genRes.json();
             if (!genRes.ok || !genData.success) throw new Error(genData.error || 'Generation failed');
 
-            const blog = genData.blog;
-            const { error: saveError } = await supabase.from('blogs').insert([{
-                title: blog.title,
-                slug: blog.slug,
-                content: blog.content,
-                excerpt: blog.excerpt,
-                meta_title: blog.meta_title,
-                meta_description: blog.meta_description,
-                meta_keywords: blog.meta_keywords,
-                category: blog.category,
-                is_published: false,
-                template: 'default',
-                author_id: null,
-                updated_at: new Date().toISOString(),
-            }]);
-            if (saveError) throw new Error(saveError.message);
+            const saveRes = await fetch('/api/save-blog', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+                body: JSON.stringify({ blog: { ...genData.blog, is_published: false } }),
+            });
+            const saveData = await saveRes.json();
+            if (!saveRes.ok) throw new Error(saveData.error || 'Save failed');
 
             setGenState(s => ({ ...s, [tool.id]: 'done' }));
             setTools(prev => prev.map(t => t.id === tool.id ? { ...t, hasBlog: true } : t));
