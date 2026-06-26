@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { verifyAdminRequest, unauthorizedJson } from '@/lib/admin-auth';
+
+const ALLOWED_ADMIN_EMAILS = [
+    'muhammadismailkpt@gmail.com',
+    'allaitoolist@gmail.com',
+    'haramtaxiservice@gmail.com',
+];
 
 function getSupabase() {
     return createClient(
@@ -9,8 +14,21 @@ function getSupabase() {
     );
 }
 
+async function isAdmin(req: NextRequest): Promise<boolean> {
+    try {
+        const token = req.headers.get('x-admin-token');
+        if (!token) return false;
+        const supabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        );
+        const { data: { user } } = await supabase.auth.getUser(token);
+        return !!(user?.email && ALLOWED_ADMIN_EMAILS.includes(user.email));
+    } catch { return false; }
+}
+
 export async function GET(req: NextRequest) {
-    if (!await verifyAdminRequest(req)) return unauthorizedJson();
+    if (!await isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const supabase = getSupabase();
     const { data, error } = await supabase.from('site_settings').select('key, value');
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -20,7 +38,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-    if (!await verifyAdminRequest(req)) return unauthorizedJson();
+    if (!await isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const supabase = getSupabase();
     try {
         const { settings } = await req.json();

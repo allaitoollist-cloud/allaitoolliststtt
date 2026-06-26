@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { Save, Loader2, Key, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { getBrowserClient } from '@/lib/supabase-browser';
 
 const DEFAULT_SETTINGS = {
     site_title: '',
@@ -28,26 +29,33 @@ export default function SiteSettingsPage() {
     const [saved, setSaved] = useState(false);
     const [settings, setSettings] = useState(DEFAULT_SETTINGS);
     const { toast } = useToast();
+    const supabase = getBrowserClient();
+
+    const getToken = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        return session?.access_token || '';
+    };
 
     useEffect(() => {
-        fetch('/api/settings')
-            .then(r => r.json())
-            .then(data => {
-                if (data.settings) {
-                    setSettings(prev => ({ ...prev, ...data.settings }));
-                }
-            })
-            .catch(() => {})
-            .finally(() => setLoadingData(false));
+        getToken().then(token => {
+            fetch('/api/settings', { headers: { 'x-admin-token': token } })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.settings) setSettings(prev => ({ ...prev, ...data.settings }));
+                })
+                .catch(() => {})
+                .finally(() => setLoadingData(false));
+        });
     }, []);
 
     const handleSave = async () => {
         setLoading(true);
         setSaved(false);
         try {
+            const token = await getToken();
             const res = await fetch('/api/settings', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
                 body: JSON.stringify({ settings }),
             });
             const data = await res.json();
