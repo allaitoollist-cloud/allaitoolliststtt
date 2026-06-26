@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
     Send, Loader2, MessageCircle, Circle, RefreshCw, RotateCcw,
-    Pencil, Trash2, Check, X, Search, Zap,
+    Pencil, Trash2, Check, X, Search, Zap, Globe, Star, Moon, Sun,
 } from 'lucide-react';
 import { getBrowserClient } from '@/lib/supabase-browser';
+import { Switch } from '@/components/ui/switch';
 
 interface Message {
     id: string;
@@ -24,7 +25,11 @@ interface Session {
     id: string;
     visitor_name: string;
     visitor_email?: string;
+    visitor_page?: string;
+    visitor_browser?: string;
     status: string;
+    rating?: number | null;
+    rating_comment?: string | null;
     created_at: string;
     updated_at: string;
     chat_messages: Message[];
@@ -66,6 +71,9 @@ export default function LiveChatPage() {
     const [visitorTyping, setVisitorTyping] = useState(false);
     const [search, setSearch] = useState('');
     const [showQuick, setShowQuick] = useState(false);
+    const [awayMode, setAwayMode] = useState(false);
+    const [awayMessage, setAwayMessage] = useState('');
+    const [configLoaded, setConfigLoaded] = useState(false);
 
     // Edit state
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -90,6 +98,30 @@ export default function LiveChatPage() {
     }, []);
 
     useEffect(() => { load(); }, [load]);
+
+    // Load away mode config
+    useEffect(() => {
+        fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'get_config' }),
+        }).then(r => r.json()).then(data => {
+            if (data.config) {
+                setAwayMode(data.config.away_mode === 'true');
+                setAwayMessage(data.config.away_message || '');
+            }
+            setConfigLoaded(true);
+        }).catch(() => setConfigLoaded(true));
+    }, []);
+
+    const toggleAwayMode = async (val: boolean) => {
+        setAwayMode(val);
+        await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'set_config', key: 'away_mode', value: val ? 'true' : 'false' }),
+        });
+    };
 
     useEffect(() => {
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
@@ -283,24 +315,34 @@ export default function LiveChatPage() {
             {/* ── Left: Session list ─────────────────────────────────────── */}
             <div className="w-72 shrink-0 border-r border-white/10 flex flex-col">
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-white/10 shrink-0">
-                    <div className="flex items-center gap-2">
-                        <h2 className="font-semibold text-sm">Live Chats</h2>
-                        {totalUnread > 0 && (
-                            <span className="w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                                {totalUnread}
-                            </span>
-                        )}
+                <div className="p-4 border-b border-white/10 shrink-0 space-y-3">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <h2 className="font-semibold text-sm">Live Chats</h2>
+                            {totalUnread > 0 && (
+                                <span className="w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                                    {totalUnread}
+                                </span>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {openSessions.length > 0 && (
+                                <Badge className="bg-green-500/10 text-green-500 border-0 text-xs">
+                                    {openSessions.length} open
+                                </Badge>
+                            )}
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={load} disabled={loading}>
+                                <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+                            </Button>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        {openSessions.length > 0 && (
-                            <Badge className="bg-green-500/10 text-green-500 border-0 text-xs">
-                                {openSessions.length} open
-                            </Badge>
-                        )}
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={load} disabled={loading}>
-                            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-                        </Button>
+                    {/* Away Mode toggle */}
+                    <div className={`flex items-center justify-between px-3 py-2 rounded-lg border transition-colors ${awayMode ? 'border-orange-500/30 bg-orange-500/10' : 'border-white/10 bg-white/5'}`}>
+                        <div className="flex items-center gap-2">
+                            {awayMode ? <Moon className="h-3.5 w-3.5 text-orange-400" /> : <Sun className="h-3.5 w-3.5 text-green-400" />}
+                            <span className="text-xs font-medium">{awayMode ? 'Away Mode ON' : 'Online'}</span>
+                        </div>
+                        <Switch checked={awayMode} onCheckedChange={toggleAwayMode} />
                     </div>
                 </div>
 
@@ -397,30 +439,62 @@ export default function LiveChatPage() {
             {activeSession ? (
                 <div className="flex-1 flex flex-col min-w-0">
                     {/* Chat header */}
-                    <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 shrink-0">
-                        <div>
-                            <p className="font-semibold">{activeSession.visitor_name}</p>
-                            {activeSession.visitor_email && (
-                                <p className="text-xs text-muted-foreground">{activeSession.visitor_email}</p>
-                            )}
+                    <div className="px-5 py-3 border-b border-white/10 shrink-0 space-y-1">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="font-semibold">{activeSession.visitor_name}</p>
+                                {activeSession.visitor_email && (
+                                    <p className="text-xs text-muted-foreground">{activeSession.visitor_email}</p>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Badge className={activeSession.status === 'open'
+                                    ? 'bg-green-500/10 text-green-500 border-0'
+                                    : 'bg-gray-500/10 text-gray-400 border-0'}>
+                                    {activeSession.status}
+                                </Badge>
+                                {activeSession.status === 'open' ? (
+                                    <Button size="sm" variant="outline" className="text-xs h-7 border-white/10"
+                                        onClick={() => closeSession(activeSession.id)}>
+                                        Close Chat
+                                    </Button>
+                                ) : (
+                                    <Button size="sm" variant="outline" className="text-xs h-7 border-white/10 gap-1"
+                                        onClick={() => reopenSession(activeSession.id)}>
+                                        <RotateCcw className="h-3 w-3" />
+                                        Reopen
+                                    </Button>
+                                )}
+                            </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <Badge className={activeSession.status === 'open'
-                                ? 'bg-green-500/10 text-green-500 border-0'
-                                : 'bg-gray-500/10 text-gray-400 border-0'}>
-                                {activeSession.status}
-                            </Badge>
-                            {activeSession.status === 'open' ? (
-                                <Button size="sm" variant="outline" className="text-xs h-7 border-white/10"
-                                    onClick={() => closeSession(activeSession.id)}>
-                                    Close Chat
-                                </Button>
-                            ) : (
-                                <Button size="sm" variant="outline" className="text-xs h-7 border-white/10 gap-1"
-                                    onClick={() => reopenSession(activeSession.id)}>
-                                    <RotateCcw className="h-3 w-3" />
-                                    Reopen
-                                </Button>
+
+                        {/* Visitor info row */}
+                        <div className="flex flex-wrap items-center gap-3">
+                            {activeSession.visitor_browser && (
+                                <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                                    <Globe className="h-3 w-3" />{activeSession.visitor_browser}
+                                </span>
+                            )}
+                            {activeSession.visitor_page && (
+                                <a
+                                    href={activeSession.visitor_page}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[11px] text-primary hover:underline truncate max-w-[200px]"
+                                    title={activeSession.visitor_page}
+                                >
+                                    📍 {(() => { try { return new URL(activeSession.visitor_page).pathname || '/'; } catch { return activeSession.visitor_page; } })()}
+                                </a>
+                            )}
+                            {activeSession.rating && (
+                                <span className="flex items-center gap-1 text-[11px] text-yellow-400">
+                                    {Array.from({ length: 5 }).map((_, i) => (
+                                        <Star key={i} className={`h-3 w-3 ${i < activeSession.rating! ? 'fill-yellow-400' : 'text-muted-foreground/30'}`} />
+                                    ))}
+                                    {activeSession.rating_comment && (
+                                        <span className="text-muted-foreground ml-1">"{activeSession.rating_comment}"</span>
+                                    )}
+                                </span>
                             )}
                         </div>
                     </div>

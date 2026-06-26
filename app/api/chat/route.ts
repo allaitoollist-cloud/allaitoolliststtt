@@ -9,12 +9,25 @@ function getSupabase() {
     return createClient(url, key);
 }
 
-function chatTranscriptHtml(visitorName: string, messages: { sender: string; message: string; created_at: string }[]) {
-    const rows = messages.map(m => {
-        const who = m.sender === 'admin' ? 'Support' : visitorName;
-        const color = m.sender === 'admin' ? '#f97316' : '#1a1007';
-        const time = new Date(m.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
-        return `
+async function getConfig(supabase: any, key: string, fallback = ''): Promise<string> {
+    try {
+        const { data } = await supabase.from('chat_config').select('value').eq('key', key).maybeSingle();
+        return (data as any)?.value ?? fallback;
+    } catch { return fallback; }
+}
+
+function chatTranscriptHtml(
+    visitorName: string,
+    messages: { sender: string; message: string; created_at: string; deleted?: boolean }[],
+    rating?: number | null,
+) {
+    const rows = messages
+        .filter(m => !m.deleted)
+        .map(m => {
+            const who = m.sender === 'admin' ? 'Support' : visitorName;
+            const color = m.sender === 'admin' ? '#f97316' : '#1a1007';
+            const time = new Date(m.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+            return `
             <tr>
                 <td style="padding:10px 0;border-bottom:1px solid #e8dfd7;vertical-align:top;width:90px">
                     <span style="font-size:12px;font-weight:700;color:${color}">${who}</span><br>
@@ -24,7 +37,11 @@ function chatTranscriptHtml(visitorName: string, messages: { sender: string; mes
                     ${m.message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}
                 </td>
             </tr>`;
-    }).join('');
+        }).join('');
+
+    const ratingHtml = rating
+        ? `<p style="margin:16px 0 0;font-size:13px;color:#79716a">Rating: ${'⭐'.repeat(rating)} (${rating}/5)</p>`
+        : '';
 
     return `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f5f5f5;font-family:sans-serif">
     <div style="max-width:600px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e8dfd7">
@@ -34,6 +51,7 @@ function chatTranscriptHtml(visitorName: string, messages: { sender: string; mes
         </div>
         <div style="padding:24px 32px">
             <table style="width:100%;border-collapse:collapse">${rows}</table>
+            ${ratingHtml}
         </div>
         <div style="padding:16px 32px;background:#fef8f4;border-top:1px solid #e8dfd7;font-size:12px;color:#79716a;text-align:center">
             All AI Tool List &mdash; <a href="https://allaitoollist.com" style="color:#f97316">allaitoollist.com</a>
@@ -53,7 +71,7 @@ export async function POST(req: NextRequest) {
 
         // ── Start / resume session ─────────────────────────────────────────
         if (action === 'start') {
-            const { visitorId, name, email } = body;
+            const { visitorId, name, email, page, browser } = body;
             if (!visitorId || !name) {
                 return NextResponse.json({ error: 'visitorId and name required' }, { status: 400 });
             }
@@ -73,25 +91,49 @@ export async function POST(req: NextRequest) {
             }
 
             let sessionId: string;
+            let isNew = false;
 
             if (existing) {
                 sessionId = existing.id;
             } else {
                 const { data: session, error } = await supabase
                     .from('chat_sessions')
-                    .insert({ visitor_id: visitorId, visitor_name: name, visitor_email: email || null, status: 'open' })
+                    .insert({
+                        visitor_id: visitorId,
+                        visitor_name: name,
+                        visitor_email: email || null,
+                        visitor_page: page || null,
+                        visitor_browser: browser || null,
+                        status: 'open',
+                    })
                     .select('id')
                     .single();
                 if (error || !session) {
                     return NextResponse.json({ error: error?.message || 'Failed to create session' }, { status: 500 });
                 }
                 sessionId = session.id;
+                isNew = true;
 
+                // Welcome message
                 await supabase.from('chat_messages').insert({
                     session_id: sessionId,
                     sender: 'admin',
                     message: `Hi ${name}! 👋 Thanks for reaching out. How can we help you today?`,
                 });
+
+                // Away mode auto-reply
+                const awayMode = await getConfig(supabase, 'away_mode', 'false');
+                if (awayMode === 'true') {
+                    const awayMsg = await getConfig(
+                        supabase, 'away_message',
+                        "We're currently away but will reply as soon as possible. 🙏"
+                    );
+                    await supabase.from('chat_messages').insert({
+                        session_id: sessionId,
+                        sender: 'admin',
+                        message: awayMsg,
+                    });
+                }
             }
 
             const { data: messages } = await supabase
@@ -100,7 +142,7 @@ export async function POST(req: NextRequest) {
                 .eq('session_id', sessionId)
                 .order('created_at', { ascending: true });
 
-            return NextResponse.json({ sessionId, messages: messages || [] });
+            return NextResponse.json({ sessionId, messages: messages || [], isNew });
         }
 
         // ── Send message ───────────────────────────────────────────────────
@@ -110,7 +152,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ error: 'sessionId, message, sender required' }, { status: 400 });
             }
 
-            // Check session is still open
             const { data: sess } = await supabase
                 .from('chat_sessions')
                 .select('status')
@@ -155,13 +196,13 @@ export async function POST(req: NextRequest) {
 
             const { data: session } = await supabase
                 .from('chat_sessions')
-                .select('visitor_name, visitor_email')
+                .select('visitor_name, visitor_email, rating')
                 .eq('id', sessionId)
                 .single();
 
             const { data: messages } = await supabase
                 .from('chat_messages')
-                .select('sender, message, created_at')
+                .select('sender, message, created_at, deleted')
                 .eq('session_id', sessionId)
                 .order('created_at', { ascending: true });
 
@@ -170,7 +211,7 @@ export async function POST(req: NextRequest) {
                 .eq('id', sessionId);
 
             if (session && messages && messages.length > 0) {
-                const html = chatTranscriptHtml(session.visitor_name, messages);
+                const html = chatTranscriptHtml(session.visitor_name, messages, session.rating);
                 const adminEmail = process.env.ADMIN_EMAIL || 'allaitoollist@gmail.com';
                 const emailJobs: Promise<any>[] = [
                     sendEmail({ to: adminEmail, subject: `Chat ended — ${session.visitor_name}`, html }),
@@ -220,6 +261,33 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: true });
         }
 
+        // ── Visitor submits rating ─────────────────────────────────────────
+        if (action === 'rate') {
+            const { sessionId, rating, comment } = body;
+            if (!sessionId || !rating) return NextResponse.json({ error: 'sessionId and rating required' }, { status: 400 });
+            if (rating < 1 || rating > 5) return NextResponse.json({ error: 'Rating must be 1-5' }, { status: 400 });
+            await supabase.from('chat_sessions')
+                .update({ rating: Number(rating), rating_comment: comment?.trim() || null })
+                .eq('id', sessionId);
+            return NextResponse.json({ success: true });
+        }
+
+        // ── Get/set config (away mode) ─────────────────────────────────────
+        if (action === 'get_config') {
+            const { data } = await supabase.from('chat_config').select('key, value');
+            const config: Record<string, string> = {};
+            data?.forEach(row => { config[row.key] = row.value; });
+            return NextResponse.json({ config });
+        }
+
+        if (action === 'set_config') {
+            const { key, value } = body;
+            if (!key) return NextResponse.json({ error: 'key required' }, { status: 400 });
+            await supabase.from('chat_config')
+                .upsert({ key, value: String(value), updated_at: new Date().toISOString() });
+            return NextResponse.json({ success: true });
+        }
+
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     } catch (e: any) {
         console.error('[Chat API] Unexpected error:', e.message);
@@ -247,7 +315,8 @@ export async function GET(req: NextRequest) {
     const { data: sessions, error } = await supabase
         .from('chat_sessions')
         .select(`
-            id, visitor_name, visitor_email, status, created_at, updated_at,
+            id, visitor_name, visitor_email, visitor_page, visitor_browser,
+            status, rating, rating_comment, created_at, updated_at,
             chat_messages(id, message, sender, created_at, read_at, edited_at, deleted)
         `)
         .order('updated_at', { ascending: false });

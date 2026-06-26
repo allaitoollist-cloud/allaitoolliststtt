@@ -27,6 +27,26 @@ ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS read_at TIMESTAMP WITH TIME Z
 ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS edited_at TIMESTAMP WITH TIME ZONE DEFAULT NULL;
 ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS deleted BOOLEAN DEFAULT FALSE;
 
+-- Visitor info + rating on sessions
+ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS visitor_page TEXT DEFAULT NULL;
+ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS visitor_browser TEXT DEFAULT NULL;
+ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS rating INT DEFAULT NULL;
+ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS rating_comment TEXT DEFAULT NULL;
+
+-- Chat config table (away mode, auto-reply message)
+CREATE TABLE IF NOT EXISTS chat_config (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+ALTER TABLE chat_config ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Service role manages chat_config" ON chat_config FOR ALL USING (true) WITH CHECK (true);
+
+INSERT INTO chat_config (key, value) VALUES
+    ('away_mode', 'false'),
+    ('away_message', 'Thanks for reaching out! We are currently away but will reply as soon as possible. 🙏')
+ON CONFLICT (key) DO NOTHING;
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS chat_sessions_visitor_id_idx ON chat_sessions(visitor_id);
 CREATE INDEX IF NOT EXISTS chat_sessions_status_idx ON chat_sessions(status);

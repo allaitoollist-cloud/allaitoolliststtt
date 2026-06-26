@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Loader2, Headphones, RefreshCw } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, Headphones, RefreshCw, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getBrowserClient } from '@/lib/supabase-browser';
@@ -26,6 +26,17 @@ function getVisitorId() {
     return id;
 }
 
+function getBrowserName() {
+    if (typeof window === 'undefined') return '';
+    const ua = navigator.userAgent;
+    if (ua.includes('Edg/')) return 'Edge';
+    if (ua.includes('Chrome/')) return 'Chrome';
+    if (ua.includes('Firefox/')) return 'Firefox';
+    if (ua.includes('Safari/') && !ua.includes('Chrome')) return 'Safari';
+    if (ua.includes('OPR/') || ua.includes('Opera/')) return 'Opera';
+    return 'Browser';
+}
+
 export function LiveChatWidget() {
     return <LiveChatWidgetInner />;
 }
@@ -46,9 +57,16 @@ function LiveChatWidgetInner() {
     const [sessionClosed, setSessionClosed] = useState(false);
     const [adminTyping, setAdminTyping] = useState(false);
 
+    // Rating state
+    const [rated, setRated] = useState(false);
+    const [hoverRating, setHoverRating] = useState(0);
+    const [selectedRating, setSelectedRating] = useState(0);
+    const [ratingComment, setRatingComment] = useState('');
+    const [ratingSubmitting, setRatingSubmitting] = useState(false);
+
     const bottomRef = useRef<HTMLDivElement>(null);
     const adminTypingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const typingChannelRef = useRef<ReturnType<typeof getBrowserClient>['channel'] extends (...args: any[]) => infer R ? R : any>(null as any);
+    const typingChannelRef = useRef<any>(null);
     const supabase = getBrowserClient();
 
     useEffect(() => { setMounted(true); }, []);
@@ -57,7 +75,6 @@ function LiveChatWidgetInner() {
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
     };
 
-    // Load messages via API (service role — no RLS issues)
     const loadMessages = async (sid: string) => {
         try {
             const res = await fetch(`/api/chat?sessionId=${sid}`);
@@ -67,32 +84,31 @@ function LiveChatWidgetInner() {
         } catch { setSetupRequired(true); }
     };
 
-    // Restore session from localStorage on mount
+    // Restore session from localStorage
     useEffect(() => {
         if (!mounted) return;
         const savedSession = localStorage.getItem('_chat_session');
         const savedName = localStorage.getItem('_chat_name') || '';
         const savedEmail = localStorage.getItem('_chat_email') || '';
+        const savedRated = localStorage.getItem('_chat_rated') === '1';
         if (savedSession && savedName) {
             setSessionId(savedSession);
             setName(savedName);
             setEmail(savedEmail);
             setStarted(true);
+            setRated(savedRated);
             setLoading(true);
             loadMessages(savedSession).finally(() => setLoading(false));
         }
     }, [mounted]);
 
-    // Realtime: new messages + session status changes
+    // Realtime: messages + session status + message updates
     useEffect(() => {
         if (!sessionId) return;
-
         const channel = supabase
             .channel(`session:${sessionId}`)
             .on('postgres_changes', {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'chat_messages',
+                event: 'INSERT', schema: 'public', table: 'chat_messages',
                 filter: `session_id=eq.${sessionId}`,
             }, (payload) => {
                 const msg = payload.new as Message;
@@ -106,35 +122,29 @@ function LiveChatWidgetInner() {
                 }
                 scrollBottom();
             })
-            // When admin updates read_at → trigger double tick
             .on('postgres_changes', {
-                event: 'UPDATE',
-                schema: 'public',
-                table: 'chat_messages',
+                event: 'UPDATE', schema: 'public', table: 'chat_messages',
                 filter: `session_id=eq.${sessionId}`,
             }, (payload) => {
                 const updated = payload.new as Message;
-                setMessages(prev => prev.map(m => m.id === updated.id ? { ...m, read_at: updated.read_at } : m));
+                setMessages(prev => prev.map(m => m.id === updated.id
+                    ? { ...m, message: updated.message, read_at: updated.read_at, edited_at: updated.edited_at, deleted: updated.deleted }
+                    : m
+                ));
             })
-            // Session closed by admin → show "Chat ended"
             .on('postgres_changes', {
-                event: 'UPDATE',
-                schema: 'public',
-                table: 'chat_sessions',
+                event: 'UPDATE', schema: 'public', table: 'chat_sessions',
                 filter: `id=eq.${sessionId}`,
             }, (payload) => {
-                if ((payload.new as any).status === 'closed') {
-                    setSessionClosed(true);
-                } else if ((payload.new as any).status === 'open') {
-                    setSessionClosed(false);
-                }
+                const s = payload.new as any;
+                if (s.status === 'closed') setSessionClosed(true);
+                else if (s.status === 'open') setSessionClosed(false);
             })
             .subscribe();
-
         return () => { supabase.removeChannel(channel); };
     }, [sessionId]);
 
-    // Typing indicator channel
+    // Typing channel
     useEffect(() => {
         if (!sessionId) return;
         const ch = supabase.channel(`typing:${sessionId}`);
@@ -153,13 +163,8 @@ function LiveChatWidgetInner() {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setInput(e.target.value);
-        // Broadcast typing to admin
         try {
-            typingChannelRef.current?.send({
-                type: 'broadcast',
-                event: 'visitor-typing',
-                payload: {},
-            });
+            typingChannelRef.current?.send({ type: 'broadcast', event: 'visitor-typing', payload: {} });
         } catch {}
     };
 
@@ -168,10 +173,12 @@ function LiveChatWidgetInner() {
         if (!name.trim() || !email.trim()) return;
         setSending(true);
         const visitorId = getVisitorId();
+        const page = window.location.href;
+        const browser = getBrowserName();
         const res = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'start', visitorId, name: name.trim(), email: email.trim() }),
+            body: JSON.stringify({ action: 'start', visitorId, name: name.trim(), email: email.trim(), page, browser }),
         });
         const data = await res.json();
         if (data.setup_required || res.status === 503) {
@@ -184,23 +191,30 @@ function LiveChatWidgetInner() {
             localStorage.setItem('_chat_session', data.sessionId);
             localStorage.setItem('_chat_name', name.trim());
             localStorage.setItem('_chat_email', email.trim());
+            localStorage.removeItem('_chat_rated');
             setStarted(true);
             setSessionClosed(false);
+            setRated(false);
             setMessages(data.messages || []);
             scrollBottom();
         }
         setSending(false);
     };
 
-    // Start a fresh new session (used after session close)
     const startNewSession = async () => {
         setSending(true);
         localStorage.removeItem('_chat_session');
+        localStorage.removeItem('_chat_rated');
+        setRated(false);
+        setSelectedRating(0);
+        setRatingComment('');
         const visitorId = getVisitorId();
+        const page = window.location.href;
+        const browser = getBrowserName();
         const res = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'start', visitorId, name, email }),
+            body: JSON.stringify({ action: 'start', visitorId, name, email, page, browser }),
         });
         const data = await res.json();
         if (data.sessionId) {
@@ -219,8 +233,6 @@ function LiveChatWidgetInner() {
         const text = input.trim();
         setInput('');
         setSending(true);
-
-        // Optimistic update
         const optimistic: Message = {
             id: `opt-${Date.now()}`,
             message: text,
@@ -229,21 +241,30 @@ function LiveChatWidgetInner() {
         };
         setMessages(prev => [...prev, optimistic]);
         scrollBottom();
-
         const res = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'message', sessionId, message: text, sender: 'visitor' }),
         });
         const data = await res.json();
-
         if (data.session_closed) {
-            // Remove optimistic, show closed state
             setMessages(prev => prev.filter(m => !m.id.startsWith('opt-')));
             setSessionClosed(true);
         }
-
         setSending(false);
+    };
+
+    const submitRating = async () => {
+        if (!selectedRating || !sessionId) return;
+        setRatingSubmitting(true);
+        await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'rate', sessionId, rating: selectedRating, comment: ratingComment }),
+        });
+        setRated(true);
+        localStorage.setItem('_chat_rated', '1');
+        setRatingSubmitting(false);
     };
 
     if (!mounted) return null;
@@ -251,10 +272,9 @@ function LiveChatWidgetInner() {
     return (
         <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
             {open && (
-                <div
-                    className="w-80 sm:w-96 bg-background border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
-                    style={{ height: '480px' }}
-                >
+                <div className="w-80 sm:w-96 bg-background border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+                    style={{ height: '480px' }}>
+
                     {/* Header */}
                     <div className="flex items-center justify-between px-4 py-3 bg-primary/10 border-b border-white/10 shrink-0">
                         <div className="flex items-center gap-2">
@@ -294,19 +314,73 @@ function LiveChatWidgetInner() {
                         </form>
 
                     ) : sessionClosed ? (
-                        /* Chat was closed by admin */
-                        <div className="flex-1 flex flex-col items-center justify-center p-5 text-center space-y-4">
-                            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-                                <X className="h-5 w-5 text-muted-foreground" />
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-sm font-semibold">Chat Ended</p>
-                                <p className="text-xs text-muted-foreground">This conversation was closed. Start a new chat anytime.</p>
-                            </div>
-                            <Button size="sm" onClick={startNewSession} disabled={sending} className="gap-2">
-                                {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-                                Start New Chat
-                            </Button>
+                        /* Chat ended — show rating if not yet rated */
+                        <div className="flex-1 flex flex-col items-center justify-center p-5 text-center space-y-4 overflow-y-auto">
+                            {!rated ? (
+                                <>
+                                    <div className="space-y-1">
+                                        <p className="text-sm font-semibold">Chat Ended 👋</p>
+                                        <p className="text-xs text-muted-foreground">How was your experience?</p>
+                                    </div>
+
+                                    {/* Star rating */}
+                                    <div className="flex gap-1">
+                                        {[1, 2, 3, 4, 5].map(star => (
+                                            <button
+                                                key={star}
+                                                onMouseEnter={() => setHoverRating(star)}
+                                                onMouseLeave={() => setHoverRating(0)}
+                                                onClick={() => setSelectedRating(star)}
+                                                className="transition-transform hover:scale-110"
+                                            >
+                                                <Star
+                                                    className={`h-7 w-7 transition-colors ${
+                                                        star <= (hoverRating || selectedRating)
+                                                            ? 'fill-yellow-400 text-yellow-400'
+                                                            : 'text-muted-foreground/30'
+                                                    }`}
+                                                />
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {selectedRating > 0 && (
+                                        <Input
+                                            placeholder="Leave a comment (optional)"
+                                            value={ratingComment}
+                                            onChange={e => setRatingComment(e.target.value)}
+                                            className="text-sm"
+                                        />
+                                    )}
+
+                                    <div className="flex flex-col gap-2 w-full">
+                                        <Button
+                                            size="sm"
+                                            onClick={submitRating}
+                                            disabled={!selectedRating || ratingSubmitting}
+                                            className="w-full"
+                                        >
+                                            {ratingSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" /> : null}
+                                            Submit Rating
+                                        </Button>
+                                        <Button size="sm" variant="ghost" onClick={() => setRated(true)} className="w-full text-xs text-muted-foreground">
+                                            Skip
+                                        </Button>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="space-y-1">
+                                        <p className="text-2xl">🙏</p>
+                                        <p className="text-sm font-semibold">Thanks for your feedback!</p>
+                                        <p className="text-xs text-muted-foreground">Start a new chat anytime.</p>
+                                    </div>
+                                    <Button size="sm" onClick={startNewSession} disabled={sending} className="gap-2">
+                                        {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                                        Start New Chat
+                                    </Button>
+                                </>
+                            )}
                         </div>
 
                     ) : (
@@ -342,15 +416,12 @@ function LiveChatWidgetInner() {
                                                     <span className="text-[10px] opacity-60">
                                                         {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                     </span>
-                                                    {msg.edited_at && (
-                                                        <span className="text-[10px] opacity-40 italic">edited</span>
-                                                    )}
+                                                    {msg.edited_at && <span className="text-[10px] opacity-40 italic">edited</span>}
                                                     {msg.sender === 'visitor' && !msg.id.startsWith('opt-') && (
-                                                        <span className="text-[10px]" title={msg.read_at ? 'Seen' : 'Sent'}>
+                                                        <span className="text-[10px]">
                                                             {msg.read_at
                                                                 ? <span className="text-blue-300 font-bold">✓✓</span>
-                                                                : <span className="opacity-50">✓</span>
-                                                            }
+                                                                : <span className="opacity-50">✓</span>}
                                                         </span>
                                                     )}
                                                 </div>
@@ -359,7 +430,6 @@ function LiveChatWidgetInner() {
                                     </div>
                                 ))}
 
-                                {/* Admin typing indicator */}
                                 {adminTyping && (
                                     <div className="flex justify-start">
                                         <div className="bg-card border border-white/10 rounded-xl rounded-bl-none px-4 py-2.5">
@@ -374,7 +444,6 @@ function LiveChatWidgetInner() {
                                 <div ref={bottomRef} />
                             </div>
 
-                            {/* Input */}
                             <form onSubmit={sendMessage} className="flex gap-2 p-3 border-t border-white/10 shrink-0">
                                 <Input
                                     placeholder="Type a message..."
@@ -392,7 +461,6 @@ function LiveChatWidgetInner() {
                 </div>
             )}
 
-            {/* Toggle button */}
             <button
                 onClick={() => setOpen(o => !o)}
                 className="relative w-14 h-14 bg-primary rounded-full shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors"
