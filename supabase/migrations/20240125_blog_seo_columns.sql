@@ -1,0 +1,8 @@
+-- Blog SEO Enhancement Columns
+-- Run this in Supabase Dashboard > SQL Editor
+
+ALTER TABLE blogs ADD COLUMN IF NOT EXISTS faq JSONB DEFAULT '[]';
+ALTER TABLE blogs ADD COLUMN IF NOT EXISTS focus_keyword TEXT DEFAULT NULL;
+ALTER TABLE blogs ADD COLUMN IF NOT EXISTS schema_markup TEXT DEFAULT NULL;
+ALTER TABLE blogs ADD COLUMN IF NOT EXISTS reading_time INT DEFAULT NULL;
+ALTER TABLE blogs ADD COLUMN IF NOT EXISTS entity_mentions TEXT[] DEFAULT '{}';

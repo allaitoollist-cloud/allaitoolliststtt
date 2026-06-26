@@ -60,12 +60,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 
 export default async function CategoryPage({ params }: PageProps) {
-    // Decode the slug to handle spaces and special characters
-    const decodedCategory = decodeURIComponent(params.slug);
-    const displayCategory = formatCategoryName(decodedCategory);
+    // Decode the slug to handle spaces, special characters, and URL encoding
+    let decodedCategory = decodeURIComponent(params.slug);
 
-    // Fetch tools for this category
-    const { data: dbTools, error } = await supabase
+    // Fetch tools for this category (exact match first)
+    let { data: dbTools, error } = await supabase
         .from('tools')
         .select('*')
         .eq('category', decodedCategory)
@@ -75,18 +74,39 @@ export default async function CategoryPage({ params }: PageProps) {
         console.error('Error fetching tools:', error);
     }
 
-    // If no tools found, check if category exists at all
+    // If no exact match, try a case-insensitive / hyphen-normalised fallback
     if (!dbTools || dbTools.length === 0) {
-        const { data: allCategories } = await supabase
+        const { data: allCategoryRows } = await supabase
             .from('tools')
             .select('category');
 
-        const uniqueCategories = Array.from(new Set(allCategories?.map(t => t.category) || []));
+        const uniqueCategories = Array.from(
+            new Set(allCategoryRows?.map(t => t.category).filter(Boolean) || [])
+        ) as string[];
 
-        if (!uniqueCategories.includes(decodedCategory)) {
+        // Normalise: lowercase + replace hyphens/underscores with spaces
+        const normalize = (s: string) => s.toLowerCase().replace(/[-_]/g, ' ').trim();
+        const normalizedInput = normalize(decodedCategory);
+
+        const matched = uniqueCategories.find(
+            cat => normalize(cat) === normalizedInput
+        );
+
+        if (!matched) {
             notFound();
         }
+
+        // Re-fetch with the correct casing
+        decodedCategory = matched!;
+        const refetch = await supabase
+            .from('tools')
+            .select('*')
+            .eq('category', matched)
+            .order('views', { ascending: false });
+        dbTools = refetch.data;
     }
+
+    const displayCategory = formatCategoryName(decodedCategory);
 
     const tools = (dbTools || []).map(dbToolToTool);
 

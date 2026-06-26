@@ -21,6 +21,22 @@ export function formatBlogDate(dateString: string): string {
     }
 }
 
+// Extract headings from markdown for Table of Contents
+export function extractHeadings(markdown: string): { id: string; text: string; level: number }[] {
+    const lines = markdown.split('\n');
+    const headings: { id: string; text: string; level: number }[] = [];
+    for (const line of lines) {
+        const match = line.match(/^(#{2,3})\s+(.+)$/);
+        if (match) {
+            const level = match[1].length;
+            const text = match[2].trim();
+            const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+            headings.push({ id, text, level });
+        }
+    }
+    return headings;
+}
+
 // Shared markdown to HTML converter function
 export function markdownToHtml(markdown: string): string {
     let html = markdown
@@ -28,9 +44,9 @@ export function markdownToHtml(markdown: string): string {
         .replace(/^###### (.*$)/gim, '<h6 class="text-lg font-bold mt-6 mb-3">$1</h6>')
         .replace(/^##### (.*$)/gim, '<h5 class="text-xl font-bold mt-6 mb-3">$1</h5>')
         .replace(/^#### (.*$)/gim, '<h4 class="text-xl font-bold mt-7 mb-4">$1</h4>')
-        .replace(/^### (.*$)/gim, '<h3 class="text-2xl font-bold mt-8 mb-4">$1</h3>')
-        .replace(/^## (.*$)/gim, '<h2 class="text-3xl font-bold mt-10 mb-6">$1</h2>')
-        .replace(/^# (.*$)/gim, '<h1 class="text-4xl font-bold mt-12 mb-8">$1</h1>')
+        .replace(/^### (.*$)/gim, (_, t) => `<h3 id="${t.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')}" class="text-2xl font-bold mt-8 mb-4">${t}</h3>`)
+        .replace(/^## (.*$)/gim, (_, t) => `<h2 id="${t.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')}" class="text-3xl font-bold mt-10 mb-6">${t}</h2>`)
+        .replace(/^# (.*$)/gim, (_, t) => `<h1 id="${t.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')}" class="text-4xl font-bold mt-12 mb-8">${t}</h1>`)
         .replace(/\*\*(.*?)\*\*/gim, '<strong class="font-semibold">$1</strong>')
         .replace(/\*(.*?)\*/gim, '<em class="italic">$1</em>')
         .replace(/\[([^\]]+)\]\(([^\)]+)\)/gim, '<a href="$2" class="text-primary hover:underline">$1</a>')

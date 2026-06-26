@@ -2,14 +2,14 @@ import Link from 'next/link';
 import { ArrowRight, TrendingUp } from 'lucide-react';
 
 const TRENDING = [
-    { label: 'Video Creation',    slug: 'video',      emoji: '🎬', count: '240', color: 'bg-blue-50   border-blue-100   group-hover:border-blue-200   group-hover:bg-blue-50' },
-    { label: 'AI Art & Image',    slug: 'image',      emoji: '🎨', count: '380', color: 'bg-rose-50   border-rose-100   group-hover:border-rose-200   group-hover:bg-rose-50' },
-    { label: 'Chatbots',          slug: 'chatbots',   emoji: '💬', count: '190', color: 'bg-emerald-50 border-emerald-100 group-hover:border-emerald-200 group-hover:bg-emerald-50' },
-    { label: 'Autonomous Agents', slug: 'ai-agents',  emoji: '🤖', count: '120', color: 'bg-violet-50 border-violet-100 group-hover:border-violet-200 group-hover:bg-violet-50' },
-    { label: 'Marketing Copy',    slug: 'marketing',  emoji: '📣', count: '210', color: 'bg-orange-50 border-orange-100 group-hover:border-orange-200 group-hover:bg-orange-50' },
-    { label: 'Dev Assistants',    slug: 'code',       emoji: '💻', count: '175', color: 'bg-sky-50    border-sky-100    group-hover:border-sky-200    group-hover:bg-sky-50' },
-    { label: 'Business SEO',      slug: 'seo',        emoji: '🔍', count: '130', color: 'bg-zinc-50   border-zinc-200   group-hover:border-zinc-300   group-hover:bg-zinc-100' },
-    { label: 'Workflow',          slug: 'automation', emoji: '⚡', count: '160', color: 'bg-yellow-50 border-yellow-100 group-hover:border-yellow-200 group-hover:bg-yellow-50' },
+    { label: 'Video Creation',    slug: 'Video Generators',    emoji: '🎬', count: '240+', color: 'bg-blue-50   border-blue-100   group-hover:border-blue-200   group-hover:bg-blue-50' },
+    { label: 'AI Art & Image',    slug: 'Image Generators',    emoji: '🎨', count: '380+', color: 'bg-rose-50   border-rose-100   group-hover:border-rose-200   group-hover:bg-rose-50' },
+    { label: 'Chatbots',          slug: 'ChatBots',            emoji: '💬', count: '190+', color: 'bg-emerald-50 border-emerald-100 group-hover:border-emerald-200 group-hover:bg-emerald-50' },
+    { label: 'Autonomous Agents', slug: 'AI Agents',           emoji: '🤖', count: '120+', color: 'bg-violet-50 border-violet-100 group-hover:border-violet-200 group-hover:bg-violet-50' },
+    { label: 'Marketing Copy',    slug: 'Marketing',           emoji: '📣', count: '210+', color: 'bg-orange-50 border-orange-100 group-hover:border-orange-200 group-hover:bg-orange-50' },
+    { label: 'Dev Assistants',    slug: 'Developer Tools',     emoji: '💻', count: '175+', color: 'bg-sky-50    border-sky-100    group-hover:border-sky-200    group-hover:bg-sky-50' },
+    { label: 'Business & Finance',slug: 'Business',            emoji: '💼', count: '130+', color: 'bg-zinc-50   border-zinc-200   group-hover:border-zinc-300   group-hover:bg-zinc-100' },
+    { label: 'Workflow',          slug: 'Automation',          emoji: '⚡', count: '160+', color: 'bg-yellow-50 border-yellow-100 group-hover:border-yellow-200 group-hover:bg-yellow-50' },
 ];
 
 export function TrendingCategories() {
@@ -42,7 +42,7 @@ export function TrendingCategories() {
                     {TRENDING.map((cat) => (
                         <Link
                             key={cat.label}
-                            href={`/categories/${cat.slug}`}
+                            href={`/category/${encodeURIComponent(cat.slug)}`}
                             className={`group relative flex flex-col p-6 rounded-[24px] bg-white border transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 min-h-[160px] ${cat.color}`}
                         >
                             {/* Emoji icon — uniform container */}

@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
         }
 
         const supabase = getSupabase();
+        const wordCount = (blog.content || '').split(/\s+/).length;
         const blogData = {
             title: blog.title,
             slug: blog.slug,
@@ -33,6 +34,12 @@ export async function POST(req: NextRequest) {
             template: blog.template || 'default',
             author_id: null,
             updated_at: new Date().toISOString(),
+            // SEO enhancement fields
+            faq: blog.faq || [],
+            focus_keyword: blog.focus_keyword || null,
+            schema_markup: blog.schema_markup || null,
+            entity_mentions: blog.entity_mentions || [],
+            reading_time: blog.reading_time || Math.max(1, Math.ceil(wordCount / 200)),
         };
 
         if (id) {

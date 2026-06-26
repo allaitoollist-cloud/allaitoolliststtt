@@ -1,9 +1,13 @@
+'use client';
+
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, User, Share2, Sparkles } from 'lucide-react';
+import { Calendar, Clock, Share2, Sparkles, ChevronDown, ChevronUp, ExternalLink, List } from 'lucide-react';
 import Link from 'next/link';
-import { markdownToHtml } from '@/lib/markdown';
-import { TopicClusterSidebar } from './TopicClusterSidebar';
+import { markdownToHtml, extractHeadings } from '@/lib/markdown';
+
+interface FAQ { question: string; answer: string; }
 
 interface BlogTemplateDefaultProps {
     blog: {
@@ -13,118 +17,248 @@ interface BlogTemplateDefaultProps {
         category?: string;
         created_at: string;
         views?: number;
-        tags?: string[];
         content: string;
         formattedDate?: string;
+        readingTime?: number;
+        faq?: FAQ[];
+        focus_keyword?: string;
+        schema_markup?: string;
+        entity_mentions?: string[];
     };
 }
 
-export function BlogTemplateDefault({ blog }: BlogTemplateDefaultProps) {
-    // Use formatted date from props (always provided from server)
-    const formattedDate = blog.formattedDate || '';
-
+function FAQItem({ question, answer, index }: { question: string; answer: string; index: number }) {
+    const [open, setOpen] = useState(index === 0);
     return (
-        <article className="container mx-auto px-4 py-8 max-w-4xl">
-            {blog.cover_image && (
-                <div className="mb-8 rounded-lg overflow-hidden">
-                    <img
-                        src={blog.cover_image}
-                        alt={blog.title}
-                        className="w-full h-auto max-h-[500px] object-cover"
-                    />
+        <div className="border border-white/10 rounded-xl overflow-hidden">
+            <button
+                onClick={() => setOpen(o => !o)}
+                className="w-full text-left px-5 py-4 flex items-center justify-between gap-3 hover:bg-white/5 transition-colors"
+            >
+                <span className="font-semibold text-sm">{question}</span>
+                {open ? <ChevronUp className="h-4 w-4 shrink-0 text-primary" /> : <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />}
+            </button>
+            {open && (
+                <div className="px-5 pb-4 text-sm text-muted-foreground leading-relaxed border-t border-white/10 pt-3">
+                    {answer}
                 </div>
             )}
-
-            <div className="space-y-6">
-                {blog.category && (
-                    <Badge variant="secondary" className="text-sm">
-                        {blog.category}
-                    </Badge>
-                )}
-
-                <h1 className="text-4xl md:text-5xl font-bold leading-tight">
-                    {blog.title}
-                </h1>
-
-                {blog.excerpt && (
-                    <p className="text-xl text-muted-foreground">
-                        {blog.excerpt}
-                    </p>
-                )}
-
-                <div className="flex items-center gap-6 text-sm text-muted-foreground border-y py-4">
-                    <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        <span>{formattedDate}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        <span>Matt Verma, AI SEO Specialist</span>
-                    </div>
-                    {blog.views && (
-                        <div>
-                            {blog.views} views
-                        </div>
-                    )}
-                </div>
-
-                {/* TL;DR Section for AI Synthesis (AEO Strategy) */}
-                <div className="bg-primary/5 border-l-4 border-primary p-6 rounded-r-xl my-8">
-                    <h2 className="text-xl font-bold text-foreground mb-3 flex items-center gap-2">
-                        <Sparkles className="h-5 w-5 text-primary" />
-                        Quick Takeaways (TL;DR)
-                    </h2>
-                    <p className="text-muted-foreground italic leading-relaxed">
-                        {blog.excerpt || "This article provides synthesized expert insights into AI tool performance, topical authority, and generative engine optimization (GEO). Summary generated for instant AI retrieval."}
-                    </p>
-                </div>
-
-                {/* Article Content with Sidebar */}
-                <div className="grid md:grid-cols-[1fr_300px] gap-12 pt-8 border-t">
-                    <div className="space-y-8">
-                        <div
-                            className="prose prose-lg dark:prose-invert max-w-none 
-                                 prose-headings:font-bold prose-h1:text-4xl prose-h2:text-3xl prose-h3:text-2xl
-                                 prose-p:text-lg prose-p:leading-relaxed prose-p:mb-6
-                                 prose-a:text-primary prose-a:no-underline hover:prose-a:underline
-                                 prose-img:rounded-xl prose-img:my-8
-                                 prose-code:bg-muted prose-code:px-2 prose-code:py-1 prose-code:rounded
-                                 prose-pre:bg-muted prose-pre:p-6
-                                 prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:pl-4
-                                 prose-strong:font-semibold"
-                            dangerouslySetInnerHTML={{ __html: markdownToHtml(blog.content || '') }}
-                        />
-
-                        {/* Tags */}
-                        {blog.tags && blog.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-2 pt-8 border-t">
-                                <span className="text-sm font-medium">Tags:</span>
-                                {blog.tags.map((tag: string, index: number) => (
-                                    <Badge key={index} variant="outline">
-                                        {tag}
-                                    </Badge>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Share Section */}
-                        <div className="flex items-center gap-4 pt-8 border-t">
-                            <span className="text-sm font-medium">Share:</span>
-                            <Button variant="outline" size="sm" className="gap-2">
-                                <Share2 className="h-4 w-4" />
-                                Share Article
-                            </Button>
-                        </div>
-                    </div>
-
-                    <aside className="hidden md:block">
-                        <div className="sticky top-8">
-                            <TopicClusterSidebar category={blog.category} />
-                        </div>
-                    </aside>
-                </div>
-            </div>
-        </article>
+        </div>
     );
 }
 
+function TableOfContents({ headings }: { headings: { id: string; text: string; level: number }[] }) {
+    if (headings.length < 3) return null;
+    return (
+        <div className="bg-card border border-white/10 rounded-2xl p-5 space-y-3">
+            <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+                <List className="h-4 w-4 text-primary" />
+                Table of Contents
+            </div>
+            <nav className="space-y-1">
+                {headings.map((h) => (
+                    <a
+                        key={h.id}
+                        href={`#${h.id}`}
+                        className={`block text-xs leading-relaxed hover:text-primary transition-colors ${h.level === 2 ? 'text-foreground/80 py-0.5' : 'text-muted-foreground py-0.5 pl-3 border-l border-white/10'}`}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            document.getElementById(h.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }}
+                    >
+                        {h.text}
+                    </a>
+                ))}
+            </nav>
+        </div>
+    );
+}
+
+export function BlogTemplateDefault({ blog }: BlogTemplateDefaultProps) {
+    const formattedDate = blog.formattedDate || '';
+    const readingTime = blog.readingTime || Math.ceil((blog.content || '').split(/\s+/).length / 200);
+    const headings = extractHeadings(blog.content || '');
+    const faqs: FAQ[] = blog.faq && Array.isArray(blog.faq) && blog.faq.length > 0 ? blog.faq : [];
+    const htmlContent = markdownToHtml(blog.content || '');
+
+    const handleShare = () => {
+        if (navigator.share) {
+            navigator.share({ title: blog.title, url: window.location.href });
+        } else {
+            navigator.clipboard.writeText(window.location.href);
+        }
+    };
+
+    return (
+        <>
+            {/* JSON-LD Schema */}
+            {blog.schema_markup && (
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: blog.schema_markup }}
+                />
+            )}
+
+            <article className="container mx-auto px-4 py-8 max-w-6xl">
+                {/* Cover image */}
+                {blog.cover_image && (
+                    <div className="mb-8 rounded-2xl overflow-hidden max-h-[480px]">
+                        <img src={blog.cover_image} alt={blog.title} className="w-full h-full object-cover" />
+                    </div>
+                )}
+
+                <div className="space-y-6 max-w-4xl mx-auto">
+                    {blog.category && <Badge variant="secondary">{blog.category}</Badge>}
+
+                    <h1 className="text-3xl md:text-5xl font-bold leading-tight">{blog.title}</h1>
+
+                    {blog.excerpt && (
+                        <p className="text-xl text-muted-foreground leading-relaxed">{blog.excerpt}</p>
+                    )}
+
+                    {/* Meta bar */}
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground border-y border-white/10 py-4">
+                        <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4" />
+                            <span>{formattedDate}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            <span>{readingTime} min read</span>
+                        </div>
+                        {blog.views ? <span>{blog.views.toLocaleString()} views</span> : null}
+                        {blog.focus_keyword && (
+                            <Badge variant="outline" className="text-xs border-primary/30 text-primary">
+                                {blog.focus_keyword}
+                            </Badge>
+                        )}
+                        <Button variant="ghost" size="sm" className="gap-2 ml-auto" onClick={handleShare}>
+                            <Share2 className="h-3.5 w-3.5" />Share
+                        </Button>
+                    </div>
+
+                    {/* TL;DR */}
+                    <div className="bg-primary/5 border-l-4 border-primary p-5 rounded-r-xl">
+                        <h2 className="text-base font-bold flex items-center gap-2 mb-2">
+                            <Sparkles className="h-4 w-4 text-primary" />Quick Takeaway (TL;DR)
+                        </h2>
+                        <p className="text-muted-foreground text-sm leading-relaxed">
+                            {blog.excerpt || 'Key insights from this article synthesized for fast AI retrieval and answer engine optimization (AEO).'}
+                        </p>
+                    </div>
+
+                    {/* Main layout: content + sidebar */}
+                    <div className="grid lg:grid-cols-[1fr_280px] gap-10 pt-4">
+
+                        {/* Article content */}
+                        <div className="min-w-0">
+                            <div
+                                className="prose prose-invert max-w-none
+                                    prose-h2:text-2xl prose-h2:font-bold prose-h2:mt-10 prose-h2:mb-4
+                                    prose-h3:text-xl prose-h3:font-semibold prose-h3:mt-8 prose-h3:mb-3
+                                    prose-p:text-base prose-p:leading-relaxed prose-p:text-muted-foreground
+                                    prose-li:text-muted-foreground prose-li:leading-relaxed
+                                    prose-a:text-primary prose-a:no-underline hover:prose-a:underline
+                                    prose-strong:text-foreground prose-strong:font-semibold
+                                    prose-blockquote:border-primary prose-blockquote:text-muted-foreground
+                                    prose-code:bg-white/10 prose-code:text-primary prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm"
+                                dangerouslySetInnerHTML={{ __html: htmlContent }}
+                            />
+
+                            {/* Entity mentions */}
+                            {blog.entity_mentions && blog.entity_mentions.length > 0 && (
+                                <div className="mt-10 pt-6 border-t border-white/10">
+                                    <p className="text-xs text-muted-foreground mb-3 font-semibold uppercase tracking-wider">Topics & Entities Covered</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {blog.entity_mentions.map((e, i) => (
+                                            <Badge key={i} variant="outline" className="text-xs">{e}</Badge>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* FAQ Section */}
+                            {faqs.length > 0 && (
+                                <section className="mt-12 pt-8 border-t border-white/10">
+                                    <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                                        <span className="text-primary">❓</span>
+                                        Frequently Asked Questions
+                                    </h2>
+                                    <div className="space-y-3">
+                                        {faqs.map((f, i) => (
+                                            <FAQItem key={i} question={f.question} answer={f.answer} index={i} />
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+
+                            {/* CTA Box */}
+                            <div className="mt-12 p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 text-center space-y-4">
+                                <p className="text-lg font-bold">🚀 Find 1000+ AI Tools — Free</p>
+                                <p className="text-sm text-muted-foreground">
+                                    Browse our curated directory of the best AI tools across 50+ categories.
+                                    Filter by pricing, category, and use case.
+                                </p>
+                                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                                    <Link href="/">
+                                        <Button className="gap-2">
+                                            <Sparkles className="h-4 w-4" />
+                                            Explore AI Tools
+                                        </Button>
+                                    </Link>
+                                    <Link href="/submit">
+                                        <Button variant="outline" className="gap-2 border-white/20">
+                                            <ExternalLink className="h-4 w-4" />
+                                            Submit Your Tool
+                                        </Button>
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Sticky Sidebar */}
+                        <aside className="hidden lg:block">
+                            <div className="sticky top-8 space-y-5">
+                                <TableOfContents headings={headings} />
+
+                                {/* AEO Score card */}
+                                <div className="bg-card border border-white/10 rounded-2xl p-5 space-y-4">
+                                    <h3 className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                                        <Sparkles className="h-3 w-3 text-emerald-400" />
+                                        SEO Signals
+                                    </h3>
+                                    {[
+                                        { label: 'AEO Ready', desc: 'Answers direct questions', ok: faqs.length > 0 },
+                                        { label: 'GEO Optimized', desc: 'Facts for AI synthesis', ok: true },
+                                        { label: 'Entity SEO', desc: 'Named entities tagged', ok: (blog.entity_mentions?.length || 0) > 0 },
+                                        { label: 'FAQ Schema', desc: 'JSON-LD structured data', ok: !!blog.schema_markup },
+                                        { label: 'Semantic Depth', desc: 'Topical authority signals', ok: headings.length >= 5 },
+                                    ].map((item, i) => (
+                                        <div key={i} className="flex items-start gap-2.5">
+                                            <span className={`mt-0.5 text-xs font-bold ${item.ok ? 'text-green-400' : 'text-red-400'}`}>{item.ok ? '✓' : '✗'}</span>
+                                            <div>
+                                                <p className="text-xs font-semibold text-foreground">{item.label}</p>
+                                                <p className="text-[10px] text-muted-foreground">{item.desc}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* CTA mini */}
+                                <div className="bg-card border border-white/10 rounded-2xl p-5 text-center space-y-3">
+                                    <p className="text-xs font-bold text-white">Discover AI Tools</p>
+                                    <p className="text-[11px] text-muted-foreground leading-relaxed">1000+ tools reviewed and curated for you.</p>
+                                    <Link href="/" className="block">
+                                        <Button size="sm" className="w-full gap-2 text-xs">
+                                            <Sparkles className="h-3 w-3" />Browse Directory
+                                        </Button>
+                                    </Link>
+                                </div>
+                            </div>
+                        </aside>
+                    </div>
+                </div>
+            </article>
+        </>
+    );
+}
