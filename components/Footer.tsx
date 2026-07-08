@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Mail, Phone, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 const FOOTER_LINKS = {
     Platform: [
@@ -52,29 +52,6 @@ export function Footer() {
                             <p className="text-[14px] text-gray-500 font-medium leading-relaxed max-w-xs">
                                 The world's largest hand-curated directory of verified AI tools. Navigate the AI revolution with expert human analysis.
                             </p>
-                        </div>
-
-                        {/* Contact Info */}
-                        <div className="space-y-3">
-                            <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Get in Touch</h4>
-                            <a
-                                href="mailto:hello@allaitoollist.com"
-                                className="flex items-center gap-3 text-[14px] font-black text-gray-800 hover:text-orange-600 transition-colors group"
-                            >
-                                <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center shrink-0 group-hover:bg-orange-100 transition-colors">
-                                    <Mail className="w-4 h-4 text-orange-500" />
-                                </div>
-                                hello@allaitoollist.com
-                            </a>
-                            <a
-                                href="tel:+13073464572"
-                                className="flex items-center gap-3 text-[14px] font-black text-gray-800 hover:text-orange-600 transition-colors group"
-                            >
-                                <div className="w-9 h-9 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0 group-hover:bg-orange-50 group-hover:border-orange-100 transition-all">
-                                    <Phone className="w-4 h-4 text-gray-400 group-hover:text-orange-500 transition-colors" />
-                                </div>
-                                +1 (307) 346-4572
-                            </a>
                         </div>
 
                     </div>
