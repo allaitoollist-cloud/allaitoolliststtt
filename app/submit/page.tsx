@@ -120,7 +120,16 @@ export default function SubmitPage() {
             });
             const result = await res.json();
             if (!res.ok) throw new Error(result.error || 'Submission failed');
+
+            // Track conversion in GA
+            if (typeof window !== 'undefined' && (window as any).gtag) {
+                (window as any).gtag('event', 'submit_tool', { plan: data.plan, value: data.plan === 'sponsored' ? 149 : 49 });
+            }
+
             setSubmitted(true);
+            // Open PayPal immediately
+            const amount = data.plan === 'sponsored' ? 149 : 49;
+            window.open(`https://paypal.me/malikmazhar/${amount}USD`, '_blank');
         } catch (error: any) {
             toast({ title: 'Error', description: error.message || 'Something went wrong. Please try again.', variant: 'destructive' });
         } finally {
@@ -130,23 +139,58 @@ export default function SubmitPage() {
 
     if (submitted) {
         const plan = PLANS.find(p => p.id === selectedPlan);
+        const amount = selectedPlan === 'sponsored' ? 149 : 49;
+        const paypalUrl = `https://paypal.me/malikmazhar/${amount}USD`;
         return (
             <div className="min-h-screen flex flex-col bg-background">
                 <Navbar />
                 <main className="flex-grow flex items-center justify-center p-4">
-                    <div className="max-w-md w-full text-center space-y-6 py-20">
-                        <div className="w-20 h-20 bg-orange-500/15 rounded-full flex items-center justify-center mx-auto ring-4 ring-orange-500/20">
-                            <CheckCircle2 className="w-10 h-10 text-orange-500" />
+                    <div className="max-w-md w-full text-center space-y-6 py-16">
+                        <div className="w-20 h-20 bg-green-500/15 rounded-full flex items-center justify-center mx-auto ring-4 ring-green-500/20">
+                            <CheckCircle2 className="w-10 h-10 text-green-500" />
                         </div>
-                        <h2 className="text-3xl font-bold">You're Submitted! 🎉</h2>
-                        <p className="text-muted-foreground leading-relaxed">
-                            Great choice! We will send a PayPal payment link for <strong className="text-white">{plan?.price}</strong> to your email within 24 hours. Once paid, your tool goes live with priority placement!
+                        <div>
+                            <h2 className="text-3xl font-bold mb-2">Submission Received! 🎉</h2>
+                            <p className="text-muted-foreground">
+                                Last step — complete your payment of <strong className="text-white">{plan?.price}</strong> to go live.
+                            </p>
+                        </div>
+
+                        {/* Big Pay Now button */}
+                        <a
+                            href={paypalUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`flex items-center justify-center gap-3 w-full py-4 px-6 rounded-2xl font-bold text-lg text-white shadow-xl transition-all hover:scale-[1.02] ${
+                                selectedPlan === 'sponsored'
+                                    ? 'bg-gradient-to-r from-violet-600 to-purple-600 shadow-violet-500/30'
+                                    : 'bg-gradient-to-r from-orange-500 to-amber-500 shadow-orange-500/30'
+                            }`}
+                        >
+                            <svg viewBox="0 0 24 24" className="w-6 h-6 fill-white" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c1.091 2.198.636 5.045-.717 7.06-1.697 2.545-4.617 3.662-8.334 3.662H9.77l-1.12 7.106h3.44c.524 0 .968-.382 1.05-.9l1.119-7.105h2.19c4.297 0 7.664-1.746 8.647-6.797.357-1.837.075-3.22-.874-4.485z"/>
+                            </svg>
+                            Pay {plan?.price} via PayPal Now
+                            <ArrowRight className="w-5 h-5" />
+                        </a>
+
+                        <div className="bg-card border border-white/10 rounded-xl p-4 text-sm space-y-2 text-left">
+                            <p className="font-semibold text-white">What happens next?</p>
+                            <div className="space-y-1.5 text-muted-foreground text-xs">
+                                <p>✅ <strong className="text-white">Step 1:</strong> Click Pay Now above → complete PayPal payment</p>
+                                <p>✅ <strong className="text-white">Step 2:</strong> We review your tool within 24 hours</p>
+                                <p>✅ <strong className="text-white">Step 3:</strong> Your tool goes live with {selectedPlan === 'sponsored' ? '90-day' : '30-day'} featured placement</p>
+                            </div>
+                        </div>
+
+                        <p className="text-xs text-muted-foreground">
+                            Payment not opening?{' '}
+                            <a href={paypalUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                                Click here to pay manually
+                            </a>
                         </p>
-                        <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 text-sm text-orange-300 space-y-2">
-                            <p>💳 Watch your inbox for the payment link.</p>
-                            <p className="text-xs opacity-80">We accept: <strong>PayPal</strong> · Binance (USDT) · Payoneer · Bank Transfer</p>
-                        </div>
-                        <Button onClick={() => { setSubmitted(false); setFormVisible(false); setSelectedPlan('featured'); }} variant="outline" className="mt-4">
+
+                        <Button onClick={() => { setSubmitted(false); setFormVisible(false); setSelectedPlan('featured'); }} variant="ghost" size="sm" className="text-muted-foreground">
                             Submit Another Tool
                         </Button>
                     </div>
