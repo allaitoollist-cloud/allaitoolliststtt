@@ -1,8 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Mail, Phone, ArrowRight, Twitter, Youtube, Github, Globe } from 'lucide-react';
-import { NewsletterForm } from '@/components/NewsletterForm';
+import { Mail, Phone, ArrowRight } from 'lucide-react';
 
 const FOOTER_LINKS = {
     Platform: [
@@ -28,46 +27,9 @@ const FOOTER_LINKS = {
     ],
 };
 
-const SOCIALS = [
-    { label: 'X (Twitter)', icon: Twitter, href: '#' },
-    { label: 'YouTube',     icon: Youtube, href: '#' },
-    { label: 'GitHub',      icon: Github,  href: '#' },
-    { label: 'Website',     icon: Globe,   href: '#' },
-];
-
 export function Footer() {
     return (
         <footer className="bg-white border-t border-gray-100">
-
-            {/* ── Newsletter Section ── */}
-            <div className="max-w-7xl mx-auto px-4 pt-16 pb-10">
-                <div className="bg-gray-900 rounded-[40px] px-8 py-10 md:px-14 md:py-12 relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-72 h-72 bg-orange-500/10 rounded-full blur-[80px] -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-                    <div className="absolute bottom-0 right-0 w-48 h-48 bg-amber-400/8 rounded-full blur-[60px] translate-x-1/3 translate-y-1/3 pointer-events-none" />
-
-                    <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
-                        {/* Left copy */}
-                        <div className="space-y-3 lg:max-w-sm">
-                            <div className="inline-flex items-center gap-2 text-orange-400 font-black text-xs uppercase tracking-[0.2em]">
-                                <Mail className="w-4 h-4" />
-                                Weekly AI Digest
-                            </div>
-                            <h3 className="text-2xl md:text-3xl font-black text-white leading-tight">
-                                The best AI tools,<br />
-                                <span className="text-gray-400">delivered weekly.</span>
-                            </h3>
-                            <p className="text-gray-500 text-[13px] font-bold uppercase tracking-widest">
-                                Join 42,000+ AI enthusiasts. No spam.
-                            </p>
-                        </div>
-
-                        {/* Right form */}
-                        <div className="w-full lg:w-[460px]">
-                            <NewsletterForm />
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             {/* ── Main Footer Links ── */}
             <div className="max-w-7xl mx-auto px-4 py-16">
@@ -115,19 +77,6 @@ export function Footer() {
                             </a>
                         </div>
 
-                        {/* Socials */}
-                        <div className="flex items-center gap-2.5">
-                            {SOCIALS.map((social) => (
-                                <a
-                                    key={social.label}
-                                    href={social.href}
-                                    aria-label={social.label}
-                                    className="w-10 h-10 rounded-xl bg-gray-900 text-white flex items-center justify-center hover:bg-orange-500 transition-all duration-200 shadow-md shadow-gray-900/10 hover:shadow-orange-500/25 hover:scale-110"
-                                >
-                                    <social.icon className="w-4 h-4" />
-                                </a>
-                            ))}
-                        </div>
                     </div>
 
                     {/* Link Columns */}
@@ -174,9 +123,6 @@ export function Footer() {
                         ))}
                     </div>
 
-                    <div className="text-[12px] font-bold text-gray-400">
-                        Built by <span className="text-gray-700 font-black">One To Five Click</span>
-                    </div>
                 </div>
             </div>
         </footer>
