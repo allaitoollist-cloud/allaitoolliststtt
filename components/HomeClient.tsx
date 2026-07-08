@@ -258,6 +258,124 @@ export default function HomeClient({ initialTools, categories = [] }: HomeClient
         <div className="min-h-screen bg-white flex flex-col">
             <Navbar />
 
+            {/* ── Hero Section ─────────────────────────────── */}
+            <div
+                className="relative bg-[#EEF2FF] border-b border-indigo-100 overflow-hidden py-10 px-4"
+                style={{
+                    backgroundImage: `repeating-linear-gradient(0deg,transparent,transparent 28px,rgba(99,102,241,0.06) 28px,rgba(99,102,241,0.06) 29px),repeating-linear-gradient(90deg,transparent,transparent 28px,rgba(99,102,241,0.06) 28px,rgba(99,102,241,0.06) 29px)`,
+                }}
+            >
+                <div className="max-w-3xl mx-auto text-center">
+
+                    {/* Count badge */}
+                    <div className="inline-flex items-center gap-2 mb-5">
+                        <span className="text-[13px] font-black tracking-[0.12em] uppercase text-indigo-500">
+                            <span className="text-indigo-600">{initialTools.length.toLocaleString()}+</span> AI Tools Analyzed and Listed
+                        </span>
+                    </div>
+
+                    {/* Logo + Title */}
+                    <div className="flex items-center justify-center gap-4 mb-3">
+                        {/* Robot mascot SVG */}
+                        <div className="w-16 h-16 shrink-0">
+                            <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="18" y="28" width="44" height="34" rx="10" fill="#1E293B"/>
+                                <rect x="26" y="36" width="12" height="10" rx="3" fill="#60A5FA"/>
+                                <rect x="42" y="36" width="12" height="10" rx="3" fill="#60A5FA"/>
+                                <circle cx="32" cy="41" r="3" fill="white"/>
+                                <circle cx="48" cy="41" r="3" fill="white"/>
+                                <path d="M30 52 Q40 58 50 52" stroke="#F97316" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+                                <rect x="35" y="18" width="10" height="12" rx="3" fill="#1E293B"/>
+                                <circle cx="40" cy="14" r="5" fill="#F97316"/>
+                                <line x1="45" y1="10" x2="58" y2="4" stroke="#1E293B" strokeWidth="2.5" strokeLinecap="round"/>
+                                <circle cx="60" cy="3" r="4" fill="#60A5FA" stroke="#1E293B" strokeWidth="1.5"/>
+                                <rect x="10" y="38" width="8" height="16" rx="4" fill="#1E293B"/>
+                                <rect x="62" y="38" width="8" height="16" rx="4" fill="#1E293B"/>
+                                <rect x="28" y="62" width="8" height="10" rx="3" fill="#1E293B"/>
+                                <rect x="44" y="62" width="8" height="10" rx="3" fill="#1E293B"/>
+                            </svg>
+                        </div>
+                        <div className="text-left">
+                            <h1 className="text-[36px] md:text-[42px] font-black text-gray-900 leading-none tracking-tight">
+                                AI Tools Directory
+                            </h1>
+                            {/* Rainbow underline */}
+                            <div className="h-[3px] w-full mt-1.5 rounded-full" style={{background:'linear-gradient(90deg,#8B5CF6,#3B82F6,#10B981,#F59E0B,#F97316)'}} />
+                        </div>
+                    </div>
+
+                    {/* Subtitle */}
+                    <p className="text-[15px] text-gray-600 font-medium mb-7 mt-3">
+                        Access the largest list of top-quality AI tools available on the web{' '}
+                        <span className="text-amber-500">★</span>
+                    </p>
+
+                    {/* Search + Category row */}
+                    <div className="bg-white rounded-2xl shadow-md shadow-indigo-100 border border-indigo-100 flex items-center gap-0 overflow-hidden mb-4 max-w-2xl mx-auto">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                                placeholder={`Search over ${initialTools.length.toLocaleString()}+ AI...`}
+                                className="w-full h-13 py-4 pl-10 pr-4 text-[14px] font-medium text-gray-800 placeholder:text-gray-400 focus:outline-none bg-transparent"
+                            />
+                        </div>
+                        <div className="w-px h-8 bg-gray-200 shrink-0" />
+                        <select
+                            value={selectedCategory}
+                            onChange={e => setSelectedCategory(e.target.value)}
+                            className="h-13 py-4 pl-4 pr-8 text-[14px] font-medium text-gray-600 bg-transparent focus:outline-none cursor-pointer appearance-none min-w-[150px]"
+                            style={{backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,backgroundRepeat:'no-repeat',backgroundPosition:'right 12px center'}}
+                        >
+                            <option value="">All categories</option>
+                            {allCategories.map(c => (
+                                <option key={c.name} value={c.name}>{c.name} ({c.count})</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Filter pills */}
+                    <div className="flex items-center justify-center gap-2 flex-wrap mb-6">
+                        <button
+                            onClick={() => {}}
+                            className="flex items-center gap-1.5 text-[12.5px] font-bold px-4 py-2 rounded-full bg-white border border-blue-200 text-blue-600 shadow-sm hover:bg-blue-50 transition-all"
+                        >
+                            <svg className="w-3.5 h-3.5 fill-blue-500" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            Verified
+                        </button>
+                        {[
+                            { label: 'Free AI',    val: 'Free',      cls: 'border-green-200 text-green-700 hover:bg-green-50' },
+                            { label: 'Freemium',   val: 'Freemium',  cls: 'border-amber-200 text-amber-700 hover:bg-amber-50' },
+                            { label: 'Paid',       val: 'Paid',      cls: 'border-gray-200  text-gray-600  hover:bg-gray-50' },
+                            { label: 'Free Trial', val: 'Free Trial', cls: 'border-purple-200 text-purple-700 hover:bg-purple-50' },
+                        ].map(p => (
+                            <button
+                                key={p.val}
+                                onClick={() => togglePricing(p.val === 'Free Trial' ? 'Contact for Pricing' : p.val)}
+                                className={`text-[12.5px] font-bold px-4 py-2 rounded-full bg-white border shadow-sm transition-all ${
+                                    selectedPricing.includes(p.val === 'Free Trial' ? 'Contact for Pricing' : p.val)
+                                        ? 'ring-2 ring-offset-1 ring-indigo-400 border-indigo-300'
+                                        : p.cls
+                                }`}
+                            >
+                                {p.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Stats row */}
+                    <div className="flex items-center justify-center gap-4 text-[13px] text-gray-500 font-medium">
+                        <span><span className="font-black text-gray-700">{allCategories.length}</span> categories</span>
+                        <span className="w-1 h-1 rounded-full bg-gray-300" />
+                        <span>Updated <span className="font-black text-gray-700">daily</span></span>
+                        <span className="w-1 h-1 rounded-full bg-gray-300" />
+                        <span><span className="font-black text-gray-700">100%</span> manually verified</span>
+                    </div>
+                </div>
+            </div>
+
             {/* ── Search Strip ─────────────────────────────── */}
             <div className="sticky top-[60px] z-40 bg-white border-b border-gray-100 shadow-sm">
                 <div className="flex items-center gap-2.5 px-4 py-3 flex-wrap sm:flex-nowrap">
