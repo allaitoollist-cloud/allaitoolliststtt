@@ -487,6 +487,21 @@ export default function SubmitPage() {
                 </section>
 
             </main>
+
+            {/* Contact section */}
+            <div className="text-center py-6 border-t border-border/40">
+                <p className="text-sm text-muted-foreground">
+                    Have questions?{' '}
+                    <a
+                        href="mailto:allaitoollist@gmail.com"
+                        className="text-primary hover:underline font-medium"
+                    >
+                        allaitoollist@gmail.com
+                    </a>
+                    {' '}— we reply within 24 hours.
+                </p>
+            </div>
+
             <Footer />
         </div>
     );

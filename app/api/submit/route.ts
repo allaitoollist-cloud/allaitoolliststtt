@@ -222,7 +222,7 @@ export async function POST(req: NextRequest) {
 
         // Determine price for email
         const planPrice = plan === 'sponsored' ? '$149' : '$49';
-        const adminEmail = process.env.ADMIN_EMAIL || 'haramtaxiservice@gmail.com';
+        const adminEmail = process.env.ADMIN_EMAIL || 'allaitoollist@gmail.com';
 
         // Send emails (only if NOT flagged)
         if (status !== 'flagged') {
